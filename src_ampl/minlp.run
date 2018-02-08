@@ -1,0 +1,53 @@
+reset;
+suffix xfeastol IN;
+suffix cfeastol IN;
+model minlp.mod;
+
+data minlp.dat;
+
+option solver knitroampl;
+option knitro_options 'outlev=3 maxit=300 scale=0 feastol=1 opttol=1 feastolabs=1e-8 opttolabs=1e-6';
+
+#let{(name, name_real, name_imag) in VAR_REAL_IMAG, (VAR_TYPE, key, name, NONE) in SOL} x[name_real] := SOL_REAL[VAR_TYPE, key, name, NONE];
+#let{(name, name_real, name_imag) in VAR_REAL_IMAG, (VAR_TYPE, key, name, NONE) in SOL} x[name_imag] := SOL_IMAG[VAR_TYPE, key, name, NONE];
+#display x;
+#printf{id in 1.._ncons: _con[id].slack < -1e-6}"%-80s%15.6E%15.6E%15.6E%15.6E\n", _conname[id], _con[id].slack, _con[id].body, _con[id].lb, _con[id].ub;
+#printf"Number of violated constraints : %10d\n", card({id in 1.._ncons: _con[id].slack < -1e-6});
+
+let{name in REAL_VARIABLES} x[name] := 1.5;
+
+solve;
+
+
+#solve;
+#display _conname, _con, _con.lb, _con.body, _con.ub;
+
+let{ctr in CONSTRAINTS, (ctr, ctr_real, ctr_imag) in OBJCTR_REAL_IMAG} DUAL_REAL[ctr] := constraint_real[ctr, ctr_real, ctr_imag];
+let{ctr in CONSTRAINTS, (ctr, ctr_real, ctr_imag) in OBJCTR_REAL_IMAG} DUAL_IMAG[ctr] := constraint_imag[ctr, ctr_real, ctr_imag];
+
+#close hessian.sol;
+#for{(v1,v2) in TRIMMER}{
+#	if (v1,v2) in H_INDEX then {
+#		printf "%20s%20s%15.6E%15.6E\n", v1, v2, H_REAL[v1, v2], H_IMAG[v1, v2] > hessian.sol;
+#	}
+#};
+#close hessian.sol;
+
+
+option solution_precision 0;
+option display_precision 0;
+
+#printf{name in VARIABLES, (name, name_real, name_imag) in VAR_REAL_IMAG} "%15s %.20f %.20f\n", name, x[name_real], x[name_imag];
+#printf "\n";
+#printf{name in VARIABLES, (name, name_real, name_imag) in VAR_REAL_IMAG} "%15s;%.20f;%.20f\n", name, x[name_real], x[name_imag] > Knitro_sol.txt;
+#printf{name in VARIABLES, (name, name_real, name_imag) in VAR_REAL_IMAG} "%15s;%.20f;%.20f\n", name, x[name_real], x[name_imag] > Knitro_sol.csv;
+#display constraint_real.body, constraint_imag.body;
+
+printf{ctr in CONSTRAINTS, (ctr, ctr_real, ctr_imag) in OBJCTR_REAL_IMAG}
+	"%15s%15s%10.3f%15s%10.3f\n"
+	, ctr
+	, ctr_real
+	, constraint_real[ctr, ctr_real, ctr_imag].body
+	, ctr_imag
+	, constraint_imag[ctr, ctr_real, ctr_imag].body
+	;
