@@ -7,13 +7,13 @@ include(joinpath("func_definitions.jl"))
 ########################################
 # Construction du problème type
 OPFpbs = load_OPFproblems(MatpowerInput, joinpath("data_Matpower", "matpower", "WB2.m"))
-problem = build_globalpb!(OPFpbs)
+OPF_problem = build_globalpb!(OPFpbs)
 
 println("WB2 problem built")
-# print(problem)
 
 ########################################
-# Setting relaxation order by constraint
+# Normalizing pb and setting relaxation order by constraint
+problem = normalize_problem(OPF_problem)
 relax_ctx = set_relaxation(problem, issparse = false, ismultiordered = false, d = 1)
 
 ########################################
