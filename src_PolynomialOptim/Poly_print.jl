@@ -72,19 +72,22 @@ function Base.print(io::IO, P::Polynomial)
   poly = P.poly
   i = length(poly)
   sorted_keys = sort(collect(keys(poly)))
+  un = Exponent()
   for expo in sorted_keys
     λ = poly[expo]
-    if λ != 0
-      print(io, "(", λ, ")")
-    end
-    if expo.degree != Degree(0,0)
-      print(io, "*")
-      print(io, expo)
-      if i > 1
-        print(io, " + ")
+
+    if expo == un
+      print(io, "$λ")
+    else
+      if λ != 1
+        print(io, "(", λ, ")*")
       end
-      i -= 1
+      print(io, expo)
     end
+    if i > 1
+      print(io, " + ")
+    end
+    i -= 1
   end
 end
 
