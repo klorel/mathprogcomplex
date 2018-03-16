@@ -35,7 +35,7 @@ end
 
 function print(io::IO, mm::MomentMatrix)
     for (key, val) in mm.mm
-        println(io, "($(key[1]), $(key[2])) ⟶ $val")
+        println(io, "($(key[1]), $(key[2])) ⟶  $val")
     end
 end
 
