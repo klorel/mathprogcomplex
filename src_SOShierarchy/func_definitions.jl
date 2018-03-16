@@ -146,21 +146,8 @@ function compute_cliqueorders(sparsity_pattern, varsbycstr, max_cliques, relax_c
 end
 
 
-
-
-"""
-    B_i_dict = compute_Bibycstr(problem, max_cliques, cliquevarsbycstr, orderbyclique)
-
-    Compute the decomposition of localizing matrix corresponding to each constraint on the moment variable basis, yielding several matrices B_i,α,β for each constraint i.
-"""
-function compute_Bibycstr(problem, max_cliques, cliquevarsbycstr, orderbyclique)
-    println("\n=== compute_Bibycstr(problem, max_cliques, cliquevarsbycstr, orderbyclique)")
-    println("Compute the decomposition of localizing matrix corresponding to each constraint on the moment variable basis, yielding several matrices B_i,α,β for each constraint i.")
-    println("-> Nb matrices:                        xx")
-    println("-> Nb matrices by constraint:          xx / xx (mean/std)")
-    println("-> Sparsity degree of the matrices:    xx / xx (mean/std)")
-    return
-end
+include("momentmatrix_dense.jl")
+include("compute_Bi.jl")
 
 
 """

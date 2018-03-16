@@ -130,7 +130,7 @@ function convertMMtobase(mm::MomentMatrix, d, k)
             end
 
             if !haskey(mmb.basis, expo)
-                mmb.basis[expo] = zeros(mmb.msize, mmb.msize)
+                mmb.basis[expo] = Array{Complex64}(mmb.msize, mmb.msize) * 0
             end
 
             mmb.basis[expo][mmb.expo2int[conj(key[1])], mmb.expo2int[key[2]]] += λ

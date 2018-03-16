@@ -59,13 +59,15 @@ function set_relaxation(problem; issparse = false, ismultiordered = false, d = 1
 
     ## TODO: Problem should be normalized
     nb_densecstrs = 0
-    maxdeg_densecstr = Int64[]
+    maxdeg_densecstr = Float32[]
+    ki = Dict{String, Int}()
+    di = Dict{String, Int}()
 
     for (cstrname, cstr) in problem.constraints
         ki[cstrname] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
         di[cstrname] = d
 
-        if ki[cstrname] > di[cstrname]
+        if di[cstrname] > ki[cstrname]
             nb_densecstrs += 1
             push!(maxdeg_densecstr, ki[cstrname])
         end

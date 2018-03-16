@@ -14,7 +14,7 @@ println("WB2 problem built")
 ########################################
 # Normalizing pb and setting relaxation order by constraint
 problem = normalize_problem(OPF_problem)
-relax_ctx = set_relaxation(problem, issparse = false, ismultiordered = false, d = 1)
+relax_ctx = set_relaxation(problem, issparse = false, ismultiordered = false, d = 2)
 
 ########################################
 # Construction du sparsity pattern
@@ -32,7 +32,7 @@ orderbyclique = compute_cliqueorders(sparsity_pattern, varsbycstr, max_cliques, 
 
 ########################################
 # Calcul des matrices B_i et pose du probleme
-B_i = compute_Bibycstr(problem, max_cliques, cliquevarsbycstr, orderbyclique)
+B_i = compute_Bibycstr(problem, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
 SDP_SOS = build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbyclique, relax_ctx)
 
 ########################################
