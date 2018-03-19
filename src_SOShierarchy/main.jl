@@ -1,3 +1,5 @@
+using JuMP, SCS
+
 ROOT = pwd()
 include(joinpath(ROOT, "src_PowSysMod", "PowSysMod_body.jl"))
 include(joinpath("func_definitions.jl"))
@@ -37,7 +39,9 @@ SDP_SOS = build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbycliq
 
 ########################################
 # Calcul d'une solution par un solveur
-m = make_JuMPproblem(SDP_SOS)
+m = make_JuMPproblem(SDP_SOS, SCSSolver())
+
+solve(m)
 
 # end
 

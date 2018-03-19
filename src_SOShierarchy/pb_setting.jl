@@ -21,6 +21,7 @@ function normalize_problem(problem)
         end
     end
 
+    add_constraint!(normpb, "moment_cstr", 0 << Exponent())
 
     exposet = Set()
     nb_expotot = 0

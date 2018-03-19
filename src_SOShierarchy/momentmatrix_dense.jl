@@ -107,11 +107,7 @@ function MomentMatrixBasis(vars, d, k)
         i += 1
     end
 
-    msize = 0
-    for l = 0:(d-k)
-        msize += binomial(length(vars), l)
-    end
-    return MomentMatrixBasis(Dict{Exponent, AbstractMatrix}(), expo2int, int2expo, Int(msize))
+    return MomentMatrixBasis(Dict{Exponent, AbstractMatrix}(), expo2int, int2expo, length(expo2int))
 end
 
 
