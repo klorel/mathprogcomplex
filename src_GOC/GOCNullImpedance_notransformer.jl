@@ -47,7 +47,7 @@ end
 """
     Sdest(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T<:GOCNullImpedance_notransformer
 
-Return power variable Sdest * baseMVA.    
+Return power variable Sdest * baseMVA.
 """
 function Sdest(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T<:GOCNullImpedance_notransformer
    return get_baseMVA(link.dest)*link_vars[elemid*"_Sdest"]

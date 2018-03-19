@@ -1,6 +1,9 @@
 reset;
 suffix xfeastol IN;
 suffix cfeastol IN;
+suffix feaserror IN,>=0, <=1e6;
+suffix opterror IN,>=0, <=1e6;
+suffix numfcevals IN, >=0, <=1e6;
 suffix intvarstrategy IN;
 
 param CONST_POINT symbolic := "CONST_POINT";
@@ -13,6 +16,11 @@ param OPTIMIZATION_CHOICE symbolic := MPEC;
 /* param STRATEGY_INITPOINT symbolic := CONST_POINT; */
 param STRATEGY_INITPOINT symbolic := GOC_POINT;
 
+param TIME_BEGIN;
+let TIME_BEGIN := time();
+
+/* display _SUFFIXES; */
+
 model real_minlp.mod;
 
 data;
@@ -22,6 +30,7 @@ set PRECOND_CONSTRAINTS := include "real_minlp_precond_cstrs.dat";
 
 
 model;
+
 
 option solver knitroampl;
 option knitro_options 'outlev=3 maxit=600 scale=0 feastol=1 opttol=1 feastolabs=1e-6 opttolabs=1e-3 bar_initpt=2 presolve=0 honorbnds=0';
@@ -63,6 +72,10 @@ if OPTIMIZATION_CHOICE == MPEC then {
 
 	solve;
 
+	close knitro_info.csv;
+	printf "%s;%f\n", "Time first resolution", time()-TIME_BEGIN > knitro_info.csv;
+	close knitro_info.csv;
+
 	if card({i in 1.._ncons: _con[i].slack<-1e-6})>1 then{
 		printf "---\nListing the constraints violated by initial point\n---\n";
 		printf "%60s%15s%15s%15s%15s\n", "NAME", "LB", "BODY", "UB", "SLACK";
@@ -92,6 +105,12 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	let{varname in BINARY_VARIABLES} y[varname].intvarstrategy := 2;
 
 	solve;
+
+
+	printf "%s;%f\n", "Time second resolution", time()-TIME_BEGIN >> knitro_info.csv;
+	close knitro_info.csv;
+
+	display time()-TIME_BEGIN;
 
 	option solution_precision 0;
 	option display_precision 0;

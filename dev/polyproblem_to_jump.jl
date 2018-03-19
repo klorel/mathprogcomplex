@@ -1,7 +1,7 @@
-using JuMP, Clp, Ipopt
+using JuMP, Clp, KNITRO, Mosek
 
 ROOT=pwd()
-include(joinpath(ROOT,"..","src_PowSysMod", "PowSysMod_body.jl"))
+include(joinpath(ROOT,"src_PowSysMod", "PowSysMod_body.jl"))
 
 
 
@@ -36,7 +36,9 @@ function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
     variables_jump = Dict{String, JuMP.Variable}()
     for (varname, vartype) in pb_poly_real.variables
         if vartype<:Real
-            variables_jump["$varname"] = @variable(m, varname, basename="$varname")
+            variables_jump["$varname"] = @variable(m, basename="$varname")
+        elseif vartype<:Bool
+            variables_jump["$varname"] = @variable(m, category=:Bin, basename="$varname")
         end
     end
     ctr_jump = Dict{String,JuMP.ConstraintRef}()
@@ -50,30 +52,116 @@ function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
                 error("Polynom coefficients have to be real numbers")
             end
         end
-        ctr_jump[ctr] = @NLconstraint(m, lb <= sum(coeff*prod(variables_jump["$var"]^(exp[1]) for (var,exp) in monome) for (monome,coeff) in polynome) <= ub)
+        ctr_jump[ctr] = @NLconstraint(m, lb <= sum(coeff*prod(variables_jump["$var"]^degree.explvar for (var,degree) in exponent.expo) for (exponent,coeff) in polynome.poly) <= ub)
     end
     polynome_obj = pb_poly_real.objective
-    @NLobjective(m,Min,sum(coeff*prod(variables_jump["$var"]^(exp[1]) for (var,exp) in monome) for (monome,coeff) in polynome_obj))
+    @NLobjective(m,Min,sum(coeff*prod(variables_jump["$var"]^(exp.explvar) for (var,exp) in monome.expo) for (monome,coeff) in polynome_obj.poly))
     return m
 end
 
 ###TEST
-# V1 = Variable("VOLT_1",Complex)
-# V2 = Variable("VOLT_2",Complex)
-# p_obj = V1*conj(V2) + (2+im)*abs2(V1) + 1+2im
-# p_ctr1 = abs2(V1)
-# p_ctr2 = 3im * V1*conj(V2) + abs2(V1)
-#
-# problem_poly=Problem()
-# add_variable!(problem_poly,V1)
-# add_variable!(problem_poly,V2)
-# add_constraint!(problem_poly, "ctr1", 0.95^2 << p_ctr1 << 1.05^2)
-# add_constraint!(problem_poly, "ctr2", p_ctr2==0)
-# set_objective!(problem_poly, p_obj)
-# print(problem_poly)
-# mysolver = IpoptSolver()
-# m = get_JuMP_cartesian_model(problem_poly, mysolver)
-# print(m)
+
+###########################################
+###polynomial problem with complex variables
+V1 = Variable("VOLT_1",Complex)
+p_obj = 0.5*(V1+conj(V1))-0.5*im*(V1-conj(V1))
+p_ctr1 = abs2(V1)
+problem_poly=Problem()
+add_variable!(problem_poly,V1)
+add_constraint!(problem_poly, "ctr1", 1 << p_ctr1 << 1 )
+set_objective!(problem_poly, p_obj)
+print(problem_poly)
+###########################################
+pb_poly_real = pb_cplx2real(problem_poly)
+println(pb_poly_real)
+
+m = Model(solver = KnitroSolver())
+variables_jump = Dict{String, JuMP.Variable}()
+for (varname, vartype) in pb_poly_real.variables
+    if vartype<:Real
+        variables_jump["$varname"] = @variable(m, basename="$varname")
+    elseif vartype<:Bool
+        variables_jump["$varname"] = @variable(m, category=:Bin, basename="$varname")
+    end
+end
+ctr_jump = Dict{String,JuMP.ConstraintRef}()
+ctr = pb_poly_real.constraints["ctr1_Re"]
+polynome = ctr.p
+lb = ctr.lb
+ub = ctr.ub
+
+# nb_monome = length(polynome.poly)
+# ctr_exp = Dict(i => @NLexpression(m,1) for i in 1:nb_monome)
+# index = Dict{Exponent,Int64}()
+# i = 0
+# for (exponent,coeff) in polynome.poly
+#     i+=1
+#     index[exponent] = i
+#      for (var,degree) in exponent.expo
+#         ctr_exp[i] = @NLexpression(m,ctr_exp[i]*variables_jump["$var"]^(degree.explvar))
+#     end
+# end
+# ctr_jump["ctr1_Re"] = @NLconstraint(m, lb <= sum(coeff*ctr_exp[index[exponent]] for (exponent,coeff) in polynome.poly) <= ub)
+
+@NLconstraint(m, lb <= sum(coeff*prod(variables_jump["$var"]^degree.explvar for (var,degree) in exponent.expo) for (exponent,coeff) in polynome.poly) <= ub)
+
+# polynome_obj = pb_poly_real.objective
+# @NLobjective(m,Min,sum(coeff*prod(variables_jump["$var"]^(exp.explvar) for (var,exp) in monome.expo) for (monome,coeff) in polynome_obj.poly))
+@objective(m, Min, variables_jump["VOLT_1_Re"]+variables_jump["VOLT_1_Im"])
+
+polynome = pb_poly_real.objective
+nb_monome = length(polynome.poly)
+ctr_exp = Dict(i => @NLexpression(m,1) for i in 1:nb_monome)
+index = Dict{Exponent,Int64}()
+i = 0
+for (exponent,coeff) in polynome.poly
+    i+=1
+    index[exponent] = i
+     for (var,degree) in exponent.expo
+        ctr_exp[i] = @NLexpression(m,ctr_exp[i]*variables_jump["$var"]^(degree.explvar))
+    end
+end
+@NLobjective(m, Min, sum(coeff*ctr_exp[index[exponent]] for (exponent,coeff) in polynome.poly))
+
+mysolver = KnitroSolver(KTR_PARAM_MIP_INTVAR_STRATEGY=0, KTR_PARAM_OUTLEV=4, #=KTR_PARAM_HESSOPT=2=#)
+m = get_JuMP_cartesian_model(problem_poly, mysolver)
+print(m)
+solve(m)
+
+
+#################################################
+## the same problem with JuMP
+mj = Model(solver=mysolver)
+@variable(mj, v1_re)
+@variable(mj, v1_im)
+@objective(mj, Min, v1_re+v1_im)
+@NLconstraint(mj, 1<= 1*v1_re^2 + 1*v1_im^2 <=1)
+print(mj)
+solve(mj)
+#################################################
+
+###########################################
+###polynomial problem with real variables
+V1_Re = Variable("VOLT_1_Re",Real)
+V1_Im = Variable("VOLT_1_Im",Real)
+p_obj = V1_Re + V1_Im
+p_ctr1 = V1_Re^2 + V1_Im^2
+problem_poly=Problem()
+add_variable!(problem_poly,V1_Re)
+add_variable!(problem_poly,V1_Im)
+add_constraint!(problem_poly, "ctr1", 1 << p_ctr1 << 1 )
+set_objective!(problem_poly, p_obj)
+print(problem_poly)
+mysolver = KnitroSolver(KTR_PARAM_MIP_INTVAR_STRATEGY=0, KTR_PARAM_OUTLEV=4)
+m = get_JuMP_cartesian_model(problem_poly, mysolver)
+print(m)
+solve(m)
+
+###########################################
+
+
+
+
 
 
 

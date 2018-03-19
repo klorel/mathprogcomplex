@@ -1,3 +1,4 @@
+using ArgParse
 """Test
 Test to launch in complex-modeler/src_test folder for example D:\repo\complex-modeler\src_test>julia global_test.jl
 
@@ -94,26 +95,31 @@ function build_and_solve_instance(typeofinput, instance_path)
 
 
     _, t_knitro, _ = @timed run_knitro(amplexportpath, joinpath(pwd(),"..","src_ampl"))
-    pt_knitro, ~ = read_Knitro_output(amplexportpath, pb_global_real)
-    feas = get_minslack(pb_global_real, pt_knitro)
+    pt_knitro, pt_GOC = read_Knitro_output(amplexportpath, pb_global_real)
+    diff_GOC = norm(pt_GOC - pt_knitro, 2)
+    feas,ctr = get_minslack(pb_global_real, pt_knitro)
     obj = get_objective(pb_global_real, pt_knitro)
+    obj2 = get_objective(pb_global_real, pt_GOC)
 
     nb_variables = length(pb_global_real.variables)
     nb_constraints = length(pb_global_real.constraints)
 
-    return String(split(instance_path,'\\')[end]) => (nb_variables, nb_constraints, obj, feas[1], t_buildexport, t_knitro)
+    return String(split(instance_path,'\\')[end]) => (nb_variables, nb_constraints, obj, feas, t_buildexport, t_knitro, diff_GOC, obj2)
 end
 
 function main(ARGS)
     typeofinput, instance_path, eps = read_arguments(ARGS)
 
-    (instance,(nb_variables, nb_constraints, obj, feas, t_buildexport, t_knitro)) = build_and_solve_instance(typeofinput, instance_path)
+    (instance,(nb_variables, nb_constraints, obj, feas, t_buildexport, t_knitro,diff_GOC,obj2)) = build_and_solve_instance(typeofinput, instance_path)
     println("NB variables : ",nb_variables)
     println("NB_constraints : ",nb_constraints)
     println("Objective : ",obj)
     println("Feasibility : ",feas)
     println("t_buildexport : ", t_buildexport)
     println("t_knitro : ", t_knitro)
+    println("Diff GOC point : ", diff_GOC)
+    println("Objective GOC : ", obj2)
+
 end
 
 main(ARGS)

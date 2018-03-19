@@ -97,7 +97,7 @@ function read_Knitro_output(pb_path::String, pb::Problem)
   cd(pb_path)
 
   ## Read Knitro solution
-  files = filter(x->ismatch(r".csv", x), readdir(pwd()))
+  files = filter(x->ismatch(r"solution\S+csv", x), readdir(pwd()))
   length(files) == 1 || warn("get_knitro_solutions(): $(length(files)) .csv files found in $(pb_path).\nExtracting solution from $(files[1]).")
 
   sol_data = readdlm(files[1], ';')
