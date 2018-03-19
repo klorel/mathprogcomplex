@@ -150,21 +150,7 @@ include("momentmatrix_dense.jl")
 include("compute_Bi.jl")
 
 
-"""
-    SDP_SOS = build_SDP_SOS(problem, di, max_cliques, B_i, cliquevarsbycstr, orderbyclique)
-
-    Build the primal SDP corresponding to the dual SOS hierarchy for the provided problem.
-"""
-function build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbyclique, relax_ctx)
-    println("\n=== build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbyclique, relax_ctx)")
-    println("Build the primal SDP corresponding to the dual SOS hierarchy for the provided problem.")
-    println("-> Nb of SDP variables:                                xx")
-    println("-> Size of the SDP variables:                          xx/xx (mean/std)")
-    println("-> Nb of eq. SDP constraints:                          xx")
-    println("-> Nb of coupling y_α,β variables:                     xx")
-    println("-> Nb of constraint involved by coupling variables:    xx/xx (mean/std)")
-    return
-end
+include("build_SDP_SOS.jl")
 
 
 """
