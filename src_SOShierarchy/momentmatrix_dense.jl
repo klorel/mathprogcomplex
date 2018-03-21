@@ -91,7 +91,7 @@ end
 """
 mutable struct MomentMatrixBasis
     basis::Dict{Exponent, AbstractMatrix} # Les exposants sont de degré inférieur à d
-    # NOTE: on ne pourra peu-être pas couper au Tuple{Expo, Expo}...
+    # NOTE: on ne pourra peut-être pas couper au Tuple{Expo, Expo}...
     expo2int::Dict{Exponent, Int}   # Carte de la matrice des coefficients d-ki
     int2expo::Dict{Int, Exponent}
     msize::Int                      # size of the matrix
@@ -126,10 +126,13 @@ function convertMMtobase(mm::MomentMatrix, d, k)
             end
 
             if !haskey(mmb.basis, expo)
-                mmb.basis[expo] = Array{Complex64}(mmb.msize, mmb.msize) * 0
+                mmb.basis[expo] = Array{Complex128}(mmb.msize, mmb.msize) * 0.0
             end
 
             mmb.basis[expo][mmb.expo2int[conj(key[1])], mmb.expo2int[key[2]]] += λ
+
+            !isnan(λ) || warn("isNaN(): $key - $expo")
+            !isnan(mmb.basis[expo][mmb.expo2int[conj(key[1])], mmb.expo2int[key[2]]]) || warn("isNaN(): $expo")
         end
     end
     return mmb
