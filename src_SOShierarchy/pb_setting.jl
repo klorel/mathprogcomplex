@@ -6,7 +6,7 @@
 # NOTE: Care for integer variables will have to be taken at some point.
 function normalize_problem(problem)
     println("\n=== normalize_problem(problem)")
-    println("Transform the problem so it contains only ineqs s.a. g_i(z) ≥ 0, add the moment constraint g_0(z) = 1 ≥ 0.")
+    println("Transform the problem so it contains only ineqs s.a. g_i(z) ≥ 0, add the moment constraint g_0(z)=1≥0.")
 
     normpb = Problem()
     normpb.variables = copy(problem.variables)
@@ -74,7 +74,7 @@ function set_relaxation(problem; issparse = false, ismultiordered = false, d = 1
         end
     end
 
-    println("-> Number of constraints s.t. di > ki:     $nb_densecstrs")
+    println("-> Number of constraints s.t. di > ki:     $nb_densecstrs / $(length(problem.constraints))")
     println("-> Max total degree on such constraints:   $(mean(maxdeg_densecstr)) / $(std(maxdeg_densecstr)) (mean/std)")
     println("All variables appearing in such constraints will be linked in the sparsity pattern, which will largely densify it.")
     return RelaxationContext(issparse, ismultiordered, di, ki)

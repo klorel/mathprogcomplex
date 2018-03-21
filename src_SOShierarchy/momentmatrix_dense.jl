@@ -134,3 +134,27 @@ function convertMMtobase(mm::MomentMatrix, d, k)
     end
     return mmb
 end
+
+
+
+"""
+    momentmatrices = compute_momentmat(problem, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
+
+    Compute the moment and localizing matrices associated with the problem constraints and vlique decomposition.
+"""
+function compute_momentmat(problem, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
+    println("\n=== compute_momentmat(problem, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)")
+    println("Compute the moment and localizing matrices associated with the problem constraints and vlique decomposition.")
+
+    momentmatrices = Dict{String, MomentMatrix}()
+
+    for (cstrname, cstr) in problem.constraints
+        vars = Set([Variable(varname, vartype) for (varname, vartype) in problem.variables])
+        di, ki = relax_ctx.di[cstrname], relax_ctx.ki[cstrname]
+        momentmatrices[cstrname] = MomentMatrix(vars, di - ki) * cstr.p
+    end
+
+    println("xxxxx which indicators ? xxxxx")
+
+    return momentmatrices
+end

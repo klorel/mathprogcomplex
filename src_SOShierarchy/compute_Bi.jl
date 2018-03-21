@@ -1,9 +1,9 @@
 """
-    B_i_dict = compute_Bibycstr(problem, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
+    B_i_dict = compute_Bibycstr(problem, momentmatrices, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
 
     Compute the decomposition of localizing matrix corresponding to each constraint on the moment variable basis, yielding several matrices B_i,α,β for each constraint i.
 """
-function compute_Bibycstr(problem, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
+function compute_Bibycstr(problem, momentmatrices, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
     println("\n=== compute_Bibycstr(problem, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)")
     println("Compute the decomposition of localizing matrix corresponding to each constraint on the moment variable basis, yielding several matrices B_i,α,β for each constraint i.")
 
@@ -16,9 +16,8 @@ function compute_Bibycstr(problem, max_cliques, cliquevarsbycstr, orderbyclique,
 
     for (cstrname, cstr) in problem.constraints
         d, k = di[cstrname], ki[cstrname]
-        mm = MomentMatrix(vars, d - k)
 
-        Bi_tot[cstrname] = convertMMtobase(cstr.p * mm, d, k)
+        Bi_tot[cstrname] = convertMMtobase(momentmatrices[cstrname], d, k)
     end
 
 
