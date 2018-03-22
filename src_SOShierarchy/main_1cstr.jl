@@ -88,27 +88,6 @@ Zi["moment_cstr"] = @variable(m, moment_cstr[1:3*2, 1:3*2], SDP)
 @constraint(m, moment_cstr1[i=1:3,j=1:2], moment_cstr[i, j] == moment_cstr[i+3, j+3])
 @constraint(m, moment_cstr2[i=1:3,j=1:3], moment_cstr[i+3, j] == -moment_cstr[i, j+3])
 
-macro def_hermitianmatrix(m, n, matname)
-    return quote
-        local var = @variable($m, $matname[1:2*$n, 1:2*$n], SDP)
-        @constraint($m, $matname[i=1:$n, j=1:$n], $matname[i, j] == $matname[i+$n, j+$n])
-        # @constraint(m, $(matname)_sdp2[i=1:$n, j=1:$n], $matname[i+$n, j] == -$matname[i, j+$n])
-        return var
-    end
-end
-
-@macroexpand @def_hermitianmatrix(m, 2, toto)
-
-macro time(ex)
-    return quote
-        local t0 = time()
-        local val = $ex
-        local t1 = time()
-        println("elapsed time: ", t1-t0, " seconds")
-        val
-    end
-end
-
 ## Setting objective
 expo = Exponent()
 

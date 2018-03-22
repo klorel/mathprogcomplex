@@ -21,6 +21,11 @@ print(problemraw)
 problem = normalize_problem(problemraw);
 
 print(problem)
+# ▶ variables: z
+# ▶ objective: (0.5)*z + (0.5)*conj(z)
+# ▶ constraints:
+#    ineq_hi: 0 < 4 + (-1.0)*conj(z) * z
+# moment_cstr: 0 < 1.0
 relax_ctx = set_relaxation(problem, issparse = false, ismultiordered = false, d = 2)
 
 ########################################
@@ -35,46 +40,36 @@ momentmatrices = compute_momentmat(problem, max_cliques, cliquevarsbycstr, order
 
 B_i = compute_Bibycstr(problem, momentmatrices, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
 
+SDP_SOS = build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbyclique, relax_ctx);
+
 m = Model(solver = SCSSolver())
+
 ## Variables
 Zi = Dict{String, Array{JuMP.Variable, 2}}()
-# for (cstrname, mmb) in B_i
-#     n = size(collect(values(mmb.basis))[1], 1)
-#     Zi[cstrname*"_Re"] = @variable(m, [1:n, 1:n], SDP)
-#     Zi[cstrname*"_Im"] = @variable(m, [1:n, 1:n], SDP)
-#     println("Added two SDP var $cstrname, size $n")
-# end
-
-function Λreal(A::AbstractMatrix)
-    n, m = size(A)
-    return A[1:Int(n/2), 1:Int(m/2)]
+for (cstrname, n) in SDP_SOS.variables
+    var = @variable(m, [1:2*n,1:2*n], SDP, basename=cstrname)
+    Zi[cstrname] = var
+    cstr1 = @constraint(m, [i=1:n,j=1:n], var[i, j] == var[i+n, j+n])
+    println(cstr1)
+    cstr2 = @constraint(m, [i=1:n,j=1:n], var[i+n, j] == -var[j, i+n])
+    println(cstr2)
 end
 
-function Λimag(A::AbstractMatrix)
-    n, m = size(A)
-    return A[(Int(n/2+1)):n, 1:Int(m/2)]
+function formconstraint(SDPform, Zi)
+    l_re = real(SDPform.scal)
+    l_im = imag(SDPform.scal)
+    for (i, Biα) in SDPform.mats
+        l_re -= vecdot(Λreal(Zi[i]), real(Biα)) - vecdot(Λimag(Zi[i]), imag(Biα))
+        l_im -= vecdot(Λreal(Zi[i]), imag(Biα)) + vecdot(Λimag(Zi[i]), real(Biα))
+    end
+    return l_re, l_im
 end
-
-Zi["ineq_hi"] = @variable(m, ineq_hi[1:2*2, 1:2*2], SDP)
-@constraint(m, ineq_sdp1[i=1:2,j=1:2], ineq_hi[i, j] == ineq_hi[i+2, j+2])
-@constraint(m, ineq_sdp2[i=1:2,j=1:2], ineq_hi[i+2, j] == -ineq_hi[j, i+2])
-Zi["moment_cstr"] = @variable(m, moment_cstr[1:3*2, 1:3*2], SDP)
-@constraint(m, moment_cstr1[i=1:3,j=1:2], moment_cstr[i, j] == moment_cstr[i+3, j+3])
-@constraint(m, moment_cstr2[i=1:3,j=1:3], moment_cstr[i+3, j] == -moment_cstr[j, i+3])
 
 ## Setting objective
 expo = Exponent()
 
-f0 = haskey(problem.objective, expo) ? problem.objective[expo] : 0
-objectif = f0
-for (i, mmbi) in B_i
-    if haskey(mmbi.basis, expo)
-
-        Biα = mmbi.basis[expo]
-        objectif -= vecdot(Λreal(Zi[i]), real(Biα)) + vecdot(Λimag(Zi[i]), imag(Biα))
-    end
-end
-@objective(m, Max, objectif)
+objectif_re, _ = formconstraint(SDP_SOS.objective, Zi)
+@objective(m, Max, objectif_re)
 
 ## Setting constraints
 d = relax_ctx.di["moment_cstr"]
@@ -82,8 +77,9 @@ vars = Set([Variable(varname, vartype) for (varname, vartype) in problem.variabl
 realexpos = compute_exponents(vars, d)
 conjexpos = compute_exponents(vars, d, compute_conj=true)
 
-@constraintref myCons_re[1:3, 1:3]
-@constraintref myCons_im[1:3, 1:3]
+#Constraint storage
+@constraintref myCons_re[1:length(realexpos), 1:length(realexpos)]
+@constraintref myCons_im[1:length(conjexpos), 1:length(conjexpos)]
 
 expo2int = Dict{Exponent, Int}()
 int2expo = Dict{Int, Exponent}()
@@ -97,44 +93,29 @@ end
 myCons_re[1,1] = @constraint(m, 1==1)
 myCons_im[1,1] = @constraint(m, 1==1)
 
+#Building constraints
 for re in realexpos, im in conjexpos
     expo = product(re, im)
 
-    ## NOTE: alpha, beta and beta, alpha should provide the same constraint, to be checked.
+    ## NOTE: (alpha, beta) and (beta, alpha) should provide the same constraint, to be checked.
     if expo != Exponent()
-        f_α = haskey(problem.objective, expo) ? problem.objective[expo] : 0
-        pss_re, pss_im = 0, 0
-        for (i, mmbi) in B_i
-            if haskey(mmbi.basis, expo)
-                # println("$expo --> $i")
-                Biα = mmbi.basis[expo]
-                pss_re += vecdot(Λreal(Zi[i]), real(Biα)) - vecdot(Λimag(Zi[i]), imag(Biα))
-                pss_im += vecdot(Λreal(Zi[i]), imag(Biα)) + vecdot(Λimag(Zi[i]), real(Biα))
-            end
-        end
-
         println("--> $(expo2int[re]), $(expo2int[conj(im)])")
-        # println("$(expo2int[re]), $(expo2int[conj(im)]) --> $(myCons_re[expo2int[re], expo2int[conj(im)]])")
-        if !(real(f_α) == 0 && pss_re == 0)
-            cstr = @constraint(m, real(f_α) == pss_re)
-            myCons_re[expo2int[re], expo2int[conj(im)]] = cstr
+        l_re, l_im = formconstraint(SDP_SOS.constraints[expo], Zi)
+
+        if l_re != 0
+            myCons_re[expo2int[re], expo2int[conj(im)]] = @constraint(m, l_re == 0)
             println(myCons_re[expo2int[re], expo2int[conj(im)]])
         else
             println("-> Expo $expo provided no constraint")
         end
 
-        if !(imag(f_α) == 0 && pss_im == 0)
-            cstr = @constraint(m, imag(f_α) == pss_im)
-            myCons_im[expo2int[re], expo2int[conj(im)]] = cstr
+        if l_im != 0
+            myCons_im[expo2int[re], expo2int[conj(im)]] = @constraint(m, l_im == 0)
             println(myCons_im[expo2int[re], expo2int[conj(im)]])
         else
             println("-> Expo $expo provided no constraint")
         end
     end
-end
-
-for re in realexpos, im in conjexpos
-    println("$(expo2int[re]), $(expo2int[conj(im)]) --> $(myCons_re[expo2int[re], expo2int[conj(im)]])")
 end
 
 print(m)
@@ -145,8 +126,9 @@ print(m)
 solve(m)
 
 println("Objective value: ", getobjectivevalue(m))
-println("ineq_hi = ", getvalue(ineq_hi))
-println("moment_cstr = ", getvalue(moment_cstr))
+for (cstrname, mmb) in B_i
+    println("$cstrname = ", getvalue(Zi[cstrname]))
+end
 
 println(getdual(myCons_re[1:3, 1:3]))
 
