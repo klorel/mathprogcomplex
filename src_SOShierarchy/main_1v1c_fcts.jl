@@ -55,11 +55,7 @@ for (cstrname, n) in SDP_SOS.variables
     end
     cstr2 = @constraint(m, [i=1:n,j=1:i], var[n+i, j] == - var[n+j, i])
     for i in 1:n, j in 1:i
-        # for j in 1:i
-        # println("$(i+n), $j  <--> $(j+n), $i")
-        # cstr = @constraint(m, var[n+i, j] == - var[n+j, i])
         println("$i, $j --> $(cstr2[i, j])")
-        # end
     end
 end
 

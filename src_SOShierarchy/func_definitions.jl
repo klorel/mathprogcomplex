@@ -152,14 +152,4 @@ include("compute_Bi.jl")
 
 include("build_SDP_SOS.jl")
 
-
-"""
-    m = make_JuMPproblem(SDP_SOS)
-
-    Convert the SDP_SOS problem into a JuMP problem
-"""
-function make_JuMPproblem(SDP_SOS)
-    println("\n=== make_JuMPproblem(SDP_SOS)")
-    println("Convert the SDP_SOS problem into a JuMP problem")
-    return
-end
+include("export_JuMP.jl")
