@@ -76,7 +76,7 @@ function load_OPFproblems(input_type, instance_path::String)
 end
 
 
-function load_OPFproblems(rawfile, genfile, confile)
+function load_OPFproblems(rawfile::String, genfile::String, confile::String)
   OPFpbs = read_GOCfiles(rawfile, genfile, confile)
 
   for scenario in keys(OPFpbs)

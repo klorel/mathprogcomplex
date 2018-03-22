@@ -8,12 +8,13 @@ include("polyproblem_to_jump.jl")
 
 typeofinput = MatpowerInput
 data_path = joinpath(ROOT,"..","data_Matpower","matpower")
-instance = "WB2.m"
+instance = "case9.m"
 
 
 mysolver = KnitroSolver(KTR_PARAM_OUTLEV=3,
                         KTR_PARAM_MAXIT=600,
                         KTR_PARAM_SCALE=0,
+                        KTR_PARAM_HESSOPT=0,
                         KTR_PARAM_FEASTOL=1.0,
                         KTR_PARAM_OPTTOL=1.0,
                         KTR_PARAM_FEASTOLABS=1e-6,
@@ -21,7 +22,7 @@ mysolver = KnitroSolver(KTR_PARAM_OUTLEV=3,
                         KTR_PARAM_BAR_INITPT=2,
                         KTR_PARAM_PRESOLVE=0,
                         KTR_PARAM_HONORBNDS=0,
-                        KTR_PARAM_MIP_INTVAR_STRATEGY=2) #0 nothing, 1 relax, 2 complementary
+                        KTR_PARAM_MIP_INTVAR_STRATEGY=0) #0 nothing, 1 relax, 2 complementary
 
 instance_path = joinpath(data_path, instance)
 
