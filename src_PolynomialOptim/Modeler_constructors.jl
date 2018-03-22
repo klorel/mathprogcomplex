@@ -40,7 +40,13 @@ function Base.print(io::IO, cstr::Constraint)
   if cstr.lb == cstr.ub
     print(io, cstr.p, " = ", cstr.ub)
   else
-    print(io, cstr.lb, " < ", cstr.p, " < ", cstr.ub)
+    if cstr.lb != (-Inf-im*Inf)
+      print(io, cstr.lb, " < ")
+    end
+    print(io, cstr.p)
+    if cstr.ub !=(Inf+im*Inf)
+      print(io, " < ", cstr.ub)
+    end
   end
 end
 
