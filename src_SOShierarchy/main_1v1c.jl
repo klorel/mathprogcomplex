@@ -142,6 +142,7 @@ print(m)
 
 ########################################
 # Calcul d'une solution par un solveur
+println("-----> Starting solve")
 solve(m)
 
 println("Objective value: ", getobjectivevalue(m))

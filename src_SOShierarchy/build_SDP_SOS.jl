@@ -4,7 +4,7 @@ struct SDPForm
 end
 
 function SDPForm(obj, B_i, expo)
-    println("----> SDPForm : $expo")
+    # println("----> SDPForm : $expo")
     scal = haskey(obj, expo) ? obj[expo] : 0
     mats = Dict{String, AbstractMatrix}()
     for (cstrname, mmb) in B_i
@@ -13,8 +13,8 @@ function SDPForm(obj, B_i, expo)
         end
     end
 
-    println("scal = $scal")
-    println("Matrices: $(keys(mats))")
+    # println("scal = $scal")
+    # println("Matrices: $(keys(mats))")
     return SDPForm(scal, mats)
 end
 
@@ -46,7 +46,7 @@ function build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbycliqu
     for realexpo in realexpos
         for conjexpo in conjexpos
             expo = product(realexpo, conjexpo)
-            println("==> Exponent $expo")
+            # println("==> Exponent $expo")
 
             cstr = SDPForm(problem.objective, B_i, expo)
             if (cstr.scal != 0) || length(cstr.mats) != 0
@@ -84,30 +84,43 @@ end
 function make_JuMPproblem(SDP::SDPPrimal, mysolver)
     m = Model(solver = mysolver)
 
-    varsSDP = Dict{String, Array{JuMP.Variable, 2}}()
-
+    ## Variables
+    Zi = Dict{String, Array{JuMP.Variable, 2}}()
     for (cstrname, n) in SDP.variables
-        varsSDP[cstrname*"_Re"] = @variable(m, [1:n,1:n], SDP)
-        varsSDP[cstrname*"_Im"] = @variable(m, [1:n,1:n], SDP)
+        var = @variable(m, [1:2n,1:2n], SDP, basename=cstrname)
+        Zi[cstrname] = var
+        @constraint(m, [i=1:n,j=1:n], var[i, j] == var[i+n, j+n])
+        @constraint(m, [i=1:n,j=1:n], var[i+n, j] == -var[j, i+n])
     end
 
     obj = SDP.objective
 
-    # println("varsSDP:\n$varsSDP")
+    # println("Zi:\n$Zi")
     #
-    # println("\nobj.mats:\n$varsSDP")
+    # println("\nobj.mats:\n$Zi")
 
-    @objective(m, Min, obj.scal - sum( trace(real(mat) * varsSDP[varname*"_Re"])
-                                     - trace(imag(mat) * varsSDP[varname*"_Im"]) for (varname, mat) in obj.mats))
+    @objective(m, Min, obj.scal - sum( trace(real(mat) * Zi[varname*"_Re"])
+                                     - trace(imag(mat) * Zi[varname*"_Im"]) for (varname, mat) in obj.mats))
 
     for (expo, cstr) in SDP.constraints
-        @constraint(m, real(cstr.scal) == sum( trace(real(mat) * varsSDP[varname*"_Re"])
-                                             - trace(imag(mat) * varsSDP[varname*"_Im"]) for (varname, mat) in cstr.mats))
+        @constraint(m, real(cstr.scal) == sum( trace(real(mat) * Zi[varname*"_Re"])
+                                             - trace(imag(mat) * Zi[varname*"_Im"]) for (varname, mat) in cstr.mats))
 
-        @constraint(m, imag(cstr.scal) == sum( trace(real(mat) * varsSDP[varname*"_Im"])
-                                             + trace(imag(mat) * varsSDP[varname*"_Re"]) for (varname, mat) in cstr.mats))
+        @constraint(m, imag(cstr.scal) == sum( trace(real(mat) * Zi[varname*"_Im"])
+                                             + trace(imag(mat) * Zi[varname*"_Re"]) for (varname, mat) in cstr.mats))
     end
 
     return m
 
+end
+
+
+function Λreal(A::AbstractMatrix)
+    n, m = size(A)
+    return A[1:Int(n/2), 1:Int(m/2)]
+end
+
+function Λimag(A::AbstractMatrix)
+    n, m = size(A)
+    return A[(Int(n/2+1)):n, 1:Int(m/2)]
 end

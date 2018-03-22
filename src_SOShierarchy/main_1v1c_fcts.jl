@@ -11,7 +11,7 @@ include(joinpath(ROOT, "src_SOShierarchy", "func_definitions.jl"))
 z = Variable("z", Complex)
 problemraw = Problem()
 add_variable!(problemraw, z)
-set_objective!(problemraw, (z+conj(z))/2)
+set_objective!(problemraw, imag(z))
 add_constraint!(problemraw, "ineq", abs2(z) << 4)
 
 print(problemraw)
@@ -50,9 +50,17 @@ for (cstrname, n) in SDP_SOS.variables
     var = @variable(m, [1:2*n,1:2*n], SDP, basename=cstrname)
     Zi[cstrname] = var
     cstr1 = @constraint(m, [i=1:n,j=1:n], var[i, j] == var[i+n, j+n])
-    println(cstr1)
-    cstr2 = @constraint(m, [i=1:n,j=1:n], var[i+n, j] == -var[j, i+n])
-    println(cstr2)
+    for i in 1:n, j in 1:n
+        println("$i, $j  --> $(cstr1[i, j])")
+    end
+    cstr2 = @constraint(m, [i=1:n,j=1:i], var[n+i, j] == - var[n+j, i])
+    for i in 1:n, j in 1:i
+        # for j in 1:i
+        # println("$(i+n), $j  <--> $(j+n), $i")
+        # cstr = @constraint(m, var[n+i, j] == - var[n+j, i])
+        println("$i, $j --> $(cstr2[i, j])")
+        # end
+    end
 end
 
 function formconstraint(SDPform, Zi)
@@ -123,6 +131,7 @@ print(m)
 
 ########################################
 # Calcul d'une solution par un solveur
+println("-----> Starting solve")
 solve(m)
 
 println("Objective value: ", getobjectivevalue(m))
@@ -131,6 +140,4 @@ for (cstrname, mmb) in B_i
 end
 
 println(getdual(myCons_re[1:3, 1:3]))
-
-println(-getdual(myCons_re[1:3, 1:3]))
 println(-getdual(myCons_im[1:3, 1:3]))
