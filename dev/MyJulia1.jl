@@ -21,14 +21,13 @@ function MyJulia1(rawfile,genfile,contfile)
                           KTR_PARAM_BAR_INITPT=2,
                           KTR_PARAM_PRESOLVE=0,
                           KTR_PARAM_HONORBNDS=0,
-                          KTR_PARAM_MIP_INTVAR_STRATEGY=0) 
+                          KTR_PARAM_MIP_INTVAR_STRATEGY=0)
   tic()
   m = get_JuMP_cartesian_model(pb_global, mysolver)
   toc()
 
   solve(m)
-
-
+  
   ##create solution1.txt and solution2.txt
 end
 
