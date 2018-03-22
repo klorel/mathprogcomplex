@@ -1,8 +1,8 @@
 using JuMP, Clp, KNITRO, Mosek
 
-ROOT=pwd()
-include(joinpath(ROOT,"src_PowSysMod", "PowSysMod_body.jl"))
-
+# ROOT=pwd()
+# include(joinpath(ROOT,"src_PowSysMod", "PowSysMod_body.jl"))
+#
 
 
 """
@@ -52,12 +52,31 @@ function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
                 error("Polynom coefficients have to be real numbers")
             end
         end
-        ctr_jump[ctr] = @NLconstraint(m, lb <= sum(coeff*prod(variables_jump["$var"]^degree.explvar for (var,degree) in exponent.expo) for (exponent,coeff) in polynome.poly) <= ub)
+        s_ctr = poly_to_NLexpression(m, variables_jump,polynome)
+        ctr_jump[ctr] = @NLconstraint(m, lb <= s_ctr <= ub)
     end
     polynome_obj = pb_poly_real.objective
-    @NLobjective(m,Min,sum(coeff*prod(variables_jump["$var"]^(exp.explvar) for (var,exp) in monome.expo) for (monome,coeff) in polynome_obj.poly))
+    s_obj = poly_to_NLexpression(m, variables_jump,polynome_obj)
+    @NLobjective(m,Min,s_obj)
     return m
 end
+
+function poly_to_NLexpression(m::JuMP.Model, variables_jump::Dict{String, JuMP.Variable},polynome::Polynomial)
+    s = @NLexpression(m, 0)
+    for (monome,coeff) in polynome.poly
+        prod = @NLexpression(m, 1)
+        for (varname, degree) in monome.expo
+            if degree.explvar > 1
+            prod = @NLexpression(m, prod * variables_jump["$varname"]^degree.explvar)
+            elseif degree.explvar == 1
+            prod = @NLexpression(m, prod * variables_jump["$varname"])
+            end
+        end
+        s = @NLexpression(m, s + coeff * prod)
+    end
+    return s
+end
+
 
 ###TEST
 
