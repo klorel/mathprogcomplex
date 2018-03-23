@@ -55,7 +55,7 @@ end
     Build a `relax_ctx` object containing relaxation choices and problem features : order by constraint, relaxation order by constraint.
 """
 function set_relaxation(problem; issparse = false, ismultiordered = false, d = 1)
-    println("\n=== set_relaxation(problem, issparse = false, ismultiordered = false, d = 1)")
+    println("\n=== set_relaxation(problem, issparse = $issparse, ismultiordered = $ismultiordered, d = $d)")
     println("Build a `relax_ctx` object containing relaxation choices and problem features : polynomial degree by constraint, relaxation order by constraint...")
 
     ## TODO: Problem should be normalized

@@ -41,9 +41,11 @@ function make_JuMPproblem(SDP::SDPPrimal, mysolver)
     @constraintref yα_im[1:length(conjexpos), 1:length(conjexpos)]
 
     expo2int = Dict{Exponent, Int}()
+    int2expo = Dict{Int, Exponent}()
     i = 1
     for expo in sort(collect(realexpos))
         expo2int[expo] = i
+        int2expo[i] = expo
         i += 1
     end
 
@@ -54,7 +56,6 @@ function make_JuMPproblem(SDP::SDPPrimal, mysolver)
     for re in realexpos, im in conjexpos
         expo = product(re, im)
 
-        ## NOTE: (alpha, beta) and (beta, alpha) should provide the same constraint, to be checked.
         if expo != Exponent()
             # println("--> $(expo2int[re]), $(expo2int[conj(im)])")
             l_re, l_im = formconstraint(SDP_SOS.constraints[expo], Zi)
@@ -75,7 +76,7 @@ function make_JuMPproblem(SDP::SDPPrimal, mysolver)
         end
     end
 
-    return m, Zi, yα_re, yα_im
+    return m, Zi, yα_re, yα_im, expo2int, int2expo
 
 end
 

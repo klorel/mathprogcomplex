@@ -28,7 +28,7 @@ print(problem)
 # ▶ constraints:
 #    ineq_hi: 0 < 4 + (-1.0)*conj(z) * z
 # moment_cstr: 0 < 1.0
-relax_ctx = set_relaxation(problem, issparse = false, ismultiordered = false, d = 2)
+relax_ctx = set_relaxation(problem, issparse = false, ismultiordered = false, d = 3)
 
 ########################################
 # Construction du sparsity pattern

@@ -67,13 +67,13 @@ function *(λ::Number, mm::MomentMatrix)
 end
 *(mm::MomentMatrix, λ::Number) = λ*mm
 
-# function add!(mm1::MomentMatrix, mm2::MomentMatrix)
-#     (mm1.order == mm2.order) || error("add!(): Different orders")
-#     (mm1.vars == mm2.vars) || error("add!(): Different var sets")
-#     for key in keys(mm2)
-#         add!(mm1[key], mm2[key])
-#     end
-# end
+function evaluate(mm::MomentMatrix, pt::Point)
+    mm_eval = Dict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
+    for (key, p) in mm.mm
+        mm_eval[key] = evaluate(p, pt)
+    end
+    return MomentMatrix(mm_eval, setdiff(mm.vars, keys(pt)), mm.order)
+end
 
 #######################################
 # Conversion to B base

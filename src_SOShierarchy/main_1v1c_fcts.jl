@@ -42,7 +42,7 @@ B_i = compute_Bibycstr(problem, momentmatrices, max_cliques, cliquevarsbycstr, o
 SDP_SOS = build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbyclique, relax_ctx);
 
 
-m, Zi, yα_re, yα_im = make_JuMPproblem(SDP_SOS, SCSSolver(maxiters=10000, eps=1e-10, verbose=false))
+m, Zi, yα_re, yα_im = make_JuMPproblem(SDP_SOS, SCSSolver(max_iters=50000, eps=1e-8))
 
 println("-----> SDP_SOS problem size: ", Base.summarysize(m)/1024, " ko")
 println("-----> JuMP problem size: ", Base.summarysize(m)/1024, " ko")
