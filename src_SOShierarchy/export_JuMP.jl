@@ -1,7 +1,7 @@
 """
     m, Zi, yα_re, yα_im = make_JuMPproblem(SDP_SOS::SDPPrimal, mysolver)
 
-    Convert the SDP_SOS problem into a `m` JuMP problem, with primal variables `Zi` and dual variables `Zi`
+    Convert the SDP_SOS problem into a `m` JuMP problem, with primal variables `Zi` and dual variables `yα_re`, `yα_im`
 """
 function make_JuMPproblem(SDP::SDPPrimal, mysolver)
     m = Model(solver = mysolver)
@@ -13,13 +13,13 @@ function make_JuMPproblem(SDP::SDPPrimal, mysolver)
         var = @variable(m, [1:2*n,1:2*n], SDP, basename=cstrname)
         Zi[cstrname] = var
         cstr1 = @constraint(m, [i=1:n,j=1:n], var[i, j] == var[i+n, j+n])
-        for i in 1:n, j in 1:n
-            println("$i, $j  --> $(cstr1[i, j])")
-        end
+        # for i in 1:n, j in 1:n
+        #     println("$i, $j  --> $(cstr1[i, j])")
+        # end
         cstr2 = @constraint(m, [i=1:n,j=1:i], var[n+i, j] == - var[n+j, i])
-        for i in 1:n, j in 1:i
-            println("$i, $j --> $(cstr2[i, j])")
-        end
+        # for i in 1:n, j in 1:i
+        #     println("$i, $j --> $(cstr2[i, j])")
+        # end
     end
 
     
@@ -56,19 +56,19 @@ function make_JuMPproblem(SDP::SDPPrimal, mysolver)
 
         ## NOTE: (alpha, beta) and (beta, alpha) should provide the same constraint, to be checked.
         if expo != Exponent()
-            println("--> $(expo2int[re]), $(expo2int[conj(im)])")
+            # println("--> $(expo2int[re]), $(expo2int[conj(im)])")
             l_re, l_im = formconstraint(SDP_SOS.constraints[expo], Zi)
 
             if l_re != 0
                 yα_re[expo2int[re], expo2int[conj(im)]] = @constraint(m, l_re == 0)
-                println(yα_re[expo2int[re], expo2int[conj(im)]])
+                # println(yα_re[expo2int[re], expo2int[conj(im)]])
             else
                 println("-> Expo $expo provided no constraint")
             end
 
             if l_im != 0
                 yα_im[expo2int[re], expo2int[conj(im)]] = @constraint(m, l_im == 0)
-                println(yα_im[expo2int[re], expo2int[conj(im)]])
+                # println(yα_im[expo2int[re], expo2int[conj(im)]])
             else
                 println("-> Expo $expo provided no constraint")
             end

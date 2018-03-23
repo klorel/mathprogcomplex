@@ -153,3 +153,17 @@ include("compute_Bi.jl")
 include("build_SDP_SOS.jl")
 
 include("export_JuMP.jl")
+
+
+function print_cmat(mat::AbstractArray, round = 1e-3)
+    for i=1:size(mat, 1)
+        for j=1:size(mat, 2)
+            re, im = real(mat[i, j]), imag(mat[i, j])
+            @printf("% 5.3f", re)
+            @printf(" ")
+            @printf("%+5.3fim", im)
+            @printf("   ")
+        end
+        @printf("\n")
+    end
+end

@@ -62,7 +62,7 @@ function build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbycliqu
 
     vars = Dict{String, Int}()
     for (cstrname, mmb) in B_i
-        vars[cstrname] = size(mmb.basis[Exponent()], 1)
+        vars[cstrname] = size(first(mmb.basis)[2], 1)
     end
     SDPsizes = collect(values(vars))
 
