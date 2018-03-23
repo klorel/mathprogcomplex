@@ -119,22 +119,28 @@ end
 """
 function convertMMtobase(mm::MomentMatrix, d, k)
     mmb = MomentMatrixBasis(mm.vars, d, k)
+
+    expo2CSCmat = Dict()
     for (key, poly) in mm.mm
         for (expo, λ) in poly
             if (expo.degree.explvar > d) || (expo.degree.conjvar > d)
                 warn("convertMMtobase(): Found exponent of degree $(expo.degree) > $d ($expo, at $key of MM matrix)")
             end
+            !isnan(λ) || warn("convertMMtobase(): isNaN $key - $expo")
 
-            if !haskey(mmb.basis, expo)
-                mmb.basis[expo] = Array{Complex128}(mmb.msize, mmb.msize) * 0.0
+            if !haskey(expo2CSCmat, expo)
+                expo2CSCmat[expo] = (Int[], Int[], Complex128[])
             end
-
-            mmb.basis[expo][mmb.expo2int[conj(key[1])], mmb.expo2int[key[2]]] += λ
-
-            !isnan(λ) || warn("isNaN(): $key - $expo")
-            !isnan(mmb.basis[expo][mmb.expo2int[conj(key[1])], mmb.expo2int[key[2]]]) || warn("isNaN(): $expo")
+            push!(expo2CSCmat[expo][1], mmb.expo2int[conj(key[1])])
+            push!(expo2CSCmat[expo][2], mmb.expo2int[key[2]])
+            push!(expo2CSCmat[expo][3], λ)
         end
     end
+
+    for (expo, CSCmat) in expo2CSCmat
+        mmb.basis[expo] = sparse(CSCmat[1], CSCmat[2], CSCmat[3], mmb.msize, mmb.msize)
+    end
+
     return mmb
 end
 
@@ -143,7 +149,7 @@ end
 """
     momentmatrices = compute_momentmat(problem, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
 
-    Compute the moment and localizing matrices associated with the problem constraints and vlique decomposition.
+    Compute the moment and localizing matrices associated with the problem constraints and clique decomposition.
 """
 function compute_momentmat(problem, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
     println("\n=== compute_momentmat(problem, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)")
