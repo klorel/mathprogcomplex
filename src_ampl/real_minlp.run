@@ -13,8 +13,8 @@ param MPEC symbolic := "MPEC";
 
 param OPTIMIZATION_CHOICE symbolic := MPEC;
 
-/* param STRATEGY_INITPOINT symbolic := CONST_POINT; */
-param STRATEGY_INITPOINT symbolic := GOC_POINT;
+param STRATEGY_INITPOINT symbolic := CONST_POINT;
+/* param STRATEGY_INITPOINT symbolic := GOC_POINT; */
 
 param TIME_BEGIN;
 let TIME_BEGIN := time();

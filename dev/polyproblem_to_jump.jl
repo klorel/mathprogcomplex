@@ -52,11 +52,13 @@ function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
                 error("Polynom coefficients have to be real numbers")
             end
         end
-        s_ctr = poly_to_NLexpression(m, variables_jump,polynome)
+        my_timer = @elapsed s_ctr = poly_to_NLexpression(m, variables_jump,polynome)
+        # @printf("%-35s%10.6f s\n", "poly_to_NLexpression for $ctr", my_timer)
         ctr_jump[ctr] = @NLconstraint(m, lb <= s_ctr <= ub)
     end
     polynome_obj = pb_poly_real.objective
-    s_obj = poly_to_NLexpression(m, variables_jump,polynome_obj)
+    my_timer = @elapsed s_obj = poly_to_NLexpression(m, variables_jump,polynome_obj)
+    # @printf("%-35s%10.6f s\n", "poly_to_NLexpression for objective", my_timer)
     @NLobjective(m,Min,s_obj)
     return m
 end
