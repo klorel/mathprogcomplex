@@ -31,7 +31,7 @@ print(m)
 ```
 """
 function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
-    pb_poly_real = pb_cplx2real(problem_poly)
+    pb_poly_real = problem_poly
     m = Model(solver = mysolver)
     variables_jump = Dict{String, JuMP.Variable}()
     for (varname, vartype) in pb_poly_real.variables
@@ -60,7 +60,7 @@ function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
     my_timer = @elapsed s_obj = poly_to_NLexpression(m, variables_jump,polynome_obj)
     # @printf("%-35s%10.6f s\n", "poly_to_NLexpression for objective", my_timer)
     @NLobjective(m,Min,s_obj)
-    return m
+    return m, variables_jump
 end
 
 function poly_to_NLexpression(m::JuMP.Model, variables_jump::Dict{String, JuMP.Variable},polynome::Polynomial)
