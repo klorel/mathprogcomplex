@@ -1,4 +1,4 @@
-using JuMP, Clp, KNITRO, Mosek
+using JuMP, KNITRO
 
 # ROOT=pwd()
 # include(joinpath(ROOT,"src_PowSysMod", "PowSysMod_body.jl"))

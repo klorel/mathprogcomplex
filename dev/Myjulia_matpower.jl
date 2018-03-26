@@ -19,7 +19,7 @@ function MyJulia_matpower(instance_path)
   ##convert to real variables
 
   tic()
-  pb_poly_real = pb_cplx2real(problem_poly)
+  pb_poly_real = pb_cplx2real(pb_global)
 
   mysolver = KnitroSolver(KTR_PARAM_OUTLEV=3,
                           KTR_PARAM_MAXIT=600,
@@ -32,9 +32,11 @@ function MyJulia_matpower(instance_path)
                           KTR_PARAM_PRESOLVE=0,
                           KTR_PARAM_HONORBNDS=0)
 
+  println(mysolver)
+
   # my_timer = @elapsed (m, variables_jump) = get_JuMP_cartesian_model(pb_global, mysolver)
   # @printf("%-35s%10.6f s\n", "get_JuMP_cartesian_model", my_timer)
-  (m, variables_jump) = get_JuMP_cartesian_model(pb_global, mysolver)
+  (m, variables_jump) = get_JuMP_cartesian_model(pb_poly_real, mysolver)
   t_buildmodel = toq()
 
   println("t_buildmodel : ", t_buildmodel)

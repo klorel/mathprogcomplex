@@ -26,7 +26,7 @@ for instance in instances
   amplexportpath = joinpath("..","knitro_runs", "$(instance_name[1:end-2])")
 
   my_timer = @elapsed export_to_dat(pb_global_real, amplexportpath, init_point_real)
-  @printf("%-35s%10.6f s\n", "export_to_dat", my_timer)
+  # @printf("%-35s%10.6f s\n", "export_to_dat", my_timer)
   t_buildexport = toq()
 
   println("time build export : ", t_buildexport)
