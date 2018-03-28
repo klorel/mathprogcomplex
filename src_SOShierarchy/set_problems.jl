@@ -4,9 +4,8 @@ function buildPOP_1v1c()
     z = Variable("z", Complex)
     problemraw = Problem()
     add_variable!(problemraw, z)
-    set_objective!(problemraw, imag(z))
+    set_objective!(problemraw, -real(z))
     add_constraint!(problemraw, "ineq", abs2(z) << 4)
-    add_constraint!(problemraw, "ineq_rot", real(z*exp(-im*π/4)) >> 0)
     return problemraw
 end
 
