@@ -1,9 +1,9 @@
 """
-    m, Zi, yα_re, yα_im = make_JuMPproblem(SDP_SOS::SDPPrimal, mysolver)
+    m, Zi, yα_re, yα_im = make_JuMPproblem(SDP_SOS::SDPPrimal, mysolver, relax_ctx)
 
     Convert the SDP_SOS problem into a `m` JuMP problem, with primal variables `Zi` and dual variables `yα_re`, `yα_im`
 """
-function make_JuMPproblem(SDP::SDPPrimal, mysolver)
+function make_JuMPproblem(SDP_SOS::SDPPrimal, mysolver, relax_ctx)
     m = Model(solver = mysolver)
 
     
@@ -32,9 +32,8 @@ function make_JuMPproblem(SDP::SDPPrimal, mysolver)
 
     ## Setting constraints
     d = relax_ctx.di["moment_cstr"]
-    vars = Set([Variable(varname, vartype) for (varname, vartype) in problem.variables])
-    realexpos = compute_exponents(vars, d)
-    conjexpos = compute_exponents(vars, d, compute_conj=true)
+    realexpos = compute_exponents(SDP_SOS.initvars, d)
+    conjexpos = compute_exponents(SDP_SOS.initvars, d, compute_conj=true)
 
     #Constraint storage
     @constraintref yα_re[1:length(realexpos), 1:length(realexpos)]

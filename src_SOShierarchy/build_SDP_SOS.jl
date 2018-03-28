@@ -20,6 +20,7 @@ end
 
 
 mutable struct SDPPrimal
+    initvars::Set{Variable}
     variables::Dict{String, Int}
     objective::SDPForm
     constraints::Dict{Exponent, SDPForm}
@@ -60,11 +61,11 @@ function build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbycliqu
     obj = cstrs[Exponent()]
     delete!(cstrs, Exponent())
 
-    vars = Dict{String, Int}()
+    variables = Dict{String, Int}()
     for (cstrname, mmb) in B_i
-        vars[cstrname] = size(first(mmb.basis)[2], 1)
+        variables[cstrname] = size(first(mmb.basis)[2], 1)
     end
-    SDPsizes = collect(values(vars))
+    SDPsizes = collect(values(variables))
 
     nbmatcstr = Int64[]
     for (expo, SDPform) in cstrs
@@ -77,5 +78,5 @@ function build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbycliqu
     println("-> Nb of matrices by constraint:                       $(mean(nbmatcstr)) / $(std(nbmatcstr)) / $(maximum(nbmatcstr)) (mean/std/max)")
     println("-> Nb of coupling y_α,β variables:                     xx")
     println("-> Nb of constraint involved by coupling variables:    xx/xx (mean/std)")
-    return SDPPrimal(vars, obj, cstrs)
+    return SDPPrimal(vars, variables, obj, cstrs)
 end

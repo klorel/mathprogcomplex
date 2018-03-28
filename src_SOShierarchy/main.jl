@@ -1,21 +1,24 @@
 using JuMP, SCS
 
 ROOT = pwd()
-include(joinpath("func_definitions.jl"))
 include(joinpath("set_problems.jl"))
+include(joinpath("func_definitions.jl"))
 
 function main()
 
     ########################################
     # Construction du problème type
     # rawproblem = buildPOP_1v1c()
-    rawproblem = buildPOP_2v3c()
+    rawproblem = buildPOP_1v2c()
+    # rawproblem = buildPOP_2v3c()
     # rawproblem = buildPOP_WB2()
 
     ########################################
     # Normalizing pb and setting relaxation order by constraint
     problem = normalize_problem(rawproblem)
-    relax_ctx = set_relaxation(problem, issparse = false, ismultiordered = false, d = 2)
+    relax_ctx = set_relaxation(problem, issparse = false, ismultiordered = false, d = 3)
+
+    println(problem)
 
     ########################################
     # Construction du sparsity pattern
@@ -39,7 +42,7 @@ function main()
 
     ########################################
     # Calcul d'une solution par un solveur
-    m, Zi, yα_re, yα_im, expo2int, int2expo = make_JuMPproblem(SDP_SOS, SCSSolver(max_iters=5000000, eps=1e-3, verbose=true))
+    m, Zi, yα_re, yα_im, expo2int, int2expo = make_JuMPproblem(SDP_SOS, SCSSolver(max_iters=5000000, eps=1e-3, verbose=true), relax_ctx)
 
     println("-----> SDP_SOS problem size: ", Base.summarysize(m)/1024, " ko")
     println("-----> JuMP problem size: ", Base.summarysize(m)/1024, " ko")
@@ -72,7 +75,6 @@ function main()
     #     println(evaluate(momentmatrices[cstrname], zsol))
     # end
 
-    return m, Zi, yα_re, yα_im, expo2int, int2expo
 end
 
-m, Zi, yα_re, yα_im, expo2int, int2expo = main();
+main()
