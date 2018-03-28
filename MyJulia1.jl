@@ -1,11 +1,10 @@
-include(joinpath(pwd(),"..","src_PowSysMod", "PowSysMod_body.jl"))
-include("polyproblem_to_jump.jl")
+include(joinpath(pwd(),"src_PowSysMod", "PowSysMod_body.jl"))
 
 function MyJulia1(rawfile,genfile,contfile)
   ##read and load files
   OPFpbs = load_OPFproblems(rawfile, genfile, contfile)
   introduce_Sgenvariables!(OPFpbs)
-  ## Bulding optimization problem
+  ## Building optimization problem
   pb_global = build_globalpb!(OPFpbs)
 
   ## convert into real problem
@@ -127,7 +126,7 @@ function MyJulia1(rawfile,genfile,contfile)
            Slink_values[(scenario_id, link_id, orig_id, dest_id, link_id)] = (real(Sor),imag(Sor),real(Sde),imag(Sde))
         end
       end
-      
+
     end
 
    open("solution2.txt","w") do f
@@ -155,17 +154,17 @@ function MyJulia1(rawfile,genfile,contfile)
 
 end
 
-raw = "powersystem.raw"
-gen = "generator.csv"
-con = "contingency.csv"
-
-instance_path = joinpath(pwd(),"..", "data_GOC", "Phase_0_IEEE14_1Scenario","scenario_1")
-# instance_path = joinpath(pwd(), "data_GOC", "Phase_0_RTS96","scenario_1")
-# instance_path = joinpath(pwd(), "data_GOC", "Phase_0_Feas179","scenario_1")
-
-
-rawfile = joinpath(instance_path,raw)
-genfile = joinpath(instance_path, gen)
-contfile = joinpath(instance_path, con)
-
-MyJulia1(rawfile,genfile,contfile)
+# raw = "powersystem.raw"
+# gen = "generator.csv"
+# con = "contingency.csv"
+#
+# instance_path = joinpath(pwd(), "data_GOC", "Phase_0_IEEE14_1Scenario","scenario_1")
+# # instance_path = joinpath(pwd(), "data_GOC", "Phase_0_RTS96","scenario_1")
+# # instance_path = joinpath(pwd(), "data_GOC", "Phase_0_Feas179","scenario_1")
+#
+#
+# rawfile = joinpath(instance_path,raw)
+# genfile = joinpath(instance_path, gen)
+# contfile = joinpath(instance_path, con)
+#
+# MyJulia1(rawfile,genfile,contfile)
