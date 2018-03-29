@@ -1,58 +1,5 @@
 include("pb_setting.jl")
 
-# """
-#     di = set_uniformdi(problem, d)
-#
-#     Return a `Dict{String, Int}` corresponding to the relaxation degree of each constraint, uniformly initialized to `d` over constraints.
-# """
-# function set_uniformdi(problem::Problem, d::Int)
-#     println("\n=== set_uniformdi(problem::Problem, d::Int)")
-#     println("Return a `Dict{String, Int}` corresponding to the relaxation degree of each constraint, uniformly initialized to `d` over constraints.")
-#     return Dict{String, Int}([(cstrname, d) for cstrname in keys(problem.constraints)])
-# end
-#
-#
-# """
-#     ki = get_ki(pb::Problem)
-#
-#     Compute the degree of each constraint of `pb`.
-# """
-# function get_ki(problem::Problem)
-#     println("\n=== get_ki(problem::Problem)")
-#     println("Compute the degree of each constraint of `pb`.")
-#
-#     ki = Dict{String, Int}()
-#     for (cstrname, cstr) in problem.constraints
-#         deg = cstr.p.degree
-#         ki[cstrname] = max(deg.explvar, deg.conjvar)
-#     end
-#
-#     println("-> Nb of variables:            $(length(problem.variables))")
-#     println("-> Nb of poly constraints:     $(length(problem.constraints))")
-#     return ki
-# end
-#
-# """
-#     check_di_ki!(di, ki)
-#
-#     Enforce the condition di - ki ≥ 0 on each constraint (if needed).
-# """
-# function check_di_ki!(di, ki)
-#     println("\n=== check_di_ki!(di, ki)")
-#     println("Enforce the condition di - ki ≥ 0 on each constraint (if needed).")
-#
-#     excessorders = 0
-#     for (cstrname, d_cstr) in di
-#         if (d_cstr - ki[cstrname] < 0)
-#             d_cstr = ki[cstrname]
-#         end
-#         (d_cstr > ki[cstrname]) && excessorders += 1
-#     end
-#
-#     println("-> number of di > ki:        xx / xx constraints")
-# end
-
-
 
 """
     SparsityPattern

@@ -1,15 +1,16 @@
 using JuMP, SCS
 
 ROOT = pwd()
-include(joinpath("set_problems.jl"))
-include(joinpath("func_definitions.jl"))
+include(joinpath(ROOT, "src_PolynomialOptim", "PolynomialOptim.jl"))
+include(joinpath(ROOT, "src_SOShierarchy", "func_definitions.jl"))
+include(joinpath(ROOT, "src_SOShierarchy", "set_problems.jl"))
 
 function main()
 
     ########################################
     # Construction du problème type
-    # rawproblem = buildPOP_1v1c()
-    rawproblem = buildPOP_1v2c()
+    rawproblem = buildPOP_1v1c()
+    # rawproblem = buildPOP_1v2c()
     # rawproblem = buildPOP_2v3c()
     # rawproblem = buildPOP_WB2()
 
@@ -17,6 +18,10 @@ function main()
     # Normalizing pb and setting relaxation order by constraint
     problem = normalize_problem(rawproblem)
     relax_ctx = set_relaxation(problem, issparse = false, ismultiordered = false, d = 2)
+
+    println(relax_ctx)
+
+    println("\n")
 
     println(problem)
 
