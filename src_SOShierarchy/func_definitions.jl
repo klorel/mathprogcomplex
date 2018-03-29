@@ -93,6 +93,19 @@ function compute_cliqueorders(sparsity_pattern, varsbycstr, max_cliques, relax_c
     return orderbyclique::Dict{Int, Int}
 end
 
+"""
+    aaa
+"""
+function compute_sparsity(relaxctx, problem)
+    sparsity_pattern, varsbycstr, cliquevarsbycstr, orderbyclique = ...
+    if relaxctx.issparse=true
+        println("Pas prêts pour ça...")
+    else
+
+    end
+    return sparsity_pattern, varsbycstr, cliquevarsbycstr, orderbyclique
+end
+
 
 include("momentmatrix_dense.jl")
 include("compute_Bi.jl")
