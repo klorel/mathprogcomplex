@@ -46,16 +46,6 @@ function normalize_problem(problem)
 end
 
 
-mutable struct RelaxationContext
-    ismultiordered
-    issparse
-    leveragesymmetries      # Check if equations have certain type of symmetry, to set afterwards some moments to 0 for example
-    hierarchykind           # :Complex or :Real
-    renamevars              # Replace variables with by shorter named ones
-    di
-    ki
-end
-
 """
     relax_ctx = set_relaxation(pb::Problem; ismultiordered=false, issparse=false, leveragesymmetries=true, hierarchykind=:Complex, renamevars=false, di=Dict{String, Int}(), d=-1)
 

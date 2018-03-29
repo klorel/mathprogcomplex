@@ -1,5 +1,6 @@
 include("pb_setting.jl")
 
+include("types.jl")
 
 """
     SparsityPattern

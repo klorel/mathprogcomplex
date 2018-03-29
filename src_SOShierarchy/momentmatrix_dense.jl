@@ -1,17 +1,3 @@
-import Base.prod!
-
-"""
-    MomentMatrix(mm, vars, order)
-
-    Store a moment or localizing matrix of size `order`, corresponding to the `vars` variables in the `mm` dictionnary.
-    **Note** that the matrix is indexed by a tuple of exponents, *the first of which contains only conjugated variables*, et second only real ones.
-"""
-mutable struct MomentMatrix
-    mm::Dict{Tuple{Exponent, Exponent}, AbstractPolynomial}
-    vars::Set{Variable}
-    order::Int
-end
-
 """
     mm = MomentMatrix(vars::Set{Variable}, d)
 
@@ -42,12 +28,12 @@ end
 
 ##########################
 # Moment matrix algebra
-function prod!(p::T, mm::MomentMatrix) where T<:AbstractPolynomial
+function product!(p::T, mm::MomentMatrix) where T<:AbstractPolynomial
     for (key, val) in mm.mm
         mm.mm[key] = p * mm.mm[key]
     end
 end
-function prod!(λ::Number, mm::MomentMatrix)
+function product!(λ::Number, mm::MomentMatrix)
     for (key, val) in mm.mm
         mm.mm[key] = λ*val
     end
@@ -55,14 +41,14 @@ end
 
 function *(p::T, mm::MomentMatrix) where T<:AbstractPolynomial
     mm_copy = copy(mm)
-    prod!(p, mm_copy)
+    product!(p, mm_copy)
     return mm_copy
 end
 *(mm::MomentMatrix, p::T) where T<:AbstractPolynomial = p*mm
 
 function *(λ::Number, mm::MomentMatrix)
     mm_copy = copy(mm)
-    prod!(λ, mm_copy)
+    product!(λ, mm_copy)
     return mm_copy
 end
 *(mm::MomentMatrix, λ::Number) = λ*mm
@@ -77,25 +63,6 @@ end
 
 #######################################
 # Conversion to B base
-
-"""
-    MomentMatrixBasis(basis, expo2int, int2expo, msize)
-
-    Store the matrix coefficients of the moment variable decomposition of the moment matrix.
-
-    Arguments:
-    - basis::Dict{Exponent, AbstractMatrix} : matrice correspondant au moment clé,
-    - expo2int : carte donnant les coordonnées de l'exposant clé dans la matrice des moments initiale,
-    - int2expo : carte donnant l'xposant correspondant aux coordonnées clé dans la matrice des moments initiale,
-    - msize: taille de la matrice des moments initiale (ordre d-k).
-"""
-mutable struct MomentMatrixBasis
-    basis::Dict{Exponent, AbstractMatrix} # Les exposants sont de degré inférieur à d
-    # NOTE: on ne pourra peut-être pas couper au Tuple{Expo, Expo}...
-    expo2int::Dict{Exponent, Int}   # Carte de la matrice des coefficients d-ki
-    int2expo::Dict{Int, Exponent}
-    msize::Int                      # size of the matrix
-end
 
 function MomentMatrixBasis(vars, d, k)
     expo2int = Dict{Exponent, Int}()
