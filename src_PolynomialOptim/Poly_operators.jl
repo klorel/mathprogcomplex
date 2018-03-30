@@ -45,6 +45,18 @@ function Point(vars::Array{Variable}, vals::Array{<:Number})
   return pt
 end
 
+function update_degree!(expo::Exponent)
+    expldeg = conjdeg = 0
+    for (var, deg) in expo.expo
+        expldeg = max(expldeg, deg.explvar)
+        conjdeg = max(conjdeg, deg.conjvar)
+    end
+
+    expo.degree.explvar = expldeg
+    expo.degree.conjvar =  conjdeg
+end
+
+
 ## copy methods
 function copy(p::Polynomial)
     pdict = copy(p.poly)

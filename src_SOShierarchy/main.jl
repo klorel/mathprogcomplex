@@ -52,31 +52,31 @@ function main()
     
 
 
-    B_i = compute_Bibycstr(problem, momentmatrices, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
+    # B_i = compute_Bibycstr(problem, momentmatrices, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
     
-    SDP_SOS = build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbyclique, relax_ctx)
+    # SDP_SOS = build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbyclique, relax_ctx)
     
-    ########################################
-    # Calcul d'une solution par un solveur
-    m, Zi, yα_re, yα_im, expo2int, int2expo = make_JuMPproblem(SDP_SOS, SCSSolver(max_iters=5000000, eps=1e-3, verbose=true), relax_ctx)
+    # ########################################
+    # # Calcul d'une solution par un solveur
+    # m, Zi, yα_re, yα_im, expo2int, int2expo = make_JuMPproblem(SDP_SOS, SCSSolver(max_iters=5000000, eps=1e-3, verbose=true), relax_ctx)
 
-    println("-----> SDP_SOS problem size: ", Base.summarysize(m)/1024, " ko")
-    println("-----> JuMP problem size: ", Base.summarysize(m)/1024, " ko")
+    # println("-----> SDP_SOS problem size: ", Base.summarysize(m)/1024, " ko")
+    # println("-----> JuMP problem size: ", Base.summarysize(m)/1024, " ko")
 
-    ########################################
-    # Résolution du SDP par un solveur
-    println("-----> Starting solve")
-    solve(m)
+    # ########################################
+    # # Résolution du SDP par un solveur
+    # println("-----> Starting solve")
+    # solve(m)
 
-    println("\n-----> Objective value: ", getobjectivevalue(m), "\n")
+    # println("\n-----> Objective value: ", getobjectivevalue(m), "\n")
 
-    # for (cstrname, mmb) in B_i
-    #     println("$cstrname \t= ", getvalue(Zi[cstrname]), "\n")
-    # end
+    # # for (cstrname, mmb) in B_i
+    # #     println("$cstrname \t= ", getvalue(Zi[cstrname]), "\n")
+    # # end
 
-    println("\n\n----->Lagrange multipliers : yα =")
-    yα = - getdual(yα_re) - im*getdual(yα_im)
-    print_cmat(yα)
+    # println("\n\n----->Lagrange multipliers : yα =")
+    # yα = - getdual(yα_re) - im*getdual(yα_im)
+    # print_cmat(yα)
 
 end
 
