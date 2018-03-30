@@ -1,27 +1,36 @@
 """
-    _ = build_sparsity(relax_ctx, problem)
+    moments_param = build_sparsity(relax_ctx, problem)
 
     Build the sparsitty pattern and variables decomposition for laying out the moment or SOS hierarchy
 """
-function build_sparsity(relax_ctx, problem)
+function build_sparsity(relax_ctx, problem, max_cliques::Dict{String, Set{Variable}})
 
     if relax_ctx.issparse == false
-        return SparsityPattern(), 0, 0, 0, 0
+        (length(max_cliques) == 1) || error("build_sparsity(): Relaxarion is not sparse, one clique is expected (not $(length(max_cliques)))")
+        
+        moments_param = Dict{String, Tuple{Set{String}, Int}}()
+        for (cstr, pb) in problem.constraints
+            di, ki = relax_ctx.di[cstr], relax_ctx.ki[cstr]
+            moments_param[cstr] = (Set(["oneclique"]), di-ki)
+        end
+        return moments_param
+
     else
         error("build_sparsity(): Sparse hierarchy not handled yet.")
-        sparsity_pattern = compute_sparsitypattern(problem, relax_ctx)
-
-        # Extension chordale et détection des cliques maximales
-        compute_chordalextension!(sparsity_pattern)
-        max_cliques = compute_maxcliques(sparsity_pattern)
-    
-        ########################################
-        # Relaxation degree par clique and variables par constrainte
-        varsbycstr = compute_varsbycstr(problem)
-        cliquevarsbycstr = compute_varsbycstr(sparsity_pattern, max_cliques, varsbycstr)
-        orderbyclique = compute_cliqueorders(sparsity_pattern, varsbycstr, max_cliques, relax_ctx)
+        
+        # TODO
     end
 end
+
+
+
+function get_allvars(relax_ctx, problem)
+    vars = Set{Variable}([Variable(name, kind) for (name, kind) in problem.variables])
+    return Dict{String, Set{Variable}}("oneclique"=>vars)
+end
+
+#################################################################################
+## Old stuff
 
 
 """

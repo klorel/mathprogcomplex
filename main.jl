@@ -11,11 +11,14 @@ function main()
     # rawproblem = buildPOP_2v3c()
     # rawproblem = buildPOP_WB2()
 
+    rawproblem = buildPOPR_2v2c()
+
     ########################################
     # Normalizing pb and setting relaxation order by constraint
     problem = normalize_problem(rawproblem)
-    relax_ctx = set_relaxation(problem, issparse = false, ismultiordered = false, d = 2)
+    relax_ctx = set_relaxation(problem, ismultiordered = false, hierarchykind=:Real, d = 1)
 
+    println("\n")
     println(relax_ctx)
 
     println("\n")
@@ -24,15 +27,26 @@ function main()
 
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
-    sparsity_pattern, max_cliques, varsbycstr, cliquevarsbycstr, orderbyclique = build_sparsity(relax_ctx, problem)
+
+    max_cliques = get_allvars(relax_ctx, problem)
+    println("\n--------------------------------------------------------")
+    println("max cliques = $max_cliques")
+
+    moments_params = build_sparsity(relax_ctx, problem, max_cliques)
+    println("\n--------------------------------------------------------")
+    println("moment params =")
+    for (key, (val1, val2)) in moments_params
+        println("$key \t -> $val2, $val1")
+    end
     
     ########################################
-    # Calcul des matrices B_i et pose du probleme
-    momentmatrices = compute_momentmat(problem, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
+    # Calcul des matrices de moment
 
-    println("-------------------- momentmatrices:")
+    momentmatrices = compute_momentmat(relax_ctx, problem, moments_params, max_cliques)
+    println("\n--------------------------------------------------------")
+    println("moment matrices =")
     for (cstr, mm) in momentmatrices
-        println("$cstr :")
+        println("Constraint $cstr :")
         println(mm)
     end
     println("--------------------")

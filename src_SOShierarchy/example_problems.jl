@@ -42,7 +42,7 @@ function buildPOP_WB2()
     return build_globalpb!(OPFpbs)
 end
 
-function buildPOP_WB2()
+function buildPOP_WB2_expl()
     z1 = Variable("z1", Complex)
     z2 = Variable("z2", Complex)
     problemraw = Problem()
@@ -53,5 +53,27 @@ function buildPOP_WB2()
 
     add_constraint!(problemraw, "BAL1", ((2+10im)*z1*conj(z2) + (2-10im)*z2*conj(z1) - 4*abs2(z2)) == 350)
     add_constraint!(problemraw, "BAL2", ((-10+2im)*z1*conj(z2) + (-10-2im)*z2*conj(z1) + 20*abs2(z2)) == -350)
+    return problemraw
+end
+
+
+function buildPOPR_2v1c()
+    x1 = Variable("x1", Real)
+    x2 = Variable("x2", Real)
+    problemraw = Problem()
+    add_variable!(problemraw, x1); add_variable!(problemraw, x2)
+    set_objective!(problemraw, -x1)
+    add_constraint!(problemraw, "ineq", (x1^2 + x2^2) << 4)
+    return problemraw
+end
+
+function buildPOPR_2v2c()
+    x1 = Variable("x1", Real)
+    x2 = Variable("x2", Real)
+    problemraw = Problem()
+    add_variable!(problemraw, x1); add_variable!(problemraw, x2)
+    set_objective!(problemraw, -x1-x2)
+    add_constraint!(problemraw, "ineq1", -1 << x1 << 1)
+    add_constraint!(problemraw, "ineq2", -1 << x2 << 1)
     return problemraw
 end

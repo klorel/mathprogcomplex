@@ -4,7 +4,7 @@
 Compute the set of all exponents in `variables` variables, of degree up to
 `dmax`.
 """
-function compute_exponents(variables, dmax::Int; compute_conj=false)
+function compute_exponents(variables::Set{Variable}, dmax::Int; compute_conj=false)
     cur_order = Set{Exponent}([Exponent()])
     result = copy(cur_order)
     prev_order = Set{Exponent}()
@@ -13,7 +13,7 @@ function compute_exponents(variables, dmax::Int; compute_conj=false)
         cur_order = Set{Exponent}()
         for var in variables
             if compute_conj
-                union!(cur_order, Set([product(Exponent(Dict(var=>Degree(0,1))), elt) for elt in prev_order]))
+                union!(cur_order, Set([product(conj(var), elt) for elt in prev_order]))
             else
                 union!(cur_order, Set([product(Exponent(var), elt) for elt in prev_order]))
             end

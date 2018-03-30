@@ -97,3 +97,16 @@ function normalize_problem(problem)
     println("-> Max total degree by constraint:         $(mean(degbycstr)) / $(std(degbycstr)) (mean/std)")
     return normpb
 end
+
+
+
+function print(io::IO, relctx::RelaxationContext)
+    print(io, "RelaxationContext:\n")
+    print(io, "ismultiordered         : $(relctx.ismultiordered)\n")
+    print(io, "issparse               : $(relctx.issparse)\n")
+    print(io, "leveragesymmetries     : $(relctx.leveragesymmetries)\n")
+    print(io, "hierarchykind          : $(relctx.hierarchykind)\n")
+    print(io, "renamevars             : $(relctx.renamevars)\n")
+    print(io, "di                     : $(relctx.di)\n")
+    print(io, "ki                     : $(relctx.ki)")
+end

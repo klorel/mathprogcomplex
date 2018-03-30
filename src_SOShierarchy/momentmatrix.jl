@@ -61,73 +61,26 @@ function evaluate(mm::MomentMatrix, pt::Point)
     return MomentMatrix(mm_eval, setdiff(mm.vars, keys(pt)), mm.order)
 end
 
-#######################################
-# Conversion to B base
-
-function MomentMatrixBasis(vars, d, k)
-    expo2int = Dict{Exponent, Int}()
-    int2expo = Dict{Int, Exponent}()
-    i = 1
-    for expo in sort(collect(compute_exponents(vars, d-k)))
-        expo2int[expo] = i
-        int2expo[i] = expo
-        i += 1
-    end
-
-    return MomentMatrixBasis(Dict{Exponent, AbstractMatrix}(), expo2int, int2expo, length(expo2int))
-end
-
-
-"""
-    mmb = convertMMtobase(mm::MomentMatrix, d, k)
-
-    Compute the projection of the `mm` localizing matrix of the `k`-degree constraint on the order `d` moment basis.
-    Yield a MomentMatrixBasis object with *dense* matrices.
-"""
-function convertMMtobase(mm::MomentMatrix, d, k)
-    mmb = MomentMatrixBasis(mm.vars, d, k)
-
-    expo2CSCmat = Dict()
-    for (key, poly) in mm.mm
-        for (expo, λ) in poly
-            if (expo.degree.explvar > d) || (expo.degree.conjvar > d)
-                warn("convertMMtobase(): Found exponent of degree $(expo.degree) > $d ($expo, at $key of MM matrix)")
-            end
-            !isnan(λ) || warn("convertMMtobase(): isNaN $key - $expo")
-
-            if !haskey(expo2CSCmat, expo)
-                expo2CSCmat[expo] = (Int[], Int[], Complex128[])
-            end
-            push!(expo2CSCmat[expo][1], mmb.expo2int[conj(key[1])])
-            push!(expo2CSCmat[expo][2], mmb.expo2int[key[2]])
-            push!(expo2CSCmat[expo][3], λ)
-        end
-    end
-
-    for (expo, CSCmat) in expo2CSCmat
-        mmb.basis[expo] = sparse(CSCmat[1], CSCmat[2], CSCmat[3], mmb.msize, mmb.msize)
-    end
-
-    return mmb
-end
-
-
 
 """
     momentmatrices = compute_momentmat(problem, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
 
     Compute the moment and localizing matrices associated with the problem constraints and clique decomposition.
 """
-function compute_momentmat(problem, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
-    println("\n=== compute_momentmat(problem, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)")
+function compute_momentmat(relax_ctx, problem, moment_param::Dict{String, Tuple{Set{String}, Int}}, max_cliques::Dict{String, Set{Variable}})
+    println("\n=== compute_momentmat(relax_ctx, problem, moment_param, max_cliques)")
     println("Compute the moment and localizing matrices associated with the problem constraints and vlique decomposition.")
 
+    # NOTE: Things will have to be slightly extended to support the several SDP sparse moment constraint (cstr key will not suffise)
     momentmatrices = Dict{String, MomentMatrix}()
 
-    for (cstrname, cstr) in problem.constraints
-        vars = Set([Variable(varname, vartype) for (varname, vartype) in problem.variables])
-        di, ki = relax_ctx.di[cstrname], relax_ctx.ki[cstrname]
-        momentmatrices[cstrname] = MomentMatrix(vars, di - ki) * cstr.p
+    for (cstrname, (clique_keys, order)) in moment_param
+        # Collect variables involved in constraint
+        vars = Set{Variable}()
+        for clique_key in clique_keys
+            union!(vars, max_cliques[clique_key])
+        end
+        momentmatrices[cstrname] = MomentMatrix(vars, order) * problem.constraints[cstrname].p
     end
 
     println("xxxxx which indicators ? xxxxx")

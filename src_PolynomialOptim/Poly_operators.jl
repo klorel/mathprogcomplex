@@ -92,9 +92,9 @@ end
 
 function conj(x::Variable)
     if x.kind<:Complex
-        return Polynomial(Dict{Exponent, Number}(Exponent(Dict(x=>Degree(0,1)))=>1.0))
+        return Exponent(Dict(x=>Degree(0,1)))
     else
-        return Polynomial(Dict{Exponent, Number}(Exponent(Dict(x=>Degree(1,0)))=>1.0))
+        return Exponent(Dict(x=>Degree(1,0)))
     end
 end
 
