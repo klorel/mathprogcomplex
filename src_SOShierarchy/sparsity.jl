@@ -1,13 +1,28 @@
-include("pb_setting.jl")
-
-include("types.jl")
-
 """
-    SparsityPattern
+    _ = build_sparsity(relax_ctx, problem)
 
-    Type for storing and working on sparsitty patterns.
+    Build the sparsitty pattern and variables decomposition for laying out the moment or SOS hierarchy
 """
-type SparsityPattern end
+function build_sparsity(relax_ctx, problem)
+
+    if relax_ctx.issparse == false
+        return SparsityPattern(), 0, 0, 0, 0
+    else
+        error("build_sparsity(): Sparse hierarchy not handled yet.")
+        sparsity_pattern = compute_sparsitypattern(problem, relax_ctx)
+
+        # Extension chordale et détection des cliques maximales
+        compute_chordalextension!(sparsity_pattern)
+        max_cliques = compute_maxcliques(sparsity_pattern)
+    
+        ########################################
+        # Relaxation degree par clique and variables par constrainte
+        varsbycstr = compute_varsbycstr(problem)
+        cliquevarsbycstr = compute_varsbycstr(sparsity_pattern, max_cliques, varsbycstr)
+        orderbyclique = compute_cliqueorders(sparsity_pattern, varsbycstr, max_cliques, relax_ctx)
+    end
+end
+
 
 """
     sparsity_pattern = compute_sparsitypattern(problem, di, ki)
@@ -91,27 +106,4 @@ function compute_cliqueorders(sparsity_pattern, varsbycstr, max_cliques, relax_c
     println("-> Relaxation order by clique:         xx / xx (mean/std)")
     orderbyclique = Dict{Int, Int}()
     return orderbyclique::Dict{Int, Int}
-end
-
-
-include("momentmatrix_dense.jl")
-include("compute_Bi.jl")
-
-
-include("build_SDP_SOS.jl")
-
-include("export_JuMP.jl")
-
-
-function print_cmat(mat::AbstractArray, round = 1e-3)
-    for i=1:size(mat, 1)
-        for j=1:size(mat, 2)
-            re, im = real(mat[i, j]), imag(mat[i, j])
-            @printf("% 5.4f", re)
-            @printf(" ")
-            @printf("%+5.4fim", im)
-            @printf("   ")
-        end
-        @printf("\n")
-    end
 end

@@ -1,9 +1,6 @@
-using JuMP, SCS
-
 ROOT = pwd()
-include(joinpath(ROOT, "src_PolynomialOptim", "PolynomialOptim.jl"))
-include(joinpath(ROOT, "src_SOShierarchy", "func_definitions.jl"))
-include(joinpath(ROOT, "src_SOShierarchy", "set_problems.jl"))
+include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
+
 
 function main()
 
@@ -26,19 +23,9 @@ function main()
     println(problem)
 
     ########################################
-    # Construction du sparsity pattern
-    sparsity_pattern = compute_sparsitypattern(problem, relax_ctx)
-
-    # Extension chordale et détection des cliques maximales
-    compute_chordalextension!(sparsity_pattern)
-    max_cliques = compute_maxcliques(sparsity_pattern)
-
-    ########################################
-    # Relaxation degree par clique and variables par constrainte
-    varsbycstr = compute_varsbycstr(problem)
-    cliquevarsbycstr = compute_varsbycstr(sparsity_pattern, max_cliques, varsbycstr)
-    orderbyclique = compute_cliqueorders(sparsity_pattern, varsbycstr, max_cliques, relax_ctx)
-
+    # Construction du sparsity pattern, extension chordale, cliques maximales.
+    sparsity_pattern, max_cliques, varsbycstr, cliquevarsbycstr, orderbyclique = build_sparsity(relax_ctx, problem)
+    
     ########################################
     # Calcul des matrices B_i et pose du probleme
     momentmatrices = compute_momentmat(problem, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)

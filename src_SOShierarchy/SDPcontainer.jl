@@ -13,9 +13,9 @@ function build_SDP(relaxctx::RelaxationContext, moment_matrices::Dict{Tuple{Stri
 
                 # Check the current monomial has correct degree
                 if (β.degree.explvar > relctx.di[cstrname]) || (α.degree.conjvar > relctx.di[cstrname])
-                    warn("convertMMtobase(): Found exponent pair of degree $(α.degree), $(β.degree) > $(relctx.di[cstrname]) ($(α, β), at $(γ, δ) of MM matrix)")
+                    warn("convertMMtobase(): Found exponent pair of degree $(α.degree), $(β.degree) > $(relctx.di[cstrname]) ($((α, β)), at $((γ, δ)) of MM matrix)")
                 end
-                !isnan(λ) || warn("convertMMtobase(): isNaN ! constraint $cstrname - clique $cliquename - mm entry $(γ, δ) - moment $(α, β)")
+                !isnan(λ) || warn("convertMMtobase(): isNaN ! constraint $cstrname - clique $cliquename - mm entry $((γ, δ)) - moment $((α, β))")
 
                 add_to_dict!(sdpbody[(cstrname, cliquename, α, β)], (γ, δ), λ)
             end
@@ -40,7 +40,7 @@ end
     Split the exponent into two exponents of conjugated and explicit variables in the complex case.
     Real case is not supported yet.
 """
-function split_expo(relaxctx::RelaxationConstext, expo::Exponent)
+function split_expo(relaxctx::RelaxationContext, expo::Exponent)
     α, β = Exponent(), Exponent()
 
     if relaxctx.hierarchykind == :Complex
