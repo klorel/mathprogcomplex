@@ -41,14 +41,6 @@ function main()
     println("--------------------")
     
 
-    sdpbody, sdprhs = build_SDP(relaxctx, moment_matrices)
-    println("-------------------- momentmatrices:")
-    for (cstr, mm) in momentmatrices
-        println("$cstr :")
-        println(mm)
-    end
-    println("--------------------")
-    
     # B_i = compute_Bibycstr(problem, momentmatrices, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
     
     # SDP_SOS = build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbyclique, relax_ctx)
@@ -67,9 +59,9 @@ function main()
 
     # println("\n-----> Objective value: ", getobjectivevalue(m), "\n")
 
-    # for (cstrname, mmb) in B_i
-    #     println("$cstrname \t= ", getvalue(Zi[cstrname]), "\n")
-    # end
+    # # for (cstrname, mmb) in B_i
+    # #     println("$cstrname \t= ", getvalue(Zi[cstrname]), "\n")
+    # # end
 
     # println("\n\n----->Lagrange multipliers : yα =")
     # yα = - getdual(yα_re) - im*getdual(yα_im)
