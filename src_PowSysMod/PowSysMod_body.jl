@@ -1,5 +1,5 @@
 include(joinpath("..", "src_PolynomialOptim", "PolynomialOptim.jl"))
-using LightXML, MAT
+# using LightXML, MAT
 
 import Base.copy
 
