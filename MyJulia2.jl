@@ -1,8 +1,8 @@
 include(joinpath(pwd(),"src_PowSysMod", "PowSysMod_body.jl"))
 
-function MyJulia1(rawfile,genfile,contfile)
+function MyJulia2(rawFile, genFile, contFile)
   ##read and load files
-  OPFpbs = load_OPFproblems(rawfile, genfile, contfile)
+  OPFpbs = load_OPFproblems(rawFile, genFile, contFile) 
   introduce_Sgenvariables!(OPFpbs)
   ## Building optimization problem
   pb_global = build_globalpb!(OPFpbs)

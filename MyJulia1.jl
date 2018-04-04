@@ -1,8 +1,8 @@
 include(joinpath(pwd(),"src_PowSysMod", "PowSysMod_body.jl"))
 
-function MyJulia1(rawfile,genfile,contfile)
+function MyJulia1(rawFile, genFile, contFile) 
   ##read and load files
-  OPFpbs = load_OPFproblems(rawfile, genfile, contfile)
+  OPFpbs = load_OPFproblems(rawFile, genFile, contFile)
   introduce_Sgenvariables!(OPFpbs)
   ## Building optimization problem
   pb_global = build_globalpb!(OPFpbs)
@@ -154,17 +154,17 @@ function MyJulia1(rawfile,genfile,contfile)
 
 end
 
-# raw = "powersystem.raw"
-# gen = "generator.csv"
-# con = "contingency.csv"
-#
-# instance_path = joinpath(pwd(), "data_GOC", "Phase_0_IEEE14_1Scenario","scenario_1")
-# # instance_path = joinpath(pwd(), "data_GOC", "Phase_0_RTS96","scenario_1")
-# # instance_path = joinpath(pwd(), "data_GOC", "Phase_0_Feas179","scenario_1")
-#
-#
-# rawfile = joinpath(instance_path,raw)
-# genfile = joinpath(instance_path, gen)
-# contfile = joinpath(instance_path, con)
-#
-# MyJulia1(rawfile,genfile,contfile)
+raw = "powersystem.raw"
+gen = "generator.csv"
+con = "contingency.csv"
+
+instance_path = joinpath(pwd(),"..","data", "data_GOC", "Phase_0_IEEE14_1Scenario","scenario_1")
+# instance_path = joinpath(pwd(), "data_GOC", "Phase_0_RTS96","scenario_1")
+# instance_path = joinpath(pwd(), "data_GOC", "Phase_0_Feas179","scenario_1")
+
+
+rawfile = joinpath(instance_path,raw)
+genfile = joinpath(instance_path, gen)
+contfile = joinpath(instance_path, con)
+
+MyJulia1(rawfile,genfile,contfile)
