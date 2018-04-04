@@ -244,10 +244,10 @@ function read_data_branch_fromraw(branch_data, transfo_data, index)
         if resistance == reactance == 0
             println(linkname, " nullimpedance line without transformer")
             name_line = nullimpedance_notransformer_name(branch_id)
-            link[linkname][name_line] = GOCNullImpedance_notransformer(linkname,br_id,susceptance, power_magnitude_max)
+            link[linkname][name_line] = GOCNullImpedance_notransformer(orig,dest,br_id,susceptance, power_magnitude_max)
         else
             name_line = linepi_notransformer_name(branch_id)
-            link[linkname][name_line] = GOCLineπ_notransformer(linkname,br_id,resistance,reactance,susceptance, power_magnitude_max)
+            link[linkname][name_line] = GOCLineπ_notransformer(orig,dest,br_id,resistance,reactance,susceptance, power_magnitude_max)
         end
     end
 
@@ -274,10 +274,10 @@ function read_data_branch_fromraw(branch_data, transfo_data, index)
         if resistance == reactance == 0
             println(linkname, " nullimpedance line with transformer")
             name_line = nullimpedance_withtransformer_name(branch_id)
-            link[linkname][name_line] = GOCNullImpedance_withtransformer(linkname,br_id,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
+            link[linkname][name_line] = GOCNullImpedance_withtransformer(orig,dest,br_id,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
         else
             name_line = linepi_withtransformer_name(branch_id)
-            link[linkname][name_line] = GOCLineπ_withtransformer(linkname,br_id,resistance,reactance,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
+            link[linkname][name_line] = GOCLineπ_withtransformer(orig,dest,br_id,resistance,reactance,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
         end
     end
 

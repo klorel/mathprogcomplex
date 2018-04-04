@@ -153,7 +153,7 @@ function read_data_bus(power_data)
         baseKV = bus_data["BaseKV"][line]
         baseMVA = 1.0
         voltage_magnitude_min , voltage_magnitude_max  = get_bus_data(bus_data, ["VoltageMagnitudeMin", "VoltageMagnitudeMax"], line)
-        bus[busname][volt_name()] = GOCVolt(busname, baseKV, baseMVA, voltage_magnitude_min, voltage_magnitude_max)
+        bus[busname][volt_name()] = GOCVolt(id_bus, baseKV, baseMVA, voltage_magnitude_min, voltage_magnitude_max)
     end
 
     all_loadID_key = filter(x->ismatch(r"all_loadID", x), collect(keys(power_data)))[1]
@@ -167,7 +167,7 @@ function read_data_bus(power_data)
         load = load_data[line,5] + im * load_data[line,6]
         id_load = id_elem(load_id,line)
         loadname = load_name(id_load)
-        bus[busname][loadname] = GOCLoad(busname,loadname,load)
+        bus[busname][loadname] = GOCLoad(id_bus,loadname,load)
     end
 
     all_fixedshuntID_key = filter(x->ismatch(r"all_fixedshuntID", x), collect(keys(power_data)))[1]
@@ -180,7 +180,7 @@ function read_data_bus(power_data)
         shunt = shunt_data[line,3] + im * shunt_data[line,4]
         id_shunt = id_elem(shunt_id,line)
         shuntname = shunt_name(id_shunt)
-        bus[busname][shuntname] = GOCShunt(busname,shuntname,shunt)
+        bus[busname][shuntname] = GOCShunt(id_bus,shuntname,shunt)
     end
 
     return bus,index
@@ -275,11 +275,11 @@ function add_generator_data!(power_data,generator_data_dict,bus,index)
         power_max = Pmax + im*Qmax
         # cost_degrees = generator_data["RealPowerCostExponent"][gen,:]
         # cost_coeffs = generator_data["RealPowerCostCoefficient"][gen,:]
-        gen_id = remove_simple_quotes_if_present(gen_id)
-        if typeof(gen_id)==Float64
-            gen_id = Int(gen_id)
+        gen_id2 = remove_simple_quotes_if_present(gen_id)
+        if typeof(gen_id2)==Float64
+            gen_id2 = Int(gen_id2)
         end
-        generatorname = generator_name(gen_id)
+        generatorname = generator_name(gen_id2)
         dict_obj_coeffs = Dict{Int64,Float64}()
         for (degree, value) in generator_data_dict[busname][generatorname]
             if (degree ∈ [0,1,2])
@@ -292,7 +292,7 @@ function add_generator_data!(power_data,generator_data_dict,bus,index)
             if !haskey(dict_obj_coeffs,1) dict_obj_coeffs[1] = 0 end
             if !haskey(dict_obj_coeffs,2) dict_obj_coeffs[2] = 0 end
        end
-        bus[busname][generatorname] = GOCGenerator(busname,generatorname,power_min,power_max,participation_factor,dict_obj_coeffs)
+        bus[busname][generatorname] = GOCGenerator(bus_id,gen_id,power_min,power_max,participation_factor,dict_obj_coeffs)
     end
     return bus
 end
@@ -343,10 +343,10 @@ function read_branch_data(power_data, index)
         if resistance == reactance == 0
             println(linkname, " nullimpedance line without transformer")
             name_line = nullimpedance_notransformer_name(branch_id)
-            link[linkname][name_line] = GOCNullImpedance_notransformer(linkname,name_line,susceptance, power_magnitude_max)
+            link[linkname][name_line] = GOCNullImpedance_notransformer(origin,destination,name_line,susceptance, power_magnitude_max)
         else
             name_line = linepi_notransformer_name(branch_id)
-            link[linkname][name_line] = GOCLineπ_notransformer(linkname,name_line,resistance,reactance,susceptance, power_magnitude_max)
+            link[linkname][name_line] = GOCLineπ_notransformer(origin,destination,name_line,resistance,reactance,susceptance, power_magnitude_max)
         end
     end
 
@@ -370,10 +370,10 @@ function read_branch_data(power_data, index)
         if resistance == reactance == 0
             println(linkname, " nullimpedance line with transformer")
             name_line = nullimpedance_withtransformer_name(branch_id)
-            link[linkname][name_line] = GOCNullImpedance_withtransformer(linkname,name_line,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
+            link[linkname][name_line] = GOCNullImpedance_withtransformer(origin,destination,name_line,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
         else
             name_line = linepi_withtransformer_name(branch_id)
-            link[linkname][name_line] = GOCLineπ_withtransformer(linkname,name_line,resistance,reactance,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
+            link[linkname][name_line] = GOCLineπ_withtransformer(origin,destination,name_line,resistance,reactance,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
         end
     end
 

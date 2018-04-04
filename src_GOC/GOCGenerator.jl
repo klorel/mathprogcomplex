@@ -12,7 +12,7 @@ Mutable structure descendant of AbstractNodeLabel
 - `dict_obj_coeffs::Dict{Int64,Float64}`: dictionary for objective coefficients: degree => coeff
 """
 mutable struct GOCGenerator <: AbstractNodeLabel
-  busname::Int64
+  busid::Int64
   id::Any
   power_min::Complex128 #Smin = Pmin + i Qmin
   power_max::Complex128 #Smax = Pmax + i Qmax
