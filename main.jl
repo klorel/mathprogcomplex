@@ -20,7 +20,6 @@ function main()
 
     println("\n")
     println(relax_ctx)
-
     println("\n")
 
     println(problem)
@@ -52,20 +51,19 @@ function main()
     println("--------------------")
     
 
-
     # B_i = compute_Bibycstr(problem, momentmatrices, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
     
     # SDP_SOS = build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbyclique, relax_ctx)
     
-    # ########################################
-    # # Calcul d'une solution par un solveur
+    ########################################
+    # Calcul d'une solution par un solveur
     # m, Zi, yα_re, yα_im, expo2int, int2expo = make_JuMPproblem(SDP_SOS, SCSSolver(max_iters=5000000, eps=1e-3, verbose=true), relax_ctx)
 
     # println("-----> SDP_SOS problem size: ", Base.summarysize(m)/1024, " ko")
     # println("-----> JuMP problem size: ", Base.summarysize(m)/1024, " ko")
 
-    # ########################################
-    # # Résolution du SDP par un solveur
+    ########################################
+    # Résolution du SDP par un solveur
     # println("-----> Starting solve")
     # solve(m)
 
