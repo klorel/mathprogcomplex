@@ -19,6 +19,8 @@ function set_relaxation(pb::Problem; ismultiordered=false,
     end
 
     # Check that either d or di was provided as input
+    println(di == Dict{String, Int}())
+    println(d==-1)
     ((di == Dict{String, Int}()) ⊻ (d==-1)) || error("RelaxationContext(): Either di or d should be provided as input, not both.")
 
     if d!=-1
@@ -27,7 +29,7 @@ function set_relaxation(pb::Problem; ismultiordered=false,
             di[cstr] = max(ki_, d)
         end
     else
-        (keys(di) == keys(ki)) || error("RelaxationContext(): Provided di doesn't match the set of constraint names.")
+        (Set(keys(di)) == Set(keys(ki))) || error("RelaxationContext(): Provided di doesn't match the set of constraint names.")
         for (cstr, ki_) in ki
             di_ = di[cstr]
             (ki_ <= di_) || warn("RelaxationContext(): Provided di ($di_) is lower than constraint $cstr order ($ki_). \nUsing value $ki_.")

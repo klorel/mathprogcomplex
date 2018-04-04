@@ -11,12 +11,12 @@ function main()
     # rawproblem = buildPOP_2v3c()
     # rawproblem = buildPOP_WB2()
 
-    rawproblem = buildPOPR_2v2c()
-
     ########################################
     # Normalizing pb and setting relaxation order by constraint
     problem = normalize_problem(rawproblem)
-    relax_ctx = set_relaxation(problem, ismultiordered = false, hierarchykind=:Real, d = 1)
+    relax_ctx = set_relaxation(problem, ismultiordered = false, hierarchykind=:Real, d = 2)
+
+    problem, relax_ctx = buildPOPR_2v2c()
 
     println("\n")
     println(relax_ctx)
