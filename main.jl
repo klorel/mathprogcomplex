@@ -6,28 +6,32 @@ function main()
 
     ########################################
     # Construction du problème type
-    rawproblem = buildPOP_1v1c()
+    # rawproblem = buildPOP_1v1c()
+    rawproblem = buildPOPR_2v1c()
     # rawproblem = buildPOP_1v2c()
     # rawproblem = buildPOP_2v3c()
     # rawproblem = buildPOP_WB2()
+    # rawproblem = buildPOP_WB2_expl()
 
     ########################################
     # Normalizing pb and setting relaxation order by constraint
     problem = normalize_problem(rawproblem)
-    relax_ctx = set_relaxation(problem, ismultiordered = false, hierarchykind=:Real, d = 2)
+    relax_ctx = set_relaxation(problem, ismultiordered = false, hierarchykind=:Complex, d = 1)
 
+    ## Using real problem
     problem, relax_ctx = buildPOPR_2v2c()
 
-    println("\n")
-    println(relax_ctx)
-    println("\n")
-
-    println(problem)
+    println("\n--------------------------------------------------------")
+    println("relax_ctx = $relax_ctx")
+    
+    println("\n--------------------------------------------------------")
+    println("problem = $problem")
 
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
-
+    # relax_ctx.issparse = true
     max_cliques = get_allvars(relax_ctx, problem)
+    # max_cliques["onemore"] = Set([first(max_cliques["oneclique"])])
     println("\n--------------------------------------------------------")
     println("max cliques = $max_cliques")
 
@@ -35,21 +39,16 @@ function main()
     println("\n--------------------------------------------------------")
     println("moment params =")
     for (key, (val1, val2)) in moments_params
-        println("$key \t -> $val2, $val1")
+        println("$key \t -> $val1, di-ki=$val2")
     end
     
     ########################################
     # Calcul des matrices de moment
 
-    momentmatrices = compute_momentmat(relax_ctx, problem, moments_params, max_cliques)
+    mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, moments_params, max_cliques)
     println("\n--------------------------------------------------------")
-    println("moment matrices =")
-    for (cstr, mm) in momentmatrices
-        println("Constraint $cstr :")
-        println(mm)
-    end
-    println("--------------------")
-    
+    println("mmtrel_pb = $mmtrel_pb")
+
 
     # B_i = compute_Bibycstr(problem, momentmatrices, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
     
@@ -77,6 +76,7 @@ function main()
     # yα = - getdual(yα_re) - im*getdual(yα_im)
     # print_cmat(yα)
 
+    return
 end
 
 main()

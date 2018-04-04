@@ -6,7 +6,7 @@
 function build_sparsity(relax_ctx, problem, max_cliques::Dict{String, Set{Variable}})
 
     if relax_ctx.issparse == false
-        (length(max_cliques) == 1) || error("build_sparsity(): Relaxarion is not sparse, one clique is expected (not $(length(max_cliques)))")
+        (length(max_cliques) == 1) || error("build_sparsity(): Relaxation is not sparse, one clique is expected (not $(length(max_cliques)))")
         
         moments_param = Dict{String, Tuple{Set{String}, Int}}()
         for (cstr, pb) in problem.constraints

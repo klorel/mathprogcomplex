@@ -10,7 +10,7 @@ function set_relaxation(pb::Problem; ismultiordered=false,
                                      renamevars=false,
                                      di=Dict{String, Int}(),
                                      d=-1)
-    println("\n=== set_relaxation(pb; ismultiordered=$ismultiordered, issparse=$issparse, leveragesymmetries=$leveragesymmetries, hierarchykind=$hierarchykind, renamevars=$renamevars, di=Dict of length $(length(di)), d=$d")
+    println("\n=== set_relaxation(pb; ismultiordered=$ismultiordered, issparse=$issparse, leveragesymmetries=$leveragesymmetries, hierarchykind=$hierarchykind, renamevars=$renamevars, di=Dict of length $(length(di)), d=$d)")
 
     # Compute each constraint degree
     ki = Dict{String, Int}()
@@ -19,8 +19,6 @@ function set_relaxation(pb::Problem; ismultiordered=false,
     end
 
     # Check that either d or di was provided as input
-    println(di == Dict{String, Int}())
-    println(d==-1)
     ((di == Dict{String, Int}()) ⊻ (d==-1)) || error("RelaxationContext(): Either di or d should be provided as input, not both.")
 
     if d!=-1
@@ -34,6 +32,13 @@ function set_relaxation(pb::Problem; ismultiordered=false,
             di_ = di[cstr]
             (ki_ <= di_) || warn("RelaxationContext(): Provided di ($di_) is lower than constraint $cstr order ($ki_). \nUsing value $ki_.")
         end
+    end
+
+    # Check that all variables have a type fitting the hierarchy kind
+    for (varname, vartype) in pb.variables
+        (vartype<:Int) && error("set_relaxation() : variable $varname,$vartype is integer, unfit for SOS relaxation.\nConsider relaxing it and adding a complementarity constraint.")
+        (hierarchykind==:Complex) && !(vartype<:Complex) && error("set_relaxation() : variable $varname,$vartype should be complex for complex hierarchy.")
+        (hierarchykind==:Real) && !(vartype<:Real) && error("set_relaxation() : variable $varname,$vartype should be real for real hierarchy.")
     end
 
     # log intel

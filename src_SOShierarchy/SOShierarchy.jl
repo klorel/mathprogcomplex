@@ -24,6 +24,15 @@ mutable struct MomentMatrix
     order::Int
 end
 
+"""
+    momentrel = MomentRelaxationPb(obj, cstrs)
+
+    Store a Moment Relaxation problem.
+"""
+struct MomentRelaxationPb
+    objective::AbstractPolynomial
+    constraints::Dict{Tuple{String, String}, MomentMatrix}
+end
 
 # """
 #     MomentMatrixBasis(basis, expo2int, int2expo, msize)
