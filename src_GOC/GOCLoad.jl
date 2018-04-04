@@ -10,7 +10,7 @@ Structure descendant of AbstractNodeLabel
 
 """
 struct GOCLoad <: AbstractNodeLabel
-    busname::String
+    busname::Int64
     id::String #label
     load::Complex128 #Sd = Pd+im*Qd
 end

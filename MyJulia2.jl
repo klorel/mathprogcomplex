@@ -2,7 +2,7 @@ include(joinpath(pwd(),"src_PowSysMod", "PowSysMod_body.jl"))
 
 function MyJulia2(rawFile, genFile, contFile)
   ##read and load files
-  OPFpbs = load_OPFproblems(rawFile, genFile, contFile) 
+  OPFpbs = load_OPFproblems(rawFile, genFile, contFile)
   introduce_Sgenvariables!(OPFpbs)
   ## Building optimization problem
   pb_global = build_globalpb!(OPFpbs)
@@ -42,8 +42,10 @@ function MyJulia2(rawFile, genFile, contFile)
      for (busname, elems) in OPFpbs[basecase_scenario_name()].ds.bus
        for (elemname,element) in elems
                if typeof(element) == GOCGenerator
-                 bus = matchall(r"\d+", element.busname)[1]
-                 gen = matchall(r"\d+", element.id)[1]
+                 bus =  element.busname
+                 gen = element.id
+                 # bus = matchall(r"\d+", element.busname)[1]
+                 # gen = matchall(r"\d+", element.id)[1]
                  Pgen = getvalue(variables_jump[variable_name("Sgen", busname, elemname, basecase_scenario_name())*"_Re"])
                  Qgen = getvalue(variables_jump[variable_name("Sgen", busname, elemname, basecase_scenario_name())*"_Im"])
                  write(f, "$bus, $gen, $Pgen, $Qgen\n")
@@ -53,8 +55,8 @@ function MyJulia2(rawFile, genFile, contFile)
      write(f,"--end of generation dispatch \n");
    end
 
-   Qgen_scen_values = Dict{Tuple{String,String,String,String}, Float64}()
-   volt_values = Dict{Tuple{String,String}, Tuple{Float64, Float64}}()
+   Qgen_scen_values = Dict{Tuple{String,String,Int64,String}, Float64}()
+   volt_values = Dict{Tuple{String,Int64}, Tuple{Float64, Float64}}()
    delta_values = Dict{String,Float64}()
    Slink_values = Dict{Tuple{String,String,String,String,String}, Tuple{Float64, Float64, Float64, Float64}}()
 
@@ -65,8 +67,8 @@ function MyJulia2(rawFile, genFile, contFile)
         for (busname, elems) in OPFpb.ds.bus
           for (elemid, element) in elems
             if typeof(element) == GOCVolt
-              busname = element.busname
-              bus = String(matchall(r"\d+", element.busname)[1])
+              bus = element.busname
+              # bus = String(matchall(r"\d+", element.busname)[1])
               V_re = getvalue(variables_jump[variable_name("VOLT", busname, "", scenario)*"_Re"])
               V_im = getvalue(variables_jump[variable_name("VOLT", busname, "", scenario)*"_Im"])
               V_mod = abs(V_re + V_im * im)
@@ -83,16 +85,18 @@ function MyJulia2(rawFile, genFile, contFile)
         for (busname, elems) in OPFpb.ds.bus
           for (elemid, element) in elems
             if typeof(element) == GOCVolt
-              busname = element.busname
-              bus = String(matchall(r"\d+", element.busname)[1])
+              bus = element.busname
+              # bus = String(matchall(r"\d+", element.busname)[1])
               V_re = getvalue(variables_jump[variable_name("VOLT", busname, "", scenario)*"_Re"])
               V_im = getvalue(variables_jump[variable_name("VOLT", busname, "", scenario)*"_Im"])
               V_mod = abs(V_re + V_im * im)
               V_theta = angle(V_re + V_im * im)*180/pi
               volt_values[(scenario_id,bus)] = (V_mod, V_theta)
             elseif typeof(element) == GOCGenerator
-               bus = String(matchall(r"\d+", element.busname)[1])
-               gen = String(matchall(r"\d+", element.id)[1])
+              bus =  element.busname
+              gen = element.id
+               # bus = String(matchall(r"\d+", element.busname)[1])
+               # gen = String(matchall(r"\d+", element.id)[1])
                Qgen = getvalue(variables_jump[variable_name("Sgen", busname, elemid, basecase_scenario_name())*"_Im"])
                Qgen_scen_values[(scenario_id,gen,bus, gen)] = Qgen
             end
@@ -117,7 +121,7 @@ function MyJulia2(rawFile, genFile, contFile)
 
        for (elemid, element) in elems
            scenario == basecase_scenario_name() ? scenario_id = "0" : scenario_id = String(matchall(r"\d+", scenario)[1])
-           link_id = split(element.id, "_")[end]
+           link_id = element.id
            orig_id = String(matchall(r"\d+", orig)[1])
            dest_id = String(matchall(r"\d+", dest)[1])
            elem_formulation = link_elems_formulations[elemid]
