@@ -16,7 +16,7 @@ function main()
     ########################################
     # Normalizing pb and setting relaxation order by constraint
     problem = normalize_problem(rawproblem)
-    relax_ctx = set_relaxation(problem, ismultiordered = false, hierarchykind=:Complex, d = 1)
+    relax_ctx = set_relaxation(problem, ismultiordered = false, hierarchykind=:Real, d = 2)
 
     ## Using real problem
     problem, relax_ctx = buildPOPR_2v2c()

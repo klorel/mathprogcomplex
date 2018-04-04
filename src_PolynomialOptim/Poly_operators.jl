@@ -45,17 +45,37 @@ function Point(vars::Array{Variable}, vals::Array{<:Number})
   return pt
 end
 
-function update_degree!(expo::Exponent)
+function compute_degree(expo::Exponent)
     expldeg = conjdeg = 0
     for (var, deg) in expo.expo
         expldeg = max(expldeg, deg.explvar)
         conjdeg = max(conjdeg, deg.conjvar)
     end
-
-    expo.degree.explvar = expldeg
-    expo.degree.conjvar =  conjdeg
+    return Degree(expldeg, conjdeg)
 end
 
+function compute_degree(p::Polynomial)
+    expldeg = conjdeg = 0
+    for (expo, λ) in p
+        for (var, deg) in expo
+            expldeg = max(expldeg, deg.explvar)
+            conjdeg = max(conjdeg, deg.conjvar)
+        end
+    end
+    return Degree(expldeg, conjdeg)
+end
+
+function update_degree!(expo::Exponent)
+    updeg = compute_degree(expo)
+    expo.degree.explvar = updeg.explvar
+    expo.degree.conjvar = updeg.conjvar
+end
+
+function update_degree!(p::Polynomial)
+    updeg = compute_degree(p)
+    p.degree.explvar = updeg.explvar
+    p.degree.conjvar = updeg.conjvar
+end
 
 ## copy methods
 function copy(p::Polynomial)
@@ -78,6 +98,10 @@ end
 
 function convert(::Type{Point}, pt::Dict{Variable, T}) where T
     return Point(convert(Dict{Variable, Number}, pt))
+end
+
+function convert(::Type{AbstractPolynomial}, λ::Number)
+    return Polynomial(Dict{Exponent, Number}(Exponent()=>λ))
 end
 
 ##
@@ -136,9 +160,11 @@ end
 ## Evaluate
 function evaluate(p::Polynomial, pt::Point)
     res=0
+    expldeg = conjdeg = 0
     for (expo, λ) in p
         res += λ*evaluate(expo, pt)
     end
+    typeof(res)<:Polynomial && update_degree!(res)
     return res
 end
 
@@ -147,6 +173,8 @@ function evaluate(expo::Exponent, pt::Point)
     for (var, deg) in expo.expo
         if haskey(pt, var)
             res *= (evaluate(var, pt)^deg.explvar) * (conj(evaluate(var, pt))^deg.conjvar)
+        else
+            res *= var^deg.explvar * conj(var)^deg.conjvar
         end
     end
     return res

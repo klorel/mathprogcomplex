@@ -56,9 +56,14 @@ end
 function evaluate(mm::MomentMatrix, pt::Point)
     mm_eval = Dict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
     for (key, p) in mm.mm
-        mm_eval[key] = evaluate(p, pt)
+        res = evaluate(p, pt)
+        if res == Polynomial()
+            delete!(mm_eval, key)
+        else
+            mm_eval[key] = res
+        end
     end
-    return MomentMatrix(mm_eval, setdiff(mm.vars, keys(pt)), mm.order)
+    return MomentMatrix(mm_eval, setdiff(mm.vars, Set(keys(pt))), mm.order)
 end
 
 
