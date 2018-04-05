@@ -67,6 +67,7 @@ type SparsityPattern end
 include("setproblem.jl")
 include("momentmatrix.jl")
 include("sparsity.jl")
+include("symmetries.jl")
 include("SDPcontainer.jl")
 
 include("example_problems.jl")

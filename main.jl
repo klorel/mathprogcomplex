@@ -7,19 +7,21 @@ function main()
     ########################################
     # Construction du problème type
     # rawproblem = buildPOP_1v1c()
-    rawproblem = buildPOPR_2v1c()
+    # rawproblem = buildPOPR_2v1c()
     # rawproblem = buildPOP_1v2c()
     # rawproblem = buildPOP_2v3c()
     # rawproblem = buildPOP_WB2()
-    # rawproblem = buildPOP_WB2_expl()
+    rawproblem = buildPOP_WB2_expl()
 
     ########################################
     # Normalizing pb and setting relaxation order by constraint
     problem = normalize_problem(rawproblem)
-    relax_ctx = set_relaxation(problem, ismultiordered = false, hierarchykind=:Real, d = 2)
-
+    relax_ctx = set_relaxation(problem, ismultiordered = false, hierarchykind=:Complex, d = 1)
+    
     ## Using real problem
-    problem, relax_ctx = buildPOPR_2v2c()
+    # problem, relax_ctx = buildPOPR_2v2c()
+    # relax_ctx.di["ineq1_hi"] = 1
+    # relax_ctx.di["moment_cstr"] = 3
 
     println("\n--------------------------------------------------------")
     println("relax_ctx = $relax_ctx")

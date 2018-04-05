@@ -98,6 +98,12 @@ end
 
 function MomentRelaxationPb(relax_ctx, problem, moment_param::Dict{String, Tuple{Set{String}, Int}}, max_cliques::Dict{String, Set{Variable}})
     momentmatrices = compute_momentmat(relax_ctx, problem, moment_param, max_cliques)
+
+    if relax_ctx.leveragesymmetries && has_phasesymmetry(relax_ctx, problem)
+        warn("MomentRelaxationPb(): Problem is phase-shift invariant. Leveraging to reduce the number of moments.")
+        enforce_phaseinvariance!(relax_ctx, momentmatrices)
+    end
+
     return MomentRelaxationPb(problem.objective, momentmatrices)
 end
 
