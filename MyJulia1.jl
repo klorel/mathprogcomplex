@@ -33,13 +33,13 @@ function MyJulia1(rawFile, genFile, contFile)
   ##get values
   println("Objective value : ", getobjectivevalue(m))
 
-  # f = open("JuMP_solution.csv","w")
-  # write(f, "Varname ; Value\n")
-  # for (varname, var) in variables_jump
-  #   value = getvalue(var)
-  #   write(f, "$varname; $value\n")
-  # end
-  # close(f)
+  f = open("JuMP_solution.csv","w")
+  write(f, "Varname ; Value\n")
+  for (varname, var) in variables_jump
+    value = getvalue(var)
+    write(f, "$varname; $value\n")
+  end
+  close(f)
 
   ##create solution1.txt and solution2.txt
   println("Solution writing")
@@ -162,5 +162,7 @@ function MyJulia1(rawFile, genFile, contFile)
      end
      write(f,"--end of line flow\n")
    end
+
+   return pb_global_real
 
 end

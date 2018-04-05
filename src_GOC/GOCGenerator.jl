@@ -108,6 +108,7 @@ function constraint(element::T, bus::String, elemid::String, elem_formulation::S
         cstrs[ccname_bindef_upper] = (abs2(Volt_sc) - abs2(Volt_bc) - (Vbc_inf_Vsc * (-ϵ) + (1-Vbc_inf_Vsc) * M)) << 0
         ## Definition of binary variables, lower constraint
         ccname_bindef_lower = get_VoltBinDef_lower()
+        ##TODO: verify big M constraints
         cstrs[ccname_bindef_lower] = (abs2(Volt_sc) - abs2(Volt_bc) - (Vsc_inf_Vbc * ϵ + (1-Vsc_inf_Vbc) * (-M))) >> 0
         ## Definition of binary variables, complementarity
         ccname_compl = get_VoltBinDef_complement()
