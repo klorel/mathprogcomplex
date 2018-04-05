@@ -14,7 +14,6 @@ function MyJulia1(rawFile, genFile, contFile)
   mysolver = KnitroSolver(KTR_PARAM_OUTLEV=3,
                           KTR_PARAM_MAXIT=600,
                           KTR_PARAM_SCALE=0,
-                          KTR_PARAM_HESSOPT=0,
                           KTR_PARAM_FEASTOL=1.0,
                           KTR_PARAM_OPTTOL=1.0,
                           KTR_PARAM_FEASTOLABS=1e-6,
@@ -34,11 +33,19 @@ function MyJulia1(rawFile, genFile, contFile)
   ##get values
   println("Objective value : ", getobjectivevalue(m))
 
+  # f = open("JuMP_solution.csv","w")
+  # write(f, "Varname ; Value\n")
+  # for (varname, var) in variables_jump
+  #   value = getvalue(var)
+  #   write(f, "$varname; $value\n")
+  # end
+  # close(f)
+
   ##create solution1.txt and solution2.txt
   println("Solution writing")
 
    open("solution1.txt","w") do f
-     write(f, "--generation dispatch \nbus id,unit id,pg(MW),qg(MVar) \n");
+     write(f, "--generation dispatch\nbus id,unit id,pg(MW),qg(MVar) \n");
      for (busname, elems) in OPFpbs[basecase_scenario_name()].ds.bus
        for (elemname,element) in elems
                if typeof(element) == GOCGenerator
@@ -52,7 +59,7 @@ function MyJulia1(rawFile, genFile, contFile)
                end
         end
       end
-     write(f,"--end of generation dispatch \n");
+     write(f,"--end of generation dispatch\n");
    end
 
    Qgen_scen_values = Dict{Tuple{String,Any,Int64,Any}, Float64}()
@@ -134,26 +141,26 @@ function MyJulia1(rawFile, genFile, contFile)
     end
 
    open("solution2.txt","w") do f
-     write(f, "--contingency generator \nconID,genID,busID,unitID,q(MW) \n");
+     write(f, "--contingency generator\nconID,genID,busID,unitID,q(MW) \n");
      for ((sc, genID, busID, unitID),q) in Qgen_scen_values
        write(f,"$sc, $genID, $busID, $unitID, $q\n")
      end
 
-     write(f,"--end of contingency generator \n--bus \ncontingency id,bus id,v(pu),theta(deg) \n");
+     write(f,"--end of contingency generator\n--bus\ncontingency id,bus id,v(pu),theta(deg) \n");
      for ((sc,bus), (V_mod, V_theta)) in volt_values
        write(f, "$sc, $bus, $V_mod, $V_theta\n")
      end
 
-     write(f,"--end of bus \n--Delta \ncontingency id,Delta(MW) \n");
+     write(f,"--end of bus\n--Delta\ncontingency id,Delta(MW) \n");
      for (sc, delta) in delta_values
        write(f, "$sc, $delta \n")
      end
 
-     write(f,"--end of Delta \n--line flow \ncontingency id,line id,origin bus id,destination bus id,circuit id,p_origin(MW),q_origin(MVar),p_destination(MW),q_destination(MVar) \n");
+     write(f,"--end of Delta\n--line flow\ncontingency id,line id,origin bus id,destination bus id,circuit id,p_origin(MW),q_origin(MVar),p_destination(MW),q_destination(MVar) \n");
      for ((sc, br_id, orig_id, dest_id, br_id), (porig, qorig, pdest, qdest)) in Slink_values
        write(f, "$sc, $br_id, $orig_id, $dest_id, $br_id, $porig, $qorig, $pdest, $qdest \n")
      end
-     write(f,"--end of line flow \n")
+     write(f,"--end of line flow\n")
    end
 
 end

@@ -35,9 +35,9 @@ function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
     m = Model(solver = mysolver)
     variables_jump = Dict{String, JuMP.Variable}()
     for (varname, vartype) in pb_poly_real.variables
-        if vartype<:Real
+        if vartype==Real
             variables_jump["$varname"] = @variable(m, basename="$varname", start=1.1)
-        elseif vartype<:Bool
+        elseif vartype==Bool
             variables_jump["$varname"] = @variable(m, category=:Bin, basename="$varname", start=0)
         end
     end
