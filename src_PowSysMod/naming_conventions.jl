@@ -68,6 +68,7 @@ get_VoltM_cstrname() = "VOLTM"
 get_ShuntDef_cstrname() = "ShuntDef"
 get_LoadDef_cstrname() = "LoadDef"
 get_GenBounds_cstrname() = "GenBounds"
+get_NullImpVolt_cstrname() = "NullImpVolt"
 
 
 get_VoltBinDef_upper() = "BinDef_upper"

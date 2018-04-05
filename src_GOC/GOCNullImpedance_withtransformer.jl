@@ -33,7 +33,7 @@ function create_vars!(element::T, link::Link, elemid::String, elem_formulation::
     link_vars["Volt_dest"] = Variable(variable_name("VOLT", destid, "", scenario), Complex)
 
     link_vars[elemid*"_Sorig"] = Variable(variable_name("Sorig", origid, "", scenario), Complex)
-    link_vars[elemid*"_Sdest"] = Variable(variable_name("Sdest", destid, "", scenario), Complex)
+    # link_vars[elemid*"_Sdest"] = Variable(variable_name("Sdest", destid, "", scenario), Complex)
     #elem_formulation modified ?
     return
 end
@@ -54,11 +54,29 @@ end
 Return power variable Sdest * baseMVA.
 """
 function Sdest(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T<:GOCNullImpedance_withtransformer
-   return get_baseMVA(link.dest)*link_vars[elemid*"_Sdest"]
+   return get_baseMVA(link.dest)*(link_vars[elemid*"_Sorig"]- im * element.susceptance * abs2(link_vars["Volt_dest"]))
 end
 
 
 ## 3. Constraints creation
-# function constraint(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T <: MyType
-#   return Dict{String, Constraint}()
-# end
+function constraint(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T <:GOCNullImpedance_withtransformer
+    cstrs = Dict{String, Constraint}()
+
+    #Smax constraints
+    Sor = Sorig(element, link, elemid, elem_formulation, link_vars)
+    Sde = Sdest(element, link, elemid, elem_formulation, link_vars)
+    Smax = element.power_magnitude_max
+
+    cstrs[get_Smax_orig_cstrname()] = (abs2(real(Sor)) + abs2(imag(Sor))) << Smax^2
+    cstrs[get_Smax_dest_cstrname()] = (abs2(real(Sde)) + abs2(imag(Sde))) << Smax^2
+
+    cstrs[get_Smax_orig_cstrname()].precond = :sqrt
+    cstrs[get_Smax_dest_cstrname()].precond = :sqrt
+
+    ## constraint linking Vorig and Vdest
+    τ = element.transfo_ratio
+    θ = element.transfo_phase
+    cstrs[get_NullImpVolt_cstrname()] = Polynomial(link_vars["Volt_orig"] - link_vars["Volt_dest"] * 1/τ * exp(-im*θ))==0
+
+    return cstrs
+end

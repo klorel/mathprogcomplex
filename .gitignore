@@ -47,3 +47,10 @@ src_modeler/Modeler/QCQP_ampl.jl
 /dev/resultsROADEF_Phase_0_Modified_IEEE14.csv
 /dev/resultsROADEF_Phase_0_Modified_RTS96.csv
 /dev/resultsROADEF_Phase_0_RTS96.csv
+/data_GOC/Phase_0_OriginalDataset*
+/src_test/resultsROADEFv2*
+/data_GOC/Phase_0_Feas179/*
+/data_GOC/Phase_0_Feas179_old/*
+/data_GOC/Phase_0_Feas179/*
+/dev/solution1.txt
+/dev/solution2.txt

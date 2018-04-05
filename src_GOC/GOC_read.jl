@@ -36,7 +36,7 @@ function read_input(input_type::T, instance_path::String) where T<:Type{GOCInput
     link_formulations = Dict{Link, Dict{Tuple{Type, String}, Symbol}}()
     mp = MathematicalProgramming(node_formulations, link_formulations, node_vars,link_vars)
     ##read scenarios
-    OPFproblems = scenarios_data(ds, gs, mp, power_data, contingency_data,index)
+    OPFproblems = scenarios_data(ds, gs, mp, contingency_data,index)
     return OPFproblems
 end
 
@@ -388,11 +388,10 @@ Use dictionaries `ds`, `gs` and `mp` to create `Scenario` structures for each co
 Return an `OPFproblems` structure : "scenario" => Scenario
 
 """
-function scenarios_data(ds,gs,mp,power_data, contingency_data,index)
+function scenarios_data(ds,gs,mp,contingency_data,index)
     output = Dict("BaseCase" => Scenario(ds,gs,mp))
     ds = output["BaseCase"].ds
     nb_contingencies = size(contingency_data,1)
-    nb_bus = Int(power_data["totalbus"])
     for ct in 1:nb_contingencies
         id_contingency = contingency_data[ct,1]
         scenario_name = scenarioname(id_contingency)
