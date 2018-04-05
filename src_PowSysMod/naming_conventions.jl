@@ -62,6 +62,7 @@ shunt_name(id_shunt) = "Shunt$id_shunt"
 
 get_delta_varname(scenario::String) = "$(scenario)_Delta"
 get_binInf_varname(scenario1::String, scenario2::String, bus::String) = "BinVolt_$(get_busid(bus))_$(scenario1)_inf_$(scenario2)"
+get_binEq_varname(scenario1::String, scenario2::String, bus::String) = "BinVolt_$(get_busid(bus))_$(scenario1)_eq_$(scenario2)"
 
 # constraint names
 get_VoltM_cstrname() = "VOLTM"

@@ -1,4 +1,4 @@
-using ArgParse
+using ArgParse, MAT
 """Test
 Test to launch in complex-modeler/src_test folder for example D:\repo\complex-modeler\src_test>julia global_test.jl
 

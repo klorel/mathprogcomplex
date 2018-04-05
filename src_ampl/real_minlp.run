@@ -134,3 +134,5 @@ printf{var0 in BINARY_VARIABLES} "%s;%.20e;%.20e\n", var0, y[var0], LEFT[VAR_TYP
 
 printf"||x-x_GOC||_2   : %f\n", sqrt(sum{var0 in REAL_VARIABLES} (x[var0] - LEFT[VAR_TYPE, REAL, var0, NONE])^2);
 printf"||x-x_GOC||_inf : %f\n\n", max{var0 in REAL_VARIABLES} abs(x[var0] - LEFT[VAR_TYPE, REAL, var0, NONE]);
+
+expand;
