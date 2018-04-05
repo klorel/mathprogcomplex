@@ -51,3 +51,12 @@ function is_homogeneous(expo::Exponent, kind::Symbol)
         error("is_homogeneous(expo, kind): kind should be either :Real or :Complex ($kind here).")
     end
 end
+
+function make_homogeneous!(p::Polynomial, kind::Symbol)
+    for expo in keys(p)
+        if !is_homogeneous(expo, kind)
+            delete!(p.poly, expo)
+        end
+    end
+    update_degree!(p)
+end

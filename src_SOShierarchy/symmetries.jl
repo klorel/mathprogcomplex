@@ -16,33 +16,19 @@ end
 
 
 """
-enforce_phaseinvariance!(relax_ctx, momentmatrices)
+    enforce_phaseinvariance!(relax_ctx, momentmatrices)
+
+    Remove all the non homogeneous oments from the moment-matrices.
 """
 function enforce_phaseinvariance!(relax_ctx::RelaxationContext, momentmatrices::Dict{Tuple{String, String}, MomentMatrix})
-    # Generate appropriate point from the moment contraint
-    vars = momentmatrices[("moment_cstr", "oneclique")].vars
-    d = momentmatrices[("moment_cstr", "oneclique")].order
-
-    println("enforce_phaseinvariance!(): pt_null construction...")
-
-    realexpos = compute_exponents(vars, d)
-    conjexpos = compute_exponents(vars, d, compute_conj=true)
-    pt_null = Point()
-    for realexpo in realexpos, conjexpo in conjexpos
-        expo = product(realexpo, conjexpo)
-        println(expo)
-        if !is_homogeneous(expo, relax_ctx.hierarchykind)
-            pt_null.coords[expo] = 0
-        end
-    end
-
-    println("pt_null: $pt_null")
+    # Remove all the non-homogeneous moments
 
     for (key, mmt) in momentmatrices
-        # evaluate the moment matrix at that point
-        println("Dealing with $key...")
-        println("Before: $mmt")
-        momentmatrices[key] = evaluate(mmt, pt_null) # TODO : evaluate!
-        println("After: $(momentmatrices[key])")
+        for ((α, β), p) in mmt.mm
+            make_homogeneous!(p, relax_ctx.hierarchykind)
+            if p==Polynomial()
+                delete!(mmt.mm, (α, β))
+            end
+        end
     end
 end
