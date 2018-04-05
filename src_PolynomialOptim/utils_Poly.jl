@@ -22,3 +22,32 @@ function compute_exponents(variables::Set{Variable}, dmax::Int; compute_conj=fal
     end
     return result
 end
+
+
+"""
+    ishomo = is_homogeneous(p, kind)
+
+    Check wether `p`, of kind `:Real` or `:Complex` is homogeneous or not.
+"""
+function is_homogeneous(p::Polynomial, kind::Symbol)
+    ishomo = true
+    for (expo, λ) in p
+        ishomo = ishomo && is_homogeneous(expo, kind)
+    end
+    return ishomo
+end
+
+"""
+    ishomo = is_homogeneous(expo, kind)
+
+    Check wether `expo`, of kind `:Real` or `:Complex` is homogeneous or not.
+"""
+function is_homogeneous(expo::Exponent, kind::Symbol)
+    if kind == :Real
+        return expo.degee.explvar % 2 == 0
+    elseif kind == :Complex
+        return expo.degree.explvar == expo.degree.conjvar
+    else
+        error("is_homogeneous(expo, kind): kind should be either :Real or :Complex ($kind here).")
+    end
+end
