@@ -11,17 +11,23 @@ function main()
     # rawproblem = buildPOP_1v2c()
     # rawproblem = buildPOP_2v3c()
     # rawproblem = buildPOP_WB2()
-    rawproblem = buildPOP_WB2_expl()
+    # rawproblem = buildPOP_WB2_expl()
 
     ########################################
     # Normalizing pb and setting relaxation order by constraint
-    problem = normalize_problem(rawproblem)
-    relax_ctx = set_relaxation(problem, ismultiordered = false, hierarchykind=:Complex, d = 1)
-    
-    ## Using real problem
-    # problem, relax_ctx = buildPOPR_2v2c()
-    # relax_ctx.di["ineq1_hi"] = 1
-    # relax_ctx.di["moment_cstr"] = 3
+    # problem = normalize_problem(rawproblem)
+    # relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
+
+    if real_pb
+        rawproblem = buildPOPR_2v1c()
+        problem = normalize_problem(rawproblem)
+        relax_ctx = set_relaxation(problem, hierarchykind=:Real, d = 2)
+    else
+        rawproblem = buildPOP_WB2_expl()
+        problem = normalize_problem(rawproblem)
+        relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
+        relax_ctx.di["moment_cstr"] = 2
+    end
 
     println("\n--------------------------------------------------------")
     println("relax_ctx = $relax_ctx")
@@ -31,9 +37,9 @@ function main()
 
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
-    # relax_ctx.issparse = true
-    max_cliques = get_allvars(relax_ctx, problem)
+    max_cliques = get_maxcliques(relax_ctx, problem)
     # max_cliques["onemore"] = Set([first(max_cliques["oneclique"])])
+
     println("\n--------------------------------------------------------")
     println("max cliques = $max_cliques")
 

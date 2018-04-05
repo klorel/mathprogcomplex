@@ -43,15 +43,22 @@ end
     Check wether `expo`, of kind `:Real` or `:Complex` is homogeneous or not.
 """
 function is_homogeneous(expo::Exponent, kind::Symbol)
+    explsum, conjsum = get_sumdegs(expo)
     if kind == :Real
-        return expo.degee.explvar % 2 == 0
+        (conjsum != 0) && error("is_homogeneous(): Exponent $expo has conjugated variables for a real hierarchy.")
+        return explsum % 2 == 0
     elseif kind == :Complex
-        return expo.degree.explvar == expo.degree.conjvar
+        return explsum == conjsum
     else
         error("is_homogeneous(expo, kind): kind should be either :Real or :Complex ($kind here).")
     end
 end
 
+"""
+    make_homogeneous!(p, kind)
+
+    Remove in-place the non homogeneous (in the `is_homogeneous` sense) monomials of `p`.
+"""
 function make_homogeneous!(p::Polynomial, kind::Symbol)
     for expo in keys(p)
         if !is_homogeneous(expo, kind)
@@ -59,4 +66,18 @@ function make_homogeneous!(p::Polynomial, kind::Symbol)
         end
     end
     update_degree!(p)
+end
+
+"""
+    explsum, conjsum = get_sumdegs(expo)
+
+    Compute `|α|`, `|β|` the sum of the real variables exponents and conjugated variables exponents.
+"""
+function get_sumdegs(expo::Exponent) 
+    explsum = conjsum = 0
+    for (var, deg) in expo
+        explsum += deg.explvar
+        conjsum += deg.conjvar
+    end
+    return explsum, conjsum
 end

@@ -6,10 +6,8 @@
 function has_phasesymmetry(relax_ctx::RelaxationContext, pb::Problem)
     polykind = relax_ctx.hierarchykind
     hassym = is_homogeneous(pb.objective, polykind)
-    println("$hassym  \t $(pb.objective)")
     for (cstrname, cstr) in pb.constraints
         hassym = hassym && is_homogeneous(cstr.p, polykind)
-        println("$hassym  \t $(cstr.p)")
     end
     return hassym
 end

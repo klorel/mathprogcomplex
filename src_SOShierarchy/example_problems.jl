@@ -62,7 +62,7 @@ function buildPOPR_2v1c()
     x2 = Variable("x2", Real)
     problemraw = Problem()
     add_variable!(problemraw, x1); add_variable!(problemraw, x2)
-    set_objective!(problemraw, -x1)
+    set_objective!(problemraw, -x1^2)
     add_constraint!(problemraw, "ineq", (x1^2 + x2^2) << 4)
     return problemraw
 end

@@ -24,9 +24,13 @@ end
 
 
 
-function get_allvars(relax_ctx, problem)
-    vars = Set{Variable}([Variable(name, kind) for (name, kind) in problem.variables])
-    return Dict{String, Set{Variable}}("oneclique"=>vars)
+function get_maxcliques(relax_ctx, problem)
+    if !relax_ctx.issparse
+        vars = Set{Variable}([Variable(name, kind) for (name, kind) in problem.variables])
+        return Dict{String, Set{Variable}}("oneclique"=>vars)
+    else
+        error("Sparse relaxation is not supported yet")
+    end
 end
 
 #################################################################################
