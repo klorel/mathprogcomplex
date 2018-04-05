@@ -18,6 +18,7 @@ function main()
     # problem = normalize_problem(rawproblem)
     # relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
 
+    real_pb = true
     if real_pb
         rawproblem = buildPOPR_2v1c()
         problem = normalize_problem(rawproblem)
