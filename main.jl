@@ -18,7 +18,7 @@ function main()
     # problem = normalize_problem(rawproblem)
     # relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
 
-    real_pb = true
+    real_pb = false
     if real_pb
         rawproblem = buildPOPR_2v1c()
         problem = normalize_problem(rawproblem)
@@ -39,7 +39,6 @@ function main()
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
     max_cliques = get_maxcliques(relax_ctx, problem)
-    # max_cliques["onemore"] = Set([first(max_cliques["oneclique"])])
 
     println("\n--------------------------------------------------------")
     println("max cliques = $max_cliques")
@@ -58,6 +57,24 @@ function main()
     println("\n--------------------------------------------------------")
     println("mmtrel_pb = $mmtrel_pb")
 
+
+    SDP_body, SDP_rhs = build_SDP(relax_ctx, mmtrel_pb)
+    println("\n--------------------------------------------------------")
+    println("SDP_body =")
+    for (key, mat) in SDP_body
+        skey = "$key -> "
+        println("$key -> ")
+        for (key2, val) in mat
+            print(" "^length(skey))
+            println("$key2 -> $val")
+        end
+    end
+
+    println("\n--------------------------------------------------------")
+    println("SDP_rhs = ")
+    for (key, val) in SDP_rhs
+        println("$key -> $val")
+    end
 
     # B_i = compute_Bibycstr(problem, momentmatrices, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
     

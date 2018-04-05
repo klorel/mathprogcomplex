@@ -53,8 +53,8 @@ end
 # end
 
 
-const SDPBody = Dict{Tuple{String, String, Exponent, Exponent}, Dict{Tuple{Exponent, Exponent}, Complex128}}
-const SDPRhs = Dict{Tuple{Exponent, Exponent}, Complex128}
+const SDPBody = Dict{Tuple{String, String, Exponent, Exponent}, Dict{Tuple{Exponent, Exponent}, Number}}
+const SDPRhs = Dict{Tuple{Exponent, Exponent}, Number}
 
 """
     SparsityPattern
