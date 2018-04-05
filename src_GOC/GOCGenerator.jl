@@ -101,6 +101,7 @@ function constraint(element::T, bus::String, elemid::String, elem_formulation::S
 
         Vbc_inf_Vsc = bus_vars[get_binInf_varname(basecase_scenario_name(), scenario, bus)]
         Vsc_inf_Vbc = bus_vars[get_binInf_varname(scenario, basecase_scenario_name(), bus)]
+        Veq = bus_vars[get_binEq_varname(scenario, basecase_scenario_name(), bus)]
 
         Pmin, Qmin = real(element.power_min), imag(element.power_min)
         Pmax, Qmax = real(element.power_max), imag(element.power_max)
@@ -126,7 +127,7 @@ function constraint(element::T, bus::String, elemid::String, elem_formulation::S
 
         # If |Vbc-Vsc|< ϵ, -ϵ < abs2(Volt_bc) - abs2(Volt_sc) < ϵ
         ## If Vbc_inf_Vsc = 1, lhs < -ϵ, upper constraint not satisfied => NOT POSSIBLE
-        ## If Veq = 1,  lhs < 0, upper constraint satisfied AND lhs > 0, lower constraint satisfied 
+        ## If Veq = 1,  lhs < 0, upper constraint satisfied AND lhs > 0, lower constraint satisfied
         ## If Vsc_inf_Vbc = 1, lhs < M, upper constraint satisfied AND lhs > ϵ, lower constraint not satisfied => NOT POSSIBLE
 
         ####
