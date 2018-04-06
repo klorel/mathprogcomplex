@@ -68,24 +68,30 @@ function product(p1::Polynomial, p2::Polynomial)
     return p
 end
 
-function product(exp1::Exponent, exp2::Exponent)
-    function add_expod!(expod, expod1)
-        for (var, deg) in expod1
-            if !haskey(expod, var)
-                expod[var] = Degree(0,0)
-            end
-            expod[var].explvar += deg.explvar
-            expod[var].conjvar += deg.conjvar
-            if (expod[var].explvar, expod[var].conjvar) == (0,0)
-                delete!(expod, var)
-            end
-        end
-        return expod
-    end
+"""
+    add_expod!(expod, expod1)
 
-    expod = Dict{Variable, Degree}()
-    add_expod!(expod, exp1.expo)
-    add_expod!(expod, exp2.expo)
+    Add the `expod1` degree to `expod` inplace (equivalent to the monomial product)
+"""
+function add_expod!(expod::Exponent, expod1::Exponent)
+    for (var, deg) in expod1
+        if !haskey(expod, var)
+            expod.expo[var] = Degree(0,0)
+        end
+        expod.expo[var].explvar += deg.explvar
+        expod.expo[var].conjvar += deg.conjvar
+        if (expod.expo[var].explvar, expod.expo[var].conjvar) == (0,0)
+            delete!(expod, var)
+        end
+    end
+    update_degree!(expod)
+    return expod
+end
+
+function product(exp1::Exponent, exp2::Exponent)
+    expod = Exponent()
+    add_expod!(expod, exp1)
+    add_expod!(expod, exp2)
     return Exponent(expod)
 end
 
