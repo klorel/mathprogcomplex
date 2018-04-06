@@ -145,6 +145,9 @@ function constraint(element::T, bus::String, elemid::String, elem_formulation::S
         cstrname = get_CC_active_cstrname()
         cstrs[cstrname] = (Pgen - (P0 + α * deltavar)) == 0
 
+        cstrname = get_GenBounds_cstrname()
+        cstrs[cstrname] = Pmin << Pgen << Pmax
+
         ## Coupling constraint reactive : upper bound
         ccname_upper = get_CC_reactiveupper_cstrname()
         cstrs[ccname_upper] = ((Qgen - Vbc_inf_Vsc * (Qmin - Qmax) - Qmax)) << 0

@@ -55,6 +55,8 @@ function MyJulia1(rawFile, genFile, contFile)
                  # gen = matchall(r"\d+", element.id)[1]
                  Pgen = getvalue(variables_jump[variable_name("Sgen", busname, elemname, basecase_scenario_name())*"_Re"])
                  Qgen = getvalue(variables_jump[variable_name("Sgen", busname, elemname, basecase_scenario_name())*"_Im"])
+                 println("bus : $bus")
+                 println("$(element.power_min) <= $(Pgen+im*Qgen) <= $(element.power_max)")
                  write(f, "$bus, $gen, $Pgen, $Qgen\n")
                end
         end
@@ -86,6 +88,7 @@ function MyJulia1(rawFile, genFile, contFile)
         end
      else
        ##delta values
+       println(scenario)
        scenario_id = String(matchall(r"\d+", scenario)[1])
        delta_values[scenario_id] = getvalue(variables_jump[get_delta_varname(scenario)])
        ##volt values
@@ -104,7 +107,10 @@ function MyJulia1(rawFile, genFile, contFile)
               gen = element.id
                # bus = String(matchall(r"\d+", element.busname)[1])
                # gen = String(matchall(r"\d+", element.id)[1])
-               Qgen = getvalue(variables_jump[variable_name("Sgen", busname, elemid, basecase_scenario_name())*"_Im"])
+               Pgen = getvalue(variables_jump[variable_name("Sgen", busname, elemid, scenario)*"_Re"])
+               Qgen = getvalue(variables_jump[variable_name("Sgen", busname, elemid, scenario)*"_Im"])
+               println("bus : $bus")
+               println("$(element.power_min) <= $(Pgen+im*Qgen) <= $(element.power_max)")
                Qgen_scen_values[(scenario_id,gen,bus, gen)] = Qgen
             end
           end
