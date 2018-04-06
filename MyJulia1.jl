@@ -16,12 +16,12 @@ function MyJulia1(rawFile, genFile, contFile)
                           KTR_PARAM_SCALE=0,
                           KTR_PARAM_FEASTOL=1.0,
                           KTR_PARAM_OPTTOL=1.0,
-                          KTR_PARAM_FEASTOLABS=1e-8,
+                          KTR_PARAM_FEASTOLABS=1e-6,
                           KTR_PARAM_OPTTOLABS=1e-3,
                           KTR_PARAM_BAR_INITPT=2,
                           KTR_PARAM_PRESOLVE=0,
                           KTR_PARAM_HONORBNDS=0,
-                          KTR_PARAM_MIP_INTVAR_STRATEGY=0)
+                          KTR_PARAM_MIP_INTVAR_STRATEGY=2)
   tic()
   my_timer = @elapsed m, variables_jump = get_JuMP_cartesian_model(pb_global_real, mysolver)
   @printf("%-35s%10.6f s\n", "get_JuMP_cartesian_model", my_timer)
