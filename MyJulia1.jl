@@ -83,7 +83,6 @@ function MyJulia1(rawFile, genFile, contFile)
         end
      else
        ##delta values
-       println(scenario)
        scenario_id = String(matchall(r"\d+", scenario)[1])
        delta_values[scenario_id] = getvalue(variables_jump[get_delta_varname(scenario)])
        ##volt values
