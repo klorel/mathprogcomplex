@@ -57,13 +57,14 @@ function buildPOP_WB2_expl()
 end
 
 
-function buildPOPR_2v1c()
+function buildPOPR_2v2cbis()
     x1 = Variable("x1", Real)
     x2 = Variable("x2", Real)
     problemraw = Problem()
     add_variable!(problemraw, x1); add_variable!(problemraw, x2)
     set_objective!(problemraw, -x1^2)
-    add_constraint!(problemraw, "ineq", (x1^2 + x2^2) << 4)
+    add_constraint!(problemraw, "ineq1", (2*x1 + 1) << 0)
+    add_constraint!(problemraw, "ineq2", (x1^2 + x2^2) << 4)
     return problemraw
 end
 

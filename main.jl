@@ -18,15 +18,15 @@ function main()
     # problem = normalize_problem(rawproblem)
     # relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
 
-    real_pb = false
+    real_pb = true
     if real_pb
-        rawproblem = buildPOPR_2v1c()
+        rawproblem = buildPOPR_2v2cbis()
         problem = normalize_problem(rawproblem)
         relax_ctx = set_relaxation(problem, hierarchykind=:Real, d = 2)
     else
         rawproblem = buildPOP_WB2_expl()
         problem = normalize_problem(rawproblem)
-        relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
+        relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 2)
         relax_ctx.di["moment_cstr"] = 2
     end
 
@@ -60,26 +60,12 @@ function main()
 
     SDP_body, SDP_rhs = build_SDP(relax_ctx, mmtrel_pb)
     println("\n--------------------------------------------------------")
-    println("SDP_body =")
-    for (key, mat) in SDP_body
-        skey = "$key -> "
-        println("$key -> ")
-        for (key2, val) in mat
-            print(" "^length(skey))
-            println("$key2 -> $val")
-        end
-    end
+    println("SDP_body = \n$SDP_body")
 
     println("\n--------------------------------------------------------")
-    println("SDP_rhs = ")
-    for (key, val) in SDP_rhs
-        println("$key -> $val")
-    end
+    println("SDP_rhs = \n$SDP_rhs")
 
-    # B_i = compute_Bibycstr(problem, momentmatrices, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
-    
-    # SDP_SOS = build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbyclique, relax_ctx)
-    
+
     ########################################
     # Calcul d'une solution par un solveur
     # m, Zi, yα_re, yα_im, expo2int, int2expo = make_JuMPproblem(SDP_SOS, SCSSolver(max_iters=5000000, eps=1e-3, verbose=true), relax_ctx)

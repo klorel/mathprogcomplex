@@ -53,7 +53,7 @@ end
 # end
 
 
-const SDPBody = Dict{Tuple{String, String, Exponent, Exponent}, Dict{Tuple{Exponent, Exponent}, Number}}
+const SDPBody = Dict{String, Dict{String, Dict{Tuple{Exponent, Exponent}, Dict{Tuple{Exponent, Exponent}, Number}}}}
 const SDPRhs = Dict{Tuple{Exponent, Exponent}, Number}
 
 """
