@@ -1,8 +1,6 @@
 function build_SDP(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxationPb)
-    sdpbody = Dict{String, Dict{String, Dict{Tuple{Exponent, Exponent}, Dict{Tuple{Exponent, Exponent}, Number}}}}()
-    sdprhs = Dict{Tuple{Exponent, Exponent}, Number}()
-    # sdpbody = SDPBody()
-    # sdprhs = SDPRhs()
+    sdpbody = SDPBody()
+    sdprhs = SDPRhs()
 
     for ((cstrname, cliquename), mmt) in mmtrelax_pb.constraints
         
