@@ -16,7 +16,7 @@ function MyJulia1(rawFile, genFile, contFile)
                           KTR_PARAM_SCALE=0,
                           KTR_PARAM_FEASTOL=1.0,
                           KTR_PARAM_OPTTOL=1.0,
-                          KTR_PARAM_FEASTOLABS=1e-8,
+                          KTR_PARAM_FEASTOLABS=1e-6,
                           KTR_PARAM_OPTTOLABS=1e-3,
                           KTR_PARAM_BAR_INITPT=2,
                           KTR_PARAM_PRESOLVE=0,
@@ -55,8 +55,6 @@ function MyJulia1(rawFile, genFile, contFile)
                  # gen = matchall(r"\d+", element.id)[1]
                  Pgen = getvalue(variables_jump[variable_name("Sgen", busname, elemname, basecase_scenario_name())*"_Re"])
                  Qgen = getvalue(variables_jump[variable_name("Sgen", busname, elemname, basecase_scenario_name())*"_Im"])
-                 println("bus : $bus")
-                 println("$(element.power_min) <= $(Pgen+im*Qgen) <= $(element.power_max)")
                  write(f, "$bus, $gen, $Pgen, $Qgen\n")
                end
         end
@@ -109,8 +107,6 @@ function MyJulia1(rawFile, genFile, contFile)
                # gen = String(matchall(r"\d+", element.id)[1])
                Pgen = getvalue(variables_jump[variable_name("Sgen", busname, elemid, scenario)*"_Re"])
                Qgen = getvalue(variables_jump[variable_name("Sgen", busname, elemid, scenario)*"_Im"])
-               println("bus : $bus")
-               println("$(element.power_min) <= $(Pgen+im*Qgen) <= $(element.power_max)")
                Qgen_scen_values[(scenario_id,gen,bus, gen)] = Qgen
             end
           end
