@@ -77,14 +77,21 @@ function print(io::IO, sdpbody::SDPBody)
         bloclen = get_maxlenkey(val0)
         for (blocname, val1) in val0
             expolen = get_maxlenkey(val1)
+
+            coordlen = 0
             for ((α, β), Bi) in val1
-                coordlen = get_maxlenkey(Bi)
+                for ((γ, δ), λ) in Bi
+                    coordlen = max(coordlen, get_maxlenkey(Bi))
+                end
+            end
+            
+            for ((α, β), Bi) in val1
                 for ((γ, δ), λ) in Bi
                     print_string(io, cstrname, cstrlen)
                     print_string(io, blocname, bloclen)
                     print_string(io, "($α, $β)", expolen); print(io, ": ")
-                    print_string(io, "($γ, $δ)", coordlen)
-                    println(io, "\t$λ")
+                    print_string(io, "($γ, $δ)", coordlen, alignright=false)
+                    println(io, "$λ")
                 end
             end
         end
