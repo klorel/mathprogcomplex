@@ -16,7 +16,7 @@ function MyJulia1(rawFile, genFile, contFile)
                           KTR_PARAM_SCALE=0,
                           KTR_PARAM_FEASTOL=1.0,
                           KTR_PARAM_OPTTOL=1.0,
-                          KTR_PARAM_FEASTOLABS=1e-6,
+                          KTR_PARAM_FEASTOLABS=1e-8,
                           KTR_PARAM_OPTTOLABS=1e-3,
                           KTR_PARAM_BAR_INITPT=2,
                           KTR_PARAM_PRESOLVE=0,
@@ -33,13 +33,13 @@ function MyJulia1(rawFile, genFile, contFile)
   ##get values
   println("Objective value : ", getobjectivevalue(m))
 
-  f = open("JuMP_solution.csv","w")
-  write(f, "Varname ; Value\n")
-  for (varname, var) in variables_jump
-    value = getvalue(var)
-    write(f, "$varname; $value\n")
-  end
-  close(f)
+  # f = open("JuMP_solution.csv","w")
+  # write(f, "Varname ; Value\n")
+  # for (varname, var) in variables_jump
+  #   value = getvalue(var)
+  #   write(f, "$varname; $value\n")
+  # end
+  # close(f)
 
   ##create solution1.txt and solution2.txt
   println("Solution writing")
@@ -51,8 +51,6 @@ function MyJulia1(rawFile, genFile, contFile)
                if typeof(element) == GOCGenerator
                  bus =  element.busid
                  gen = element.id
-                 # bus = matchall(r"\d+", element.busname)[1]
-                 # gen = matchall(r"\d+", element.id)[1]
                  Pgen = getvalue(variables_jump[variable_name("Sgen", busname, elemname, basecase_scenario_name())*"_Re"])
                  Qgen = getvalue(variables_jump[variable_name("Sgen", busname, elemname, basecase_scenario_name())*"_Im"])
                  write(f, "$bus, $gen, $Pgen, $Qgen\n")
@@ -75,7 +73,6 @@ function MyJulia1(rawFile, genFile, contFile)
           for (elemid, element) in elems
             if typeof(element) == GOCVolt
               bus = element.busid
-              # bus = String(matchall(r"\d+", element.busname)[1])
               V_re = getvalue(variables_jump[variable_name("VOLT", busname, "", scenario)*"_Re"])
               V_im = getvalue(variables_jump[variable_name("VOLT", busname, "", scenario)*"_Im"])
               V_mod = abs(V_re + V_im * im)
@@ -103,9 +100,6 @@ function MyJulia1(rawFile, genFile, contFile)
             elseif typeof(element) == GOCGenerator
               bus =  element.busid
               gen = element.id
-               # bus = String(matchall(r"\d+", element.busname)[1])
-               # gen = String(matchall(r"\d+", element.id)[1])
-               Pgen = getvalue(variables_jump[variable_name("Sgen", busname, elemid, scenario)*"_Re"])
                Qgen = getvalue(variables_jump[variable_name("Sgen", busname, elemid, scenario)*"_Im"])
                Qgen_scen_values[(scenario_id,gen,bus, gen)] = Qgen
             end
