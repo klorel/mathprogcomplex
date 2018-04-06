@@ -74,7 +74,7 @@ end
 """
 function compute_momentmat(relax_ctx, problem, moment_param::Dict{String, Tuple{Set{String}, Int}}, max_cliques::Dict{String, Set{Variable}})
     println("\n=== compute_momentmat(relax_ctx, problem, moment_param, max_cliques)")
-    println("Compute the moment and localizing matrices associated with the problem constraints and vlique decomposition.")
+    println("Compute the moment and localizing matrices associated with the problem constraints and clique decomposition.")
 
     # NOTE: Things will have to be slightly extended to support the several SDP sparse moment constraint (cstr key will not suffise)
     momentmatrices = Dict{Tuple{String, String}, MomentMatrix}()
@@ -88,6 +88,11 @@ function compute_momentmat(relax_ctx, problem, moment_param::Dict{String, Tuple{
             blocname = blocname*clique_key*"_"
         end
         momentmatrices[(cstrname, blocname[1:end-1])] = MomentMatrix(vars, order) * problem.constraints[cstrname].p
+        println("****************************************************************************************")
+        println(MomentMatrix(vars, order))
+        println(problem.constraints[cstrname].p)
+        println(momentmatrices[(cstrname, blocname[1:end-1])])
+        println("****************************************************************************************")
     end
 
     println("xxxxx which indicators ? xxxxx")
