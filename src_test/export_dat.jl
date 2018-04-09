@@ -1,5 +1,6 @@
 ROOT = pwd()
 include(joinpath(ROOT,"..","src_PowSysMod", "PowSysMod_body.jl"))
+using MAT
 
 """Test
 Test to launch in complex-modeler/src_test folder for example D:\repo\complex-modeler\src_test>julia global_test.jl

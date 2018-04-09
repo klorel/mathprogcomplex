@@ -1,4 +1,6 @@
-include(joinpath(pwd(),"src_PowSysMod", "PowSysMod_body.jl"))
+ include(joinpath(pwd(),"src_PowSysMod", "PowSysMod_body.jl"))
+# push!(LOAD_PATH, "D:\\repo\\GOC_Gimaju\\src_PowSysMod")
+# using PowSysMod, JuMP, KNITRO
 
 function MyJulia1(rawFile, genFile, contFile)
   ##read and load files

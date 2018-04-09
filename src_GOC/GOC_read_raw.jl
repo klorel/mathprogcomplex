@@ -1,4 +1,3 @@
-type GOCInput <: AbstractInput end
 #
 # include(joinpath(pwd(),"src_PowSysMod", "PowSysMod_body.jl"))
 #

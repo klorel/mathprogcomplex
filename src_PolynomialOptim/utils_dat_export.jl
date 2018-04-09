@@ -139,6 +139,9 @@ function print_poly!(io::IO, p::AbstractPolynomial, cat::String, maxvarlen, maxc
     coeff = p[expo]
 
     exp_globaldeg = expo.degree.explvar + expo.degree.conjvar
+
+    d, dconj = get_sumdegs(expo)
+    exp_globaldeg = d + dconj
     if exp_globaldeg > 2
       if !haskey(expos, expo)
         expos[expo] = "MONO_$(length(expos))"
