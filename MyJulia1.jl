@@ -11,6 +11,36 @@ function MyJulia1(rawFile, genFile, contFile)
   pb_global_real = pb_cplx2real(pb_global)
 
   ##convert to JuMP model
+  ##phase 1 : continuous relaxation
+  println("
+##############################################\n
+Phase 1 : resolution  of continuous relaxation\n
+##############################################")
+
+  mysolver = KnitroSolver(KTR_PARAM_OUTLEV=3,
+                          KTR_PARAM_MAXIT=600,
+                          KTR_PARAM_SCALE=0,
+                          KTR_PARAM_FEASTOL=1.0,
+                          KTR_PARAM_OPTTOL=1.0,
+                          KTR_PARAM_FEASTOLABS=1e-6,
+                          KTR_PARAM_OPTTOLABS=1e-3,
+                          KTR_PARAM_BAR_INITPT=2,
+                          KTR_PARAM_PRESOLVE=0,
+                          KTR_PARAM_HONORBNDS=0,
+                          KTR_PARAM_MIP_INTVAR_STRATEGY=1)
+  tic()
+  my_timer = @elapsed m1, variables_jump1 = get_JuMP_cartesian_model(pb_global_real, mysolver)
+  @printf("%-35s%10.6f s\n", "get_JuMP_cartesian_model", my_timer)
+  toc()
+  #resolution
+  solve(m1)
+
+  ##phase 2 : resolution with complementary constraints + initial point = solution continuous relaxation
+  println("
+##############################################################################################\n
+Phase 2 : resolution with complementary constraints from the solution of continuous relaxation\n
+##############################################################################################")
+
   mysolver = KnitroSolver(KTR_PARAM_OUTLEV=3,
                           KTR_PARAM_MAXIT=600,
                           KTR_PARAM_SCALE=0,
@@ -23,26 +53,30 @@ function MyJulia1(rawFile, genFile, contFile)
                           KTR_PARAM_HONORBNDS=0,
                           KTR_PARAM_MIP_INTVAR_STRATEGY=2)
   tic()
-  my_timer = @elapsed m, variables_jump = get_JuMP_cartesian_model(pb_global_real, mysolver)
+  my_timer = @elapsed m2, variables_jump2 = get_JuMP_cartesian_model(pb_global_real, mysolver)
   @printf("%-35s%10.6f s\n", "get_JuMP_cartesian_model", my_timer)
+  for (varname, varjump) in variables_jump1
+    setvalue(variables_jump2[varname], getvalue(varjump))
+  end
   toc()
-
   #resolution
-  solve(m)
+  solve(m2)
 
   ##get values
-  println("Objective value : ", getobjectivevalue(m))
+  println("Objective value : ", getobjectivevalue(m2))
 
+  println("--Solution csv writing")
   f = open("JuMP_solution.csv","w")
   write(f, "Varname ; Value\n")
-  for (varname, var) in variables_jump
+  for (varname, var) in variables_jump2
     value = getvalue(var)
     write(f, "$varname; $value\n")
   end
   close(f)
+  println("--End solution csv writing")
 
   ##create solution1.txt and solution2.txt
-  println("Solution writing")
+  println("--Solution txt writing")
 
    open("solution1.txt","w") do f
      write(f, "--generation dispatch\nbus id,unit id,pg(MW),qg(MVar) \n");
@@ -51,8 +85,8 @@ function MyJulia1(rawFile, genFile, contFile)
                if typeof(element) == GOCGenerator
                  bus =  element.busid
                  gen = element.id
-                 Pgen = getvalue(variables_jump[variable_name("Sgen", busname, elemname, basecase_scenario_name())*"_Re"])
-                 Qgen = getvalue(variables_jump[variable_name("Sgen", busname, elemname, basecase_scenario_name())*"_Im"])
+                 Pgen = getvalue(variables_jump2[variable_name("Sgen", busname, elemname, basecase_scenario_name())*"_Re"])
+                 Qgen = getvalue(variables_jump2[variable_name("Sgen", busname, elemname, basecase_scenario_name())*"_Im"])
                  write(f, "$bus, $gen, $Pgen, $Qgen\n")
                end
         end
@@ -73,8 +107,8 @@ function MyJulia1(rawFile, genFile, contFile)
           for (elemid, element) in elems
             if typeof(element) == GOCVolt
               bus = element.busid
-              V_re = getvalue(variables_jump[variable_name("VOLT", busname, "", scenario)*"_Re"])
-              V_im = getvalue(variables_jump[variable_name("VOLT", busname, "", scenario)*"_Im"])
+              V_re = getvalue(variables_jump2[variable_name("VOLT", busname, "", scenario)*"_Re"])
+              V_im = getvalue(variables_jump2[variable_name("VOLT", busname, "", scenario)*"_Im"])
               V_mod = abs(V_re + V_im * im)
               V_theta = angle(V_re + V_im * im)*180/pi
               volt_values[(scenario_id,bus)] = (V_mod, V_theta)
@@ -84,22 +118,22 @@ function MyJulia1(rawFile, genFile, contFile)
      else
        ##delta values
        scenario_id = String(matchall(r"\d+", scenario)[1])
-       delta_values[scenario_id] = getvalue(variables_jump[get_delta_varname(scenario)])
+       delta_values[scenario_id] = getvalue(variables_jump2[get_delta_varname(scenario)])
        ##volt values
         for (busname, elems) in OPFpb.ds.bus
           for (elemid, element) in elems
             if typeof(element) == GOCVolt
               bus = element.busid
               # bus = String(matchall(r"\d+", element.busname)[1])
-              V_re = getvalue(variables_jump[variable_name("VOLT", busname, "", scenario)*"_Re"])
-              V_im = getvalue(variables_jump[variable_name("VOLT", busname, "", scenario)*"_Im"])
+              V_re = getvalue(variables_jump2[variable_name("VOLT", busname, "", scenario)*"_Re"])
+              V_im = getvalue(variables_jump2[variable_name("VOLT", busname, "", scenario)*"_Im"])
               V_mod = abs(V_re + V_im * im)
               V_theta = angle(V_re + V_im * im)*180/pi
               volt_values[(scenario_id,bus)] = (V_mod, V_theta)
             elseif typeof(element) == GOCGenerator
               bus =  element.busid
               gen = element.id
-               Qgen = getvalue(variables_jump[variable_name("Sgen", busname, elemid, scenario)*"_Im"])
+               Qgen = getvalue(variables_jump2[variable_name("Sgen", busname, elemid, scenario)*"_Im"])
                Qgen_scen_values[(scenario_id,gen,bus, gen)] = Qgen
             end
           end
@@ -109,10 +143,10 @@ function MyJulia1(rawFile, genFile, contFile)
      for (link, elems) in OPFpb.ds.link
        orig = link.orig
        dest = link.dest
-       Vo_re = getvalue(variables_jump[variable_name("VOLT", orig, "", scenario)*"_Re"])
-       Vo_im = getvalue(variables_jump[variable_name("VOLT", orig, "", scenario)*"_Im"])
-       Vd_re = getvalue(variables_jump[variable_name("VOLT", dest, "", scenario)*"_Re"])
-       Vd_im = getvalue(variables_jump[variable_name("VOLT", dest, "", scenario)*"_Im"])
+       Vo_re = getvalue(variables_jump2[variable_name("VOLT", orig, "", scenario)*"_Re"])
+       Vo_im = getvalue(variables_jump2[variable_name("VOLT", orig, "", scenario)*"_Im"])
+       Vd_re = getvalue(variables_jump2[variable_name("VOLT", dest, "", scenario)*"_Re"])
+       Vd_im = getvalue(variables_jump2[variable_name("VOLT", dest, "", scenario)*"_Im"])
 
        link_elems_formulations = OPFpb.mp.link_formulations[link]
        link_vars = OPFpb.mp.link_vars[link]
@@ -157,6 +191,8 @@ function MyJulia1(rawFile, genFile, contFile)
      end
      write(f,"--end of line flow\n")
    end
+
+   println("--End solution txt writing")
 
    return pb_global_real
 
