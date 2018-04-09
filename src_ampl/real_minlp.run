@@ -31,6 +31,7 @@ set PRECOND_CONSTRAINTS := include "real_minlp_precond_cstrs.dat";
 
 model;
 
+expand;
 
 option solver knitroampl;
 option knitro_options 'outlev=3 maxit=600 scale=0 feastol=1 opttol=1 feastolabs=1e-6 opttolabs=1e-3 bar_initpt=2 presolve=0 honorbnds=0';
