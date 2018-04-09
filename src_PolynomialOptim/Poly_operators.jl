@@ -125,7 +125,11 @@ end
 function conj(expo::Exponent)
     expodict = Dict{Variable, Degree}()
     for (var, deg) in expo.expo
-        expodict[var] = conj(deg)
+        if iscomplex(var)
+            expodict[var] = conj(deg)
+        else
+            expodict[var] = deg
+        end
     end
     return Exponent(expodict)
 end
@@ -165,6 +169,11 @@ function evaluate(p::Polynomial, pt::Point)
         res += λ*evaluate(expo, pt)
     end
     typeof(res)<:Polynomial && update_degree!(res)
+
+    # Fully evaluated polynomial
+    if typeof(res) == Polynomial && res.degree == Degree(0,0)
+        return first(res)[2]
+    end
     return res
 end
 
