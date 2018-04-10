@@ -139,9 +139,11 @@ function print_poly!(io::IO, p::AbstractPolynomial, cat::String, maxvarlen, maxc
     coeff = p[expo]
     explsum, conjsum = get_sumdegs(expo)
 
+    vars_deg = collect(expo.expo)
+
     oneline = (length(expo) == 0)
     oneline = (oneline || ((length(expo) == 2) && ((explsum, conjsum) == (1,1)))) # Hermitian product of two complex variables
-    oneline = (oneline || ((length(expo) == 2) && ((explsum, conjsum) == (2,0)) && isreal(first(expo)) && isreal(last(expo)))) # Product of two real variables
+    oneline = (oneline || ((length(expo) == 2) && ((explsum, conjsum) == (2,0)) && isreal(first(vars_deg)[1]) && isreal(last(vars_deg)[1]))) # Product of two real variables
     var = ((length(expo) == 1) && (((explsum, conjsum) == (0,1)) || ((explsum, conjsum) == (1,0)))) # One real or complex variable
     oneline = (var || oneline)
 
