@@ -43,7 +43,7 @@ function print_quad_expo(io, expo::Exponent, cat::String, coeff, maxvarlen, maxc
   elseif length(vars_conj) == 0 && length(vars_lin) == 0
     print_dat_line(io, "CONST", cat, "NONE", "NONE", real(coeff), imag(coeff), maxvarlen, maxcstrlen)
   else
-    warn("export_to_dat(): Exponent $expo not supported.")
+    warn("print_quad_expo(): Exponent $expo not supported.")
   end
 end
 
@@ -137,17 +137,23 @@ function print_poly!(io::IO, p::AbstractPolynomial, cat::String, maxvarlen, maxc
 
   for expo in sort(collect(keys(p)))
     coeff = p[expo]
+    explsum, conjsum = get_sumdegs(expo)
 
-    exp_globaldeg = expo.degree.explvar + expo.degree.conjvar
-    if exp_globaldeg > 2
+    oneline = (length(expo) == 0)
+    oneline = (oneline || ((length(expo) == 2) && ((explsum, conjsum) == (1,1)))) # Hermitian product of two complex variables
+    oneline = (oneline || ((length(expo) == 2) && ((explsum, conjsum) == (2,0)) && isreal(first(expo)) && isreal(last(expo)))) # Product of two real variables
+    var = ((length(expo) == 1) && (((explsum, conjsum) == (0,1)) || ((explsum, conjsum) == (1,0)))) # One real or complex variable
+    oneline = (var || oneline)
+
+    if length(expo) == 0  # const value
+      constval = coeff
+    elseif oneline         # oneline printable monomial
+      print_quad_expo(io, expo, cat, coeff, maxvarlen, maxcstrlen)
+    else                  # general monomial case
       if !haskey(expos, expo)
         expos[expo] = "MONO_$(length(expos))"
       end
       print_dat_line(io, "MONO", cat, expos[expo], "NONE", real(coeff), imag(coeff), maxvarlen, maxcstrlen)
-    elseif exp_globaldeg == 0
-      constval = coeff
-    else
-      print_quad_expo(io, expo, cat, coeff, maxvarlen, maxcstrlen)
     end
   end
   if constval != 0
