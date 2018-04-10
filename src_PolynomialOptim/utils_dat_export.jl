@@ -139,49 +139,33 @@ with the coefficient (which essentially is a linear term).
 function print_poly!(io::IO, p::AbstractPolynomial, cat::String, maxvarlen, maxcstrlen, expos::Dict{Exponent, String})
   constval = 0
 
-  for expo in sort(collect(keys(p)))
-    coeff = p[expo]
-    explsum, conjsum = get_sumdegs(expo)
+    for expo in sort(collect(keys(p)))
+      coeff = p[expo]
+      explsum, conjsum = get_sumdegs(expo)
 
-    vars_deg = collect(expo.expo)
+      vars_deg = collect(expo.expo)
 
-    oneline = (length(expo) == 0)
-    oneline = (oneline || ((length(expo) == 2) && ((explsum, conjsum) == (1,1)))) # Hermitian product of two complex variables
-    oneline = (oneline || ((length(expo) == 2) && ((explsum, conjsum) == (2,0)) && isreal(first(vars_deg)[1]) && isreal(last(vars_deg)[1]))) # Product of two real variables
-    var = ((length(expo) == 1) && (((explsum, conjsum) == (0,1)) || ((explsum, conjsum) == (1,0)))) # One real or complex variable
-    oneline = (var || oneline)
+      oneline = (length(expo) == 0)
+      oneline = (oneline || ((length(expo) == 2) && ((explsum, conjsum) == (1,1)))) # Hermitian product of two complex variables
+      oneline = (oneline || ((length(expo) == 2) && ((explsum, conjsum) == (2,0)) && isreal(first(vars_deg)[1]) && isreal(last(vars_deg)[1]))) # Product of two real variables
+      var = ((length(expo) == 1) && (((explsum, conjsum) == (0,1)) || ((explsum, conjsum) == (1,0)))) # One real or complex variable
+      oneline = (var || oneline)
 
-    if length(expo) == 0  # const value
-      constval = coeff
-    elseif oneline         # oneline printable monomial
-      print_quad_expo(io, expo, cat, coeff, maxvarlen, maxcstrlen)
-    else                  # general monomial case
-      if !haskey(expos, expo)
-        expos[expo] = "MONO_$(length(expos))"
+      if length(expo) == 0  # const value
+        constval = coeff
+      elseif oneline         # oneline printable monomial
+        print_quad_expo(io, expo, cat, coeff, maxvarlen, maxcstrlen)
+      else                  # general monomial case
+        if !haskey(expos, expo)
+          expos[expo] = "MONO_$(length(expos))"
+        end
+        print_dat_line(io, "MONO", cat, expos[expo], "NONE", real(coeff), imag(coeff), maxvarlen, maxcstrlen)
       end
-      print_dat_line(io, "MONO", cat, expos[expo], "NONE", real(coeff), imag(coeff), maxvarlen, maxcstrlen)
-    explsum, conjsum = get_sumdegs(expo)
-
-    vars_deg = collect(expo.expo)
-
-    oneline = (length(expo) == 0)
-    oneline = (oneline || ((length(expo) == 2) && ((explsum, conjsum) == (1,1)))) # Hermitian product of two complex variables
-    oneline = (oneline || ((length(expo) == 2) && ((explsum, conjsum) == (2,0)) && isreal(first(vars_deg)[1]) && isreal(last(vars_deg)[1]))) # Product of two real variables
-    var = ((length(expo) == 1) && (((explsum, conjsum) == (0,1)) || ((explsum, conjsum) == (1,0)))) # One real or complex variable
-    oneline = (var || oneline)
-
-    if length(expo) == 0  # const value
-      constval = coeff
-    elseif oneline         # oneline printable monomial
-      print_quad_expo(io, expo, cat, coeff, maxvarlen, maxcstrlen)
-    else                  # general monomial case
-
     end
+    if constval != 0
+      print_dat_line(io, "CONST", cat, "NONE", "NONE", real(constval), imag(constval), maxvarlen, maxcstrlen)
   end
-  if constval != 0
-    print_dat_line(io, "CONST", cat, "NONE", "NONE", real(constval), imag(constval), maxvarlen, maxcstrlen)
-  end
-end
+end  
 
 """
   export_to_dat(pb_optim::Problem, outpath::String, pt::Point = Point())

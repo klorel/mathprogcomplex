@@ -58,3 +58,12 @@ src_modeler/Modeler/QCQP_ampl.jl
 /pscopf_data.mat
 /src_test/Phase_0_IEEE14_1Scenario/real_minlp_instance.dat
 /src_test/Phase_0_IEEE14_1Scenario/real_minlp_precond_cstrs.dat
+/src_PolynomialOptim/utils_dat_export.jl.orig
+/src_test/Phase_0_IEEE14_1Scenario/Dat_complex/real_minlp_instance.dat
+/src_test/Phase_0_IEEE14_1Scenario/Dat_complex/real_minlp_instance1.dat
+/src_test/Phase_0_IEEE14_1Scenario/Dat_complex/real_minlp_precond_cstrs.dat
+/src_test/Phase_0_IEEE14_1Scenario/Dat_complex/real_minlp_precond_cstrs1.dat
+/src_test/real_minlp_instance_1.dat
+/src_test/real_minlp_instance_2.dat
+/src_test/real_minlp_precond_cstrs_1.dat
+/src_test/real_minlp_precond_cstrs_2.dat
