@@ -13,6 +13,7 @@ export write_solutions
 export read_solution_point_GOC
 export cplx2real
 export Point
+export add_coord!
 export MatpowerInput, MatpowerSimpleInput, IIDMInput, GOCInput
 
 
