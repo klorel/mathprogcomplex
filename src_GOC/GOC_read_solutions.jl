@@ -8,7 +8,22 @@ function solution_point(instance_path::String)
     participation_factors = create_participation_factors_dict(instance_path, index)
     global_point = create_global_point(solution1, solution2, participation_factors, index)
     # Add delta solution
-    global_point = cplx2real(global_point)
+    delta_point = create_delta_solution(solution2)
+    binary_point = compute_binary_values(basecase_generator_solution, bus_solution, power_data)
+    global_point = merge(global_point, delta_point,binary_point)
+    return global_point
+end
+
+function read_solution_point_GOC(instance_path::String, solution_path::String)
+    solution1 = readdlm(joinpath(solution_path,"solution1.txt"), ',')
+    solution2 = readdlm(joinpath(solution_path,"solution2.txt"), ',')
+    basecase_generator_solution = read_solution1(solution1)
+    contingency_generator_solution, bus_solution, delta_solution, line_flow_solution = read_solution2(solution2)
+    power_data = getpowerdata(instance_path)
+    index = get_bus_index(power_data)
+    participation_factors = create_participation_factors_dict(instance_path, index)
+    global_point = create_global_point(solution1, solution2, participation_factors, index)
+    # Add delta solution
     delta_point = create_delta_solution(solution2)
     binary_point = compute_binary_values(basecase_generator_solution, bus_solution, power_data)
     global_point = merge(global_point, delta_point,binary_point)
@@ -169,20 +184,20 @@ function compute_binary_values(basecase_generator_solution, bus_solution, power_
         for num_bus in generators
             if abs(dict_modules[num_bus]^2 - module_v_basecase[num_bus]^2) < get_GOC_Volt_ϵ()
                 add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 1.0)
-                add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 0.0)
-                add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 0.0)
+                add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 1e-16)
+                add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 1e-16)
             elseif dict_modules[num_bus]^2 - module_v_basecase[num_bus]^2 > get_GOC_Volt_ϵ()
                 add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 1.0)
-                add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 0.0)
-                add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 0.0)
+                add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 1e-16)
+                add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 1e-16)
             else
                 add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 1.0)
-                add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 0.0)
-                add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 0.0)
+                add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 1e-16)
+                add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 1e-16)
             end
         end
     end
-    println(point)
+    # println(point)
     return point
 end
 # filenames = ["Phase_0_IEEE14_1Scenario", "scenario_1"]
