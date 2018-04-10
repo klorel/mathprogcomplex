@@ -11,7 +11,7 @@ function build_sparsity(relax_ctx, problem, max_cliques::Dict{String, Set{Variab
         moments_param = Dict{String, Tuple{Set{String}, Int}}()
         for (cstr, pb) in problem.constraints
             di, ki = relax_ctx.di[cstr], relax_ctx.ki[cstr]
-            moments_param[cstr] = (Set(["oneclique"]), di-ki)
+            moments_param[cstr] = (Set(["clique1"]), di-ki)
         end
         return moments_param
 
@@ -27,7 +27,7 @@ end
 function get_maxcliques(relax_ctx, problem)
     if !relax_ctx.issparse
         vars = Set{Variable}([Variable(name, kind) for (name, kind) in problem.variables])
-        return Dict{String, Set{Variable}}("oneclique"=>vars)
+        return Dict{String, Set{Variable}}("clique1"=>vars)
     else
         error("Sparse relaxation is not supported yet")
     end

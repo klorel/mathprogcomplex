@@ -89,6 +89,7 @@ function get_slacks(pb::Problem, pt::Point)
   val_arr = Complex[]
   for (cstrName, cstr) in pb.constraints
     val = evaluate(cstr.p, pt)
+    isa(val, Number) || error("get_slacks(): constraint $cstrName not fully evaluated at provided point.\nEvaluated value is $val.")
     push!(var_arr, Variable(cstrName, Complex))
     push!(val_arr, min(real(val-cstr.lb), real(cstr.ub-val)) + min(imag(val-cstr.lb), imag(cstr.ub-val))*im)
   end

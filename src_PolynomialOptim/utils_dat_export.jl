@@ -17,8 +17,12 @@ function get_varslin(exp::Exponent)
   varlin
 end
 
-function print_string(io, strng, len)
-  print(io, " "^(len-length(strng)), strng, " ")
+function print_string(io, strng, len; alignright = true)
+  if alignright
+    print(io, " "^(len-length(strng)), strng, " ")
+  else
+    print(io, strng, " "^(len-length(strng)), " ")
+  end
 end
 
 function print_dat_line(io, linetype, cstrname, var1, var2, val1, val2, maxvarlen, maxcstrlen)

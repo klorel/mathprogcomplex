@@ -6,7 +6,6 @@ doc/build/*
 *.sol
 profile_data/*
 function_files/import_poly_dat.jl
-Notes.md
 src/Modeler/QCQP_ampl.jl
 src_ampl/ampl_triang_carres.run
 test.jl
