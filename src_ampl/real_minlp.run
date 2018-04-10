@@ -70,6 +70,8 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	# first phase relaxation binary constraints
 	let{varname in BINARY_VARIABLES} y[varname].intvarstrategy := 1;
 
+
+	write gphase1;
 	solve;
 
 	close knitro_info.csv;
@@ -104,6 +106,7 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	# second phase reformulating binary constraints into MPEC and starting from the previous KKT solution
 	let{varname in BINARY_VARIABLES} y[varname].intvarstrategy := 2;
 
+	write gphase2;
 	solve;
 
 
