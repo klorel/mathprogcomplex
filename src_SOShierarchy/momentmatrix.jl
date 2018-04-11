@@ -4,7 +4,7 @@
     Build the moment matrix corresponding to the moment of degree up to `d` of the `vars` polynomial algebra.
 """
 function MomentMatrix(vars::Set{Variable}, d::Int)
-    mm = Dict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
+    mm = OrderedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
     realexpos = compute_exponents(vars, d)
     conjexpos = compute_exponents(vars, d, compute_conj=true)
     for cexp in conjexpos
@@ -77,7 +77,7 @@ function compute_momentmat(relax_ctx, problem, moment_param::Dict{String, Tuple{
     println("Compute the moment and localizing matrices associated with the problem constraints and vlique decomposition.")
 
     # NOTE: Things will have to be slightly extended to support the several SDP sparse moment constraint (cstr key will not suffise)
-    momentmatrices = Dict{Tuple{String, String}, MomentMatrix}()
+    momentmatrices = OrderedDict{Tuple{String, String}, MomentMatrix}()
 
     for (cstrname, (clique_keys, order)) in moment_param
         # Collect variables involved in constraint

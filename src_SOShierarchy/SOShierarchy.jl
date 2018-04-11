@@ -1,3 +1,4 @@
+using DataStructures
 include(joinpath(ROOT, "src_PolynomialOptim", "PolynomialOptim.jl"))
 
 
@@ -19,7 +20,7 @@ end
     **Note** that the matrix is indexed by a tuple of exponents, *the first of which contains only conjugated variables*, et second only real ones.
 """
 mutable struct MomentMatrix
-    mm::Dict{Tuple{Exponent, Exponent}, AbstractPolynomial}
+    mm::OrderedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}
     vars::Set{Variable}
     order::Int
 end
@@ -31,7 +32,7 @@ end
 """
 struct MomentRelaxationPb
     objective::AbstractPolynomial
-    constraints::Dict{Tuple{String, String}, MomentMatrix}
+    constraints::OrderedDict{Tuple{String, String}, MomentMatrix}
 end
 
 # """
@@ -53,8 +54,8 @@ end
 # end
 
 
-const SDPBody = Dict{String, Dict{String, Dict{Tuple{Exponent, Exponent}, Dict{Tuple{Exponent, Exponent}, Number}}}}
-const SDPRhs = Dict{Tuple{Exponent, Exponent}, Number}
+const SDPBody = OrderedDict{Tuple{String, String, Exponent, Exponent}, OrderedDict{Tuple{Exponent, Exponent}, Number}}
+const SDPRhs = OrderedDict{Tuple{Exponent, Exponent}, Number}
 
 """
     SparsityPattern
