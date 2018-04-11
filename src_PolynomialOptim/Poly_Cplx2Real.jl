@@ -52,7 +52,7 @@ function cplx2real_rec(vars::Array{Variable}, degs::Array{Degree}, realPart::Pol
     elseif isbool(var)
       return cplx2real_rec(vars, degs, var*realPart, var*imagPart, cur_ind, Degree(0,0))
     else
-      return cplx2real_rec(vars, degs, Exponent(Dict(var=>cur_deg))*realPart, Exponent(Dict(var=>cur_deg))*imagPart, cur_ind, Degree(0,0))
+      return cplx2real_rec(vars, degs, Exponent(OrderedDict(var=>cur_deg))*realPart, Exponent(OrderedDict(var=>cur_deg))*imagPart, cur_ind, Degree(0,0))
     end
   end
 end

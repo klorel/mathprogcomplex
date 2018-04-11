@@ -153,11 +153,11 @@ function powpoly(p::Polynomial, d::Int)
     end
     expo, λ = collect(p)[1]
 
-    expod = Dict{Variable, Degree}()
+    expod = OrderedDict{Variable, Degree}()
     for (var, deg) in expo.expo
         expod[var] = Degree(deg.explvar*d, deg.conjvar*d)
     end
-    return Polynomial(Dict{Exponent, Number}(Exponent(expod)=>λ^d))
+    return Polynomial(OrderedDict{Exponent, Number}(Exponent(expod)=>λ^d))
 end
 
 function ^(p::T, d::Int) where T<:AbstractPolynomial

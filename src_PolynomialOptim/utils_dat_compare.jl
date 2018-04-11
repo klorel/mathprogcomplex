@@ -30,7 +30,7 @@ function compare_dat(file1::String, file2::String; epsilon = 1e-10, display_leve
     println("nfile1 \\ file2: $(sort(collect(setdiff(lines1, lines2)))) \nfile2 \\ file1: $(sort(collect(setdiff(lines2, lines1))))")
   end
 
-  errors = Dict{Float64, Any}()
+  errors = OrderedDict{Float64, Any}()
   for i=1:min(size(data1, 1), size(data2, 1))
     if data1[i, 1:4] == data2[i, 1:4]
       cur_error = max(abs(data1[i, 5]-data2[i, 5]), abs(data1[i, 6]-data2[i, 6]))

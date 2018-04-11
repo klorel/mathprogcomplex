@@ -7,8 +7,8 @@ the iniitial point possibly provided in the file (defaults value is null).
 """
 function import_from_dat(instancepath::String, precondcstrspath::String)
     init_point = Point()
-    variables = Dict{String, Variable}()
-    exponents = Dict{String, Exponent}()
+    variables = OrderedDict{String, Variable}()
+    exponents = OrderedDict{String, Exponent}()
     pb = Problem()
 
     instance_str = open(instancepath)
@@ -50,7 +50,7 @@ function import_from_dat(instancepath::String, precondcstrspath::String)
         if !haskey(exponents, exponame)
             exponents[exponame] = Exponent()
         end
-        exponents[exponame] = product(exponents[exponame], Exponent(Dict(var=>Degree(parse(line[5]), parse(line[6])))))
+        exponents[exponame] = product(exponents[exponame], Exponent(OrderedDict(var=>Degree(parse(line[5]), parse(line[6])))))
         l = readline(instance_str)
         line = matchall(r"\S+", l)
     end

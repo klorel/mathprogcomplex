@@ -51,7 +51,7 @@ function Base.print(io::IO, cstr::Constraint)
 end
 
 # Problem
-Problem() = Problem(Polynomial(), Dict{String, Constraint}(), Dict{String, Type}())
+Problem() = Problem(Polynomial(), OrderedDict{String, Constraint}(), OrderedDict{String, Type}())
 
 function Base.print(io::IO, pb::Problem)
   print(io, "▶ variables: ")
