@@ -74,7 +74,7 @@ function build_and_solve_instance(typeofinput, instance_path)
 
     ## Reading GOC initial point
     init_point = Point()
-    # (typeofinput != GOCInput) || (init_point = solution_point(instance_path))
+    (typeofinput != GOCInput) || (init_point = read_solution_point_GOC(instance_path, instance_path))
     export_to_dat(pb_global, pwd(), init_point)
     init_point_real = cplx2real(init_point)
 
