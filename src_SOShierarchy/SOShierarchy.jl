@@ -1,13 +1,18 @@
 using DataStructures
 include(joinpath(ROOT, "src_PolynomialOptim", "PolynomialOptim.jl"))
 
+## Symetries
+abstract type AbstractSymetry end
+type PhaseInvariance <: AbstractSymetry end
+
+
 
 mutable struct RelaxationContext
     ismultiordered
     issparse
-    leveragesymmetries      # Check if equations have certain type of symmetry, to set afterwards some moments to 0 for example
-    hierarchykind           # :Complex or :Real
-    renamevars              # Replace variables with by shorter named ones
+    symmetries::Set{DataType} # ::Set{DataType}
+    hierarchykind             # :Complex or :Real
+    renamevars                # Replace variables with by shorter named ones
     di
     ki
 end

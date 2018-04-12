@@ -1,15 +1,23 @@
 """
-    mm = MomentMatrix(vars::Set{Variable}, d)
+    mm = MomentMatrix(vars::Set{Variable}, d, symmetries)
 
-    Build the moment matrix corresponding to the moment of degree up to `d` of the `vars` polynomial algebra.
+    Build the moment matrix corresponding to the moment of degree up to `d` of the `vars` polynomial algebra. 
+    Only monomials featuring all `symmetries` appear in the moment matrix.
 """
-function MomentMatrix(vars::Set{Variable}, d::Int)
+function MomentMatrix(relax_ctx, vars::Set{Variable}, d::Int, symmetries::Set{DataType})
     mm = OrderedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
     realexpos = compute_exponents(vars, d)
     conjexpos = compute_exponents(vars, d, compute_conj=true)
     for cexp in conjexpos
         for rexp in realexpos
-            mm[(cexp, rexp)] = cexp*rexp
+            expo = cexp*rexp
+            hassyms = true
+            for sym in symmetries
+                hassyms = hassyms && has_symmetry(relax_ctx, expo, sym)
+            end
+            if hassyms
+                mm[(cexp, rexp)] = cexp*rexp
+            end
         end
     end
     return MomentMatrix(mm, copy(vars), d)
@@ -72,11 +80,11 @@ end
 
     Compute the moment and localizing matrices associated with the problem constraints and clique decomposition.
 """
-function compute_momentmat(relax_ctx, problem, moment_param::Dict{String, Tuple{Set{String}, Int}}, max_cliques::Dict{String, Set{Variable}})
-    println("\n=== compute_momentmat(relax_ctx, problem, moment_param, max_cliques)")
-    println("Compute the moment and localizing matrices associated with the problem constraints and vlique decomposition.")
 
-    # NOTE: Things will have to be slightly extended to support the several SDP sparse moment constraint (cstr key will not suffise)
+function MomentRelaxationPb(relax_ctx, problem, moment_param::Dict{String, Tuple{Set{String}, Int}}, max_cliques::Dict{String, Set{Variable}})
+    println("\n=== MomentRelaxationPb(relax_ctx, problem, moment_param::Dict{String, Tuple{Set{String}, Int}}, max_cliques::Dict{String, Set{Variable}})")
+    println("Compute the moment and localizing matrices associated with the problem constraints and clique decomposition and return a MomentRelaxationPb object.")
+
     momentmatrices = OrderedDict{Tuple{String, String}, MomentMatrix}()
 
     for (cstrname, (clique_keys, order)) in moment_param
@@ -87,21 +95,7 @@ function compute_momentmat(relax_ctx, problem, moment_param::Dict{String, Tuple{
             union!(vars, max_cliques[clique_key])
             blocname = blocname*clique_key*"_"
         end
-        momentmatrices[(cstrname, blocname[1:end-1])] = MomentMatrix(vars, order) * problem.constraints[cstrname].p
-    end
-
-    println("xxxxx which indicators ? xxxxx")
-
-    return momentmatrices
-end
-
-
-function MomentRelaxationPb(relax_ctx, problem, moment_param::Dict{String, Tuple{Set{String}, Int}}, max_cliques::Dict{String, Set{Variable}})
-    momentmatrices = compute_momentmat(relax_ctx, problem, moment_param, max_cliques)
-
-    if relax_ctx.leveragesymmetries && has_phasesymmetry(relax_ctx, problem)
-        println("MomentRelaxationPb(): Problem is phase-shift invariant. Leveraging to reduce the number of moments.")
-        enforce_phaseinvariance!(relax_ctx, momentmatrices)
+        momentmatrices[(cstrname, blocname[1:end-1])] = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries) * problem.constraints[cstrname].p
     end
 
     return MomentRelaxationPb(problem.objective, momentmatrices)

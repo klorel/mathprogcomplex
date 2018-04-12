@@ -32,7 +32,9 @@ function main()
 
         # Transform the problem to canonical form and set relaxation parameters
         problem = normalize_problem(rawproblem)
-        relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 2)
+        relax_ctx = set_relaxation(problem; hierarchykind=:Complex,
+                                            d = 2,
+                                            symmetries = [PhaseInvariance])
         relax_ctx.di["moment_cstr"] = 2
     end
 

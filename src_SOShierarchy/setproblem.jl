@@ -1,16 +1,16 @@
 """
-    relax_ctx = set_relaxation(pb::Problem; ismultiordered=false, issparse=false, leveragesymmetries=true, hierarchykind=:Complex, renamevars=false, di=Dict{String, Int}(), d=-1)
+    relax_ctx = set_relaxation(pb::Problem; ismultiordered=false, issparse=false, symmetries=Set(), hierarchykind=:Complex, renamevars=false, di=Dict{String, Int}(), d=-1)
 
     Build a `relax_ctx` object containing relaxation choices and problem features : order by constraint, relaxation order by constraint...
 """
 function set_relaxation(pb::Problem; ismultiordered=false, 
                                      issparse=false, 
-                                     leveragesymmetries=true,
+                                     symmetries=[],
                                      hierarchykind=:Complex,
                                      renamevars=false,
                                      di=Dict{String, Int}(),
                                      d=-1)
-    println("\n=== set_relaxation(pb; ismultiordered=$ismultiordered, issparse=$issparse, leveragesymmetries=$leveragesymmetries, hierarchykind=$hierarchykind, renamevars=$renamevars, di=Dict of length $(length(di)), d=$d)")
+    println("\n=== set_relaxation(pb; ismultiordered=$ismultiordered, issparse=$issparse, symmetries=$symmetries, hierarchykind=$hierarchykind, renamevars=$renamevars, di=Dict of length $(length(di)), d=$d)")
 
     # Compute each constraint degree
     ki = Dict{String, Int}()
@@ -41,6 +41,18 @@ function set_relaxation(pb::Problem; ismultiordered=false,
         (hierarchykind==:Real) && !(vartype<:Real) && error("set_relaxation() : variable $varname,$vartype should be real for real hierarchy.")
     end
 
+    relax_ctx = RelaxationContext(ismultiordered, issparse, Set(), hierarchykind, renamevars, di, ki)
+
+    # Check whether the problem has the suggested symmetries
+    pbsymmetries = Set{DataType}()
+    isa(symmetries, Array) || error("set_relaxation(): symmetries should be an Array of types.")
+    for symtype in symmetries
+        if has_symmetry(relax_ctx, pb, symtype)
+            push!(pbsymmetries, symtype)
+        end
+    end
+    relax_ctx.symmetries = pbsymmetries
+
     # log intel
     nb_densecstrs = 0
     maxdeg_densecstr = Float32[]
@@ -54,7 +66,7 @@ function set_relaxation(pb::Problem; ismultiordered=false,
     @printf("-> Number of constraints s.t. di > ki:     %i / %i\n", nb_densecstrs, length(pb.constraints))
     @printf("-> Max total degree on such constraints:   %.1f / %.1f (mean/std)\n", mean(maxdeg_densecstr), std(maxdeg_densecstr))
     @printf("All variables appearing in such constraints will be linked in the sparsity pattern, which will largely densify it.\n")
-    return RelaxationContext(ismultiordered, issparse, leveragesymmetries, hierarchykind, renamevars, di, ki)
+    return relax_ctx
 end
 
 
@@ -111,7 +123,7 @@ function print(io::IO, relctx::RelaxationContext)
     print(io, "RelaxationContext:\n")
     print(io, "ismultiordered         : $(relctx.ismultiordered)\n")
     print(io, "issparse               : $(relctx.issparse)\n")
-    print(io, "leveragesymmetries     : $(relctx.leveragesymmetries)\n")
+    print(io, "symmetries             : $(relctx.symmetries)\n")
     print(io, "hierarchykind          : $(relctx.hierarchykind)\n")
     print(io, "renamevars             : $(relctx.renamevars)\n")
     print(io, "di                     : $(relctx.di)\n")

@@ -55,20 +55,6 @@ function is_homogeneous(expo::Exponent, kind::Symbol)
 end
 
 """
-    make_homogeneous!(p, kind)
-
-    Remove in-place the non homogeneous (in the `is_homogeneous` sense) monomials of `p`.
-"""
-function make_homogeneous!(p::Polynomial, kind::Symbol)
-    for expo in keys(p)
-        if !is_homogeneous(expo, kind)
-            delete!(p.poly, expo)
-        end
-    end
-    update_degree!(p)
-end
-
-"""
     explsum, conjsum = get_sumdegs(expo)
 
     Compute `|α|`, `|β|` the sum of the real variables exponents and conjugated variables exponents.
