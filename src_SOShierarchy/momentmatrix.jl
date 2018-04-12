@@ -1,10 +1,10 @@
 """
-    mm = MomentMatrix(vars::Set{Variable}, d, symmetries)
+    mm = MomentMatrix(vars::OrderedSet{Variable}, d, symmetries)
 
     Build the moment matrix corresponding to the moment of degree up to `d` of the `vars` polynomial algebra. 
     Only monomials featuring all `symmetries` appear in the moment matrix.
 """
-function MomentMatrix(relax_ctx, vars::Set{Variable}, d::Int, symmetries::Set{DataType})
+function MomentMatrix(relax_ctx, vars::OrderedSet{Variable}, d::Int, symmetries::OrderedSet{DataType})
     mm = SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
     realexpos = compute_exponents(vars, d)
     conjexpos = compute_exponents(vars, d, compute_conj=true)
@@ -71,7 +71,7 @@ function evaluate(mm::MomentMatrix, pt::Point)
             mm_eval[key] = res
         end
     end
-    return MomentMatrix(mm_eval, setdiff(mm.vars, Set(keys(pt))), mm.order)
+    return MomentMatrix(mm_eval, setdiff(mm.vars, OrderedSet(keys(pt))), mm.order)
 end
 
 
@@ -81,15 +81,15 @@ end
     Compute the moment and localizing matrices associated with the problem constraints and clique decomposition.
 """
 
-function MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{Set{String}, Int}}, max_cliques::SortedDict{String, Set{Variable}})
-    println("\n=== MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{Set{String}, Int}}, max_cliques::SortedDict{String, Set{Variable}})")
+function MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{OrderedSet{String}, Int}}, max_cliques::SortedDict{String, OrderedSet{Variable}})
+    println("\n=== MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{OrderedSet{String}, Int}}, max_cliques::SortedDict{String, OrderedSet{Variable}})")
     println("Compute the moment and localizing matrices associated with the problem constraints and clique decomposition and return a MomentRelaxationPb object.")
 
     momentmatrices = SortedDict{Tuple{String, String}, MomentMatrix}()
 
     for (cstrname, (clique_keys, order)) in moment_param
         # Collect variables involved in constraint
-        vars = Set{Variable}()
+        vars = OrderedSet{Variable}()
         blocname = ""
         for clique_key in clique_keys
             union!(vars, max_cliques[clique_key])

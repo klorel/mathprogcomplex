@@ -4,7 +4,7 @@
 Compute the set of all exponents in `variables` variables, of degree up to
 `dmax`.
 """
-function compute_exponents(variables::Set{Variable}, dmax::Int; compute_conj=false)
+function compute_exponents(variables::OrderedSet{Variable}, dmax::Int; compute_conj=false)
     cur_order = Set{Exponent}([Exponent()])
     result = copy(cur_order)
     prev_order = Set{Exponent}()

@@ -10,7 +10,7 @@ type PhaseInvariance <: AbstractSymetry end
 mutable struct RelaxationContext
     ismultiordered
     issparse
-    symmetries::Set{DataType} # ::Set{DataType}
+    symmetries::OrderedSet{DataType} # ::OrderedSet{DataType}
     hierarchykind             # :Complex or :Real
     renamevars                # Replace variables with by shorter named ones
     di
@@ -26,7 +26,7 @@ end
 """
 mutable struct MomentMatrix
     mm::SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}
-    vars::Set{Variable}
+    vars::OrderedSet{Variable}
     order::Int
 end
 
