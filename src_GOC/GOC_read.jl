@@ -32,8 +32,8 @@ function read_input(input_type::T, instance_path::String) where T<:Type{GOCInput
     node_vars = SortedDict{String, SortedDict{String, Variable}}()
     link_vars = SortedDict{Link, SortedDict{String, Variable}}()
     gs = GridStructure("BaseCase", node_linksin, node_linksout)
-    node_formulations = SortedDict{String, SortedDict{Tuple{Type, String}, Symbol}}()
-    link_formulations = SortedDict{Link, SortedDict{Tuple{Type, String}, Symbol}}()
+    node_formulations = SortedDict{String, SortedDict{String, Symbol}}()
+    link_formulations = SortedDict{Link, SortedDict{String, Symbol}}()
     mp = MathematicalProgramming(node_formulations, link_formulations, node_vars,link_vars)
     ##read scenarios
     OPFproblems = scenarios_data(ds, gs, mp, contingency_data,index)
@@ -145,7 +145,8 @@ function read_data_bus(power_data)
     if nb_lines!=length(bus_data["BaseKV"])
         error("sizes of all_busName and bus not equal")
     end
-    bus = SortedDict(bus_name(line) => SortedDict{String,Any}() for line in 1:nb_bus)
+    bus = SortedDict{String, SortedDict{String,Any}}()
+    # bus = SortedDict(bus_name(line) => SortedDict{String,Any}() for line in 1:nb_bus)
     for line in 1:nb_lines
         id_bus = Int(raw_bus_data[line,1])
         # index[id_bus] = line
@@ -153,6 +154,9 @@ function read_data_bus(power_data)
         baseKV = bus_data["BaseKV"][line]
         baseMVA = 1.0
         voltage_magnitude_min , voltage_magnitude_max  = get_bus_data(bus_data, ["VoltageMagnitudeMin", "VoltageMagnitudeMax"], line)
+        if !haskey(bus, busname)
+            bus[busname] = SortedDict{String,Any}()
+        end
         bus[busname][volt_name()] = GOCVolt(busname, baseKV, baseMVA, voltage_magnitude_min, voltage_magnitude_max)
     end
 
@@ -399,8 +403,14 @@ function scenarios_data(ds,gs,mp,contingency_data,index)
         #B, T or G (Branch, Transformer, Generator)
         gs_scenario = copy(gs)
         gs_scenario.scenario = scenario_name
-        ds_scenario_bus = SortedDict(busname => SortedDict{String,Any}() for busname in keys(ds.bus))
-        ds_scenario_link = SortedDict(linkname => SortedDict{String,Any}() for linkname in keys(ds.link))
+        ds_scenario_bus = SortedDict{String, SortedDict{String,Any}}()
+        for busname in keys(ds.bus)
+            ds_scenario_bus[busname] = SortedDict{String,Any}()
+        end
+        ds_scenario_link = SortedDict{Link, SortedDict{String,Any}}()
+        for linkname in keys(ds.link)
+            ds_scenario_link[linkname] = SortedDict{String,Any}()
+        end
         ds_scenario = DataSource(ds_scenario_bus,ds_scenario_link)
         if type_contingency == "G"
             println(type_contingency)

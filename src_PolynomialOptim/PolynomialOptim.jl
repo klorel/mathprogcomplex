@@ -41,12 +41,44 @@ mutable struct Variable <: AbstractPolynomial
     kind::Type
 
     function Variable(name, kind)
-        if kind ∉ SortedSet([Complex, Real, Bool]) || typeof(name) ∉ SortedSet([String, SubString{String}])
+        if kind ∉ Set([Complex, Real, Bool]) || typeof(name) ∉ Set([String, SubString{String}])
             error("Variable() : attempting to define a variable $name of type $kind, supported types are {Complex, Real, Bool}")
         end
         return new(String(name), kind)
     end
 end
+
+# function isless(t1::Type, t2::Type)
+#     if t1 == t2
+#         return false
+#     end
+#     if t1 == Real
+#         if t2 == Bool
+#             return false
+#         elseif t2 == Complex
+#             return true
+#         end
+#     elseif t1 == Bool
+#         if t2 == Real
+#             return true
+#         elseif t2 == Complex
+#             return true
+#         else
+#             println(t1, t2)
+#         end
+#     elseif t1 == Complex
+#         if t2 == Bool
+#             return false
+#         elseif t2 == Real
+#             return false
+#         else
+#             println(t1, t2)
+#         end
+#     else
+#         println(t1, t2)
+#     end
+# end
+
 
 
 """
