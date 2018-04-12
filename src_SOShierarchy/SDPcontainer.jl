@@ -1,5 +1,5 @@
 ## Add a dimension for the cliques in moment_matrices...
-function build_SDP(relaxctx::RelaxationContext, moment_matrices::Dict{Tuple{String, String}, MomentMatrix})
+function build_SDP(relaxctx::RelaxationContext, moment_matrices::SortedDict{Tuple{String, String}, MomentMatrix})
     sdpbody = SDPBody()
     sdprhs = SDPRhs()
 

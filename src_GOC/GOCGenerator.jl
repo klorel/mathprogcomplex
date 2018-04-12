@@ -9,7 +9,7 @@ Mutable structure descendant of AbstractNodeLabel
 - `power_min::Complex128`: Smin = Pmin + im Qmin
 - `power_max::Complex128`: Smax = Pmax + im Qmax
 - `participation_factor::Float64`: coefficient to define active power coupling constraints
-- `dict_obj_coeffs::Dict{Int64,Float64}`: dictionary for objective coefficients: degree => coeff
+- `dict_obj_coeffs::SortedDict{Int64,Float64}`: dictionary for objective coefficients: degree => coeff
 """
 mutable struct GOCGenerator <: AbstractNodeLabel
   busname::String
@@ -17,20 +17,20 @@ mutable struct GOCGenerator <: AbstractNodeLabel
   power_min::Complex128 #Smin = Pmin + i Qmin
   power_max::Complex128 #Smax = Pmax + i Qmax
   participation_factor::Float64
-  dict_obj_coeffs::Dict{Int64,Float64} # dict : degree => coeff
+  dict_obj_coeffs::SortedDict{Int64,Float64} # dict : degree => coeff
 end
 
 
 
 """
-    create_vars!(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::Dict{String, Variable}, scenario::String) where T <: GOCGenerator
+    create_vars!(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::SortedDict{String, Variable}, scenario::String) where T <: GOCGenerator
 
 Create variables for generator `elemid` at `bus`  in `bus_vars` if necessary.\n
 If `elem_formulation == :NewVar`, create Sgen variable for the generator\n
 If `elem_formulation == :GOCcoupling`, create Sgen variable for the generator, binary variables for comparison of voltages and create delta variable\n
 Return nothing
 """
-function create_vars!(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::Dict{String, Variable}, scenario::String) where T <: GOCGenerator
+function create_vars!(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::SortedDict{String, Variable}, scenario::String) where T <: GOCGenerator
     if elem_formulation == :NewVar
         bus_vars[elemid] = Variable(variable_name("Sgen", bus, elemid, scenario), Complex)
     elseif elem_formulation == :GOCcoupling
@@ -52,14 +52,14 @@ function create_vars!(element::T, bus::String, elemid::String, elem_formulation:
 end
 
 """
-    [cstrname, polynom, lb, ub] = Snodal(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::Dict{String, Variable}) where T <: GOCGenerator
+    [cstrname, polynom, lb, ub] = Snodal(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::SortedDict{String, Variable}) where T <: GOCGenerator
 
 Return the polynomial contribution in power of generator `elemid` at `bus`(name, value, lower bound, upper bound). Will be used to construct power balance constraints in polynomial problem.\n
 If `elem_formulation == :NbMinVar`, return generator bounds `["UNIT", Polynomial() ,Smin, Smax]`\n
 If `elem_formulation == :NewVar` or `:GOCCoupling`, return -Sgen `["UNIT", -Sgen, 0, 0]`\n
 Return no contribution `["", Polynomial(), 0, 0]` otherwise
 """
-function Snodal(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::Dict{String, Variable}) where T <: GOCGenerator
+function Snodal(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::SortedDict{String, Variable}) where T <: GOCGenerator
     cstrname = "UNIT"
     if elem_formulation == :NbMinVar
       lb = element.power_min
@@ -72,15 +72,15 @@ function Snodal(element::T, bus::String, elemid::String, elem_formulation::Symbo
 end
 
 """
-    constraint(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::Dict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T <: GOCGenerator
+    constraint(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::SortedDict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T <: GOCGenerator
 
 Return all the constraints defined by generator `elemid` at `bus`. Will be used to construct constraints in polynomial problem.\n
 If `elem_formulation == :NewVar`, return generator bounds : "Genbounds" => Smin <= Sgen <= Smax\n
 If `elem_formulation == :GOCCoupling`, return generator bounds defined by coupling constraints\n
 Return empty dictionary otherwise
 """
-function constraint(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::Dict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T <: GOCGenerator
-    cstrs = Dict{String, Constraint}()
+function constraint(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::SortedDict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T <: GOCGenerator
+    cstrs = SortedDict{String, Constraint}()
     if elem_formulation == :NewVar
       lb = element.power_min
       ub = element.power_max
@@ -137,11 +137,11 @@ end
 
 
 """
-    cost(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::Dict{String, Variable}, Snode::Polynomial, lb, ub) where T <: GOCGenerator
+    cost(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::SortedDict{String, Variable}, Snode::Polynomial, lb, ub) where T <: GOCGenerator
 
 Return the polynomial contribution in objective generator `elemid` at `bus`.
 """
-function cost(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::Dict{String, Variable}, Snode::Polynomial, lb, ub) where T <: GOCGenerator
+function cost(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::SortedDict{String, Variable}, Snode::Polynomial, lb, ub) where T <: GOCGenerator
   Sgen = gencost = Polynomial()
   if elem_formulation == :NbMinVar
     _, S, lb_gen, ub_gen = Snodal(element, bus, elemid, elem_formulation, bus_vars)

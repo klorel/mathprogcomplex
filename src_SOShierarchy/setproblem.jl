@@ -1,5 +1,5 @@
 """
-    relax_ctx = set_relaxation(pb::Problem; ismultiordered=false, issparse=false, leveragesymmetries=true, hierarchykind=:Complex, renamevars=false, di=Dict{String, Int}(), d=-1)
+    relax_ctx = set_relaxation(pb::Problem; ismultiordered=false, issparse=false, leveragesymmetries=true, hierarchykind=:Complex, renamevars=false, di=SortedDict{String, Int}(), d=-1)
 
     Build a `relax_ctx` object containing relaxation choices and problem features : order by constraint, relaxation order by constraint...
 """
@@ -8,18 +8,18 @@ function set_relaxation(pb::Problem; ismultiordered=false,
                                      leveragesymmetries=true,
                                      hierarchykind=:Complex,
                                      renamevars=false,
-                                     di=Dict{String, Int}(),
+                                     di=SortedDict{String, Int}(),
                                      d=-1)
-    println("\n=== set_relaxation(pb; ismultiordered=$ismultiordered, issparse=$issparse, leveragesymmetries=$leveragesymmetries, hierarchykind=$hierarchykind, renamevars=$renamevars, di=Dict of length $(length(di)), d=$d)")
+    println("\n=== set_relaxation(pb; ismultiordered=$ismultiordered, issparse=$issparse, leveragesymmetries=$leveragesymmetries, hierarchykind=$hierarchykind, renamevars=$renamevars, di=SortedDict of length $(length(di)), d=$d)")
 
     # Compute each constraint degree
-    ki = Dict{String, Int}()
+    ki = SortedDict{String, Int}()
     for (cstrname, cstr) in pb.constraints
         ki[cstrname] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
     end
 
     # Check that either d or di was provided as input
-    ((di == Dict{String, Int}()) ⊻ (d==-1)) || error("RelaxationContext(): Either di or d should be provided as input, not both.")
+    ((di == SortedDict{String, Int}()) ⊻ (d==-1)) || error("RelaxationContext(): Either di or d should be provided as input, not both.")
 
     if d!=-1
         for (cstr, ki_) in ki
@@ -27,7 +27,7 @@ function set_relaxation(pb::Problem; ismultiordered=false,
             di[cstr] = max(ki_, d)
         end
     else
-        (Set(keys(di)) == Set(keys(ki))) || error("RelaxationContext(): Provided di doesn't match the set of constraint names.")
+        (SortedSet(keys(di)) == SortedSet(keys(ki))) || error("RelaxationContext(): Provided di doesn't match the set of constraint names.")
         for (cstr, ki_) in ki
             di_ = di[cstr]
             (ki_ <= di_) || warn("RelaxationContext(): Provided di ($di_) is lower than constraint $cstr order ($ki_). \nUsing value $ki_.")
@@ -87,7 +87,7 @@ function normalize_problem(problem)
 
     add_constraint!(normpb, "moment_cstr", 0 << Exponent())
 
-    exposet = Set()
+    exposet = SortedSet()
     nb_expotot = 0
     degbycstr = Int64[]
     for (cstrname, cstr) in get_constraints(normpb)

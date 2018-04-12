@@ -18,6 +18,10 @@ struct Link
   dest::String
 end
 
+function isless(l1::Link, l2::Link)
+    return isless((l1.orig, l1.dest), (l2.orig, l2.dest))
+end
+
 """
     Abstract type AbstractNodeLabel
 
@@ -60,62 +64,62 @@ abstract type AbstractInput end
 
 
 """
-    DataSource(bus::Dict{String, Dict{String, Any}}, link::Dict{Link, Dict{String, Any}})
+    DataSource(bus::SortedDict{String, SortedDict{String, Any}}, link::SortedDict{Link, SortedDict{String, Any}})
 
 Store network data either in an attribute `bus` or in an attribute `link` depending on data type.
 
 ### Attributes
-- `bus` : Dict{String, Dict{String, Any}}
-- `link`: Dict{Link, Dict{String, Any}}
+- `bus` : SortedDict{String, SortedDict{String, Any}}
+- `link`: SortedDict{Link, SortedDict{String, Any}}
 
 ### Example
 ```
 Instance Matpower WB2 with two nodes
-julia > databus1 = Dict("Volt" => MatpowerVolt("BUS_1",1,0.95, 1.05), "Gen_1"=> MatpowerGenerator(-400 im, 600+400im, 3, [0 2 0], true))
-julia > databus2 = Dict("Volt" => MatpowerVolt("BUS_2",2,0.95, 1.05), "Load" => MatpowerLoad(350-350im))
-julia > busdata = Dict("BUS_1"=> databus1, "BUS_2" => databus2)
-julia > link1to2 = Dict("LinkMP_1" => MatpowerLine_π(100,0.04,0.2,0.0,0.0,0.0))
-julia > linkdata = Dict( Link("BUS_1","BUS_2") => link1to2)
+julia > databus1 = SortedDict("Volt" => MatpowerVolt("BUS_1",1,0.95, 1.05), "Gen_1"=> MatpowerGenerator(-400 im, 600+400im, 3, [0 2 0], true))
+julia > databus2 = SortedDict("Volt" => MatpowerVolt("BUS_2",2,0.95, 1.05), "Load" => MatpowerLoad(350-350im))
+julia > busdata = SortedDict("BUS_1"=> databus1, "BUS_2" => databus2)
+julia > link1to2 = SortedDict("LinkMP_1" => MatpowerLine_π(100,0.04,0.2,0.0,0.0,0.0))
+julia > linkdata = SortedDict( Link("BUS_1","BUS_2") => link1to2)
 julia > ds = DataSource(busdata,linkdata)
 ```
 """
 struct DataSource
   # baseMVA::Number
-  bus::Dict{String, Dict{String, Any}}
-  link::Dict{Link, Dict{String, Any}}
+  bus::SortedDict{String, SortedDict{String, Any}}
+  link::SortedDict{Link, SortedDict{String, Any}}
 end
 
 
 
 """
-    struct GridStructure(scenario::String, node_linksin::Dict{String, Set{Link}}, node_linksout::Dict{String, Set{Link}})
+    struct GridStructure(scenario::String, node_linksin::SortedDict{String, SortedSet{Link}}, node_linksout::SortedDict{String, SortedSet{Link}})
 
 Store information about network to construct power balances.
 
 ### Attributes
 - `scenario::String` : scenario to study
-- `generator_types::Set{Type}` : specify which types are generators
-- `node_linksin::Dict{String, Set{Link}}` : for each node, set of links having this node for destination
-- `node_linksout::Dict{String, Set{Link}}` : for each node, set of links having this node for origin
+- `generator_types::SortedSet{Type}` : specify which types are generators
+- `node_linksin::SortedDict{String, SortedSet{Link}}` : for each node, set of links having this node for destination
+- `node_linksout::SortedDict{String, SortedSet{Link}}` : for each node, set of links having this node for origin
 
 ### Example
 ```
 Instance Matpower WB2 with two nodes
 julia > scenario = "BaseCase"
-julia > node_linksin = Dict( "BUS_2" => Set{Link}([Link("BUS_1","BUS_2")]) )
-julia > node_linksout = Dict( "BUS_1" => Set{Link}([Link("BUS_1, "BUS_2")]) )
+julia > node_linksin = SortedDict( "BUS_2" => SortedSet{Link}([Link("BUS_1","BUS_2")]) )
+julia > node_linksout = SortedDict( "BUS_1" => SortedSet{Link}([Link("BUS_1, "BUS_2")]) )
 julia > gs = GridStructure(scenario,generator_types, node_linksin, node_linksout)
 ```
 """
 mutable struct GridStructure
   scenario::String
-  node_linksin::Dict{String, Set{Link}}
-  node_linksout::Dict{String, Set{Link}}
+  node_linksin::SortedDict{String, SortedSet{Link}}
+  node_linksout::SortedDict{String, SortedSet{Link}}
 end
 
 
 """
-    struct MathematicalProgramming(node_formulations::Dict{String, Dict{String, Symbol}}, link_formulations::Dict{String, Dict{String, Symbol}}, node_vars::Dict{String, Dict{String, Variable}}, link_vars::Dict{Link, Dict{String, Variable}})
+    struct MathematicalProgramming(node_formulations::SortedDict{String, SortedDict{String, Symbol}}, link_formulations::SortedDict{String, SortedDict{String, Symbol}}, node_vars::SortedDict{String, SortedDict{String, Variable}}, link_vars::SortedDict{Link, SortedDict{String, Variable}})
 
 Store information about mathematical formulation.
 A node element or a link element can be formulated with a minimal number of variables or with variables representing all the quantities linked to the element.
@@ -126,17 +130,17 @@ Store created variables in `node_vars` or `link_vars`.
 ```
 Instance Matpower WB2 with two nodes
 julia > node_formulations =
-julia > link_formulations = Dict( Link("BUS_1","BUS_2") => Dict("LinkMP_1" => :NbMinVar))
+julia > link_formulations = SortedDict( Link("BUS_1","BUS_2") => SortedDict("LinkMP_1" => :NbMinVar))
 julia > node_vars =
 julia > link_vars =
 
 ```
 """
 mutable struct MathematicalProgramming
-  node_formulations::Dict{String, Dict{String, Symbol}} # :NbMinVar, :NewVar, :None
-  link_formulations::Dict{Link, Dict{String, Symbol}}
-  node_vars::Dict{String, Dict{String, Variable}}
-  link_vars::Dict{Link, Dict{String, Variable}}
+  node_formulations::SortedDict{String, SortedDict{String, Symbol}} # :NbMinVar, :NewVar, :None
+  link_formulations::SortedDict{Link, SortedDict{String, Symbol}}
+  node_vars::SortedDict{String, SortedDict{String, Variable}}
+  link_vars::SortedDict{Link, SortedDict{String, Variable}}
 end
 
 
@@ -164,7 +168,7 @@ end
 
 ```
 """
-const OPFProblems = Dict{String, Scenario}
+const OPFProblems = SortedDict{String, Scenario}
 
 # files to include for each entry type
 include(joinpath("..","src_GOC","GOC_files.jl"))

@@ -11,7 +11,7 @@ z = Variable("z", Real)
 b = Variable("b", Bool)
 
 ## Polynomial algebra
-pt = Point(Dict(x=>2, y=>1+im, z=>0+im, b=>2.1))
+pt = Point(SortedDict(x=>2, y=>1+im, z=>0+im, b=>2.1))
 print(pt)
 
 p1 = x^2 + 3*y + conj(x) + conj(z) + b
@@ -42,12 +42,12 @@ println(p2)
 
 
 ## Point algebra
-pt = Point(Dict(x=>2, y=>1+im, z=>0+im, b=>2.1))
-pt1 = Point(Dict(z=>0+im))
-pt2 = Point(Dict(x=>3, y=>-1+2im, b=>-1))
-@assert merge(pt, pt1, pt2) == Point(Dict(x=>5, y=>3im, z=>0+im, b=>1))
+pt = Point(SortedDict(x=>2, y=>1+im, z=>0+im, b=>2.1))
+pt1 = Point(SortedDict(z=>0+im))
+pt2 = Point(SortedDict(x=>3, y=>-1+2im, b=>-1))
+@assert merge(pt, pt1, pt2) == Point(SortedDict(x=>5, y=>3im, z=>0+im, b=>1))
 
-@assert pt + pt1 - 3*pt2 == Point(Dict(x=>-7, y=>4-5im, z=>0+im, b=>1))
+@assert pt + pt1 - 3*pt2 == Point(SortedDict(x=>-7, y=>4-5im, z=>0+im, b=>1))
 
 @assert norm(pt2, Inf) == 3
 @assert norm(pt2, 1) == 6
@@ -68,7 +68,7 @@ println("p1: $p1")
 real_p, imag_p = cplx2real(p1)
 
 
-expo = Exponent(Dict(x=>Degree(1,0), y=>Degree(1,0), z=>Degree(2,0)))
+expo = Exponent(SortedDict(x=>Degree(1,0), y=>Degree(1,0), z=>Degree(2,0)))
 println(expo)
 real_p, imag_p = cplx2real(expo)
 println(expo)

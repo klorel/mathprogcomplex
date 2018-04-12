@@ -39,7 +39,7 @@ function main()
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
     max_cliques = get_maxcliques(relax_ctx, problem)
-    # max_cliques["onemore"] = Set([first(max_cliques["oneclique"])])
+    # max_cliques["onemore"] = SortedSet([first(max_cliques["oneclique"])])
 
     println("\n--------------------------------------------------------")
     println("max cliques = $max_cliques")

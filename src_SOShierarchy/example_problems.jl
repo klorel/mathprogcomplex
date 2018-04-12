@@ -77,7 +77,7 @@ function buildPOPR_2v2c()
     add_constraint!(problemraw, "ineq2", -1 << x2 << 1)
 
     problem = normalize_problem(problemraw)
-    di = Dict([cstr=>2 for cstr in keys(problem.constraints)])
+    di = SortedDict([cstr=>2 for cstr in keys(problem.constraints)])
     relax_ctx = set_relaxation(problem, di=di, hierarchykind=:Real)
     return problem, relax_ctx
 end

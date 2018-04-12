@@ -12,11 +12,11 @@ function read_input(intput_type::T, instance_path::String) where T<:Type{Matpowe
   data = load_matpower(instance_path)
 
   # DataStructure and Gridstructure data:
-  bus = Dict{String, Dict{String, Any}}()
-  link = Dict{Link, Dict{String, MatpowerLine_π}}()
+  bus = SortedDict{String, SortedDict{String, Any}}()
+  link = SortedDict{Link, SortedDict{String, MatpowerLine_π}}()
 
-  bus_id_line=Dict{Int, Int}()
-  bus_id_name=Dict{Int, String}()
+  bus_id_line=SortedDict{Int, Int}()
+  bus_id_name=SortedDict{Int, String}()
 
   checkfor(data, 2, "mpc.baseMVA")
   baseMVA = data[2,3]
@@ -29,7 +29,7 @@ function read_input(intput_type::T, instance_path::String) where T<:Type{Matpowe
     id = i-i_debut+1
     busname = bus_name(id)
     ## Adding MatpowerVolt structure (for each bus)
-    bus[busname] = Dict(volt_name() => MatpowerVolt(busname, id, data[i,13], data[i,12]))
+    bus[busname] = SortedDict(volt_name() => MatpowerVolt(busname, id, data[i,13], data[i,12]))
 
     ## Matpower Load
     load = data[i,3] + im*data[i,4]
@@ -48,8 +48,8 @@ function read_input(intput_type::T, instance_path::String) where T<:Type{Matpowe
   end
 
   ## Adding bus generator information
-  gen2bus = Dict{Int, Int}()
-  line2busgen = Dict{Int, Tuple{Int, Int}}()
+  gen2bus = SortedDict{Int, Int}()
+  line2busgen = SortedDict{Int, Tuple{Int, Int}}()
 
   i_debut, i_fin = find_numarray(i_fin+1, data)
   checkfor(data, i_debut-1, "mpc.gen")
@@ -86,7 +86,7 @@ function read_input(intput_type::T, instance_path::String) where T<:Type{Matpowe
       rs, xs, bc = data[i,3:5]
       τ, θ = data[i, 9:10]
       if !haskey(link, linkname)
-        link[linkname] = Dict{String, MatpowerLine_π}()
+        link[linkname] = SortedDict{String, MatpowerLine_π}()
       end
 
       nb_elem = length(link[linkname])
@@ -101,7 +101,7 @@ function read_input(intput_type::T, instance_path::String) where T<:Type{Matpowe
     i_debut, i_fin = find_numarray(i_fin+1, data)
   end
 
-  bus_line_id = Dict([val=>key for (key,val) in bus_id_line])
+  bus_line_id = SortedDict([val=>key for (key,val) in bus_id_line])
 
   ## Adding generator cost information
   checkfor(data, i_debut-1, "mpc.gencost")
@@ -142,13 +142,13 @@ function read_input(intput_type::T, instance_path::String) where T<:Type{Matpowe
   ds = DataSource(bus, link)
 
   ## Building GridStructure
-  node_linksin = node_linksout = Dict{String, Set{Link}}()
-  node_vars = Dict{String, Dict{String, Variable}}()
-  link_vars = Dict{Link, Dict{String, Variable}}()
+  node_linksin = node_linksout = SortedDict{String, SortedSet{Link}}()
+  node_vars = SortedDict{String, SortedDict{String, Variable}}()
+  link_vars = SortedDict{Link, SortedDict{String, Variable}}()
   gs = GridStructure(basecase_scenario_name(), node_linksin, node_linksout, node_vars, link_vars)
 
-  node_formulations = Dict{String, Dict{Tuple{Type, String}, Symbol}}()
-  link_formulations = Dict{Link, Dict{Tuple{Type, String}, Symbol}}()
+  node_formulations = SortedDict{String, SortedDict{Tuple{Type, String}, Symbol}}()
+  link_formulations = SortedDict{Link, SortedDict{Tuple{Type, String}, Symbol}}()
   mc = ModellingChoice(node_formulations, link_formulations)
   return OPFProblems(basecase_scenario_name()=>Scenario(ds, gs, mc))
 end

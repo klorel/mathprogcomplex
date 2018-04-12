@@ -41,7 +41,7 @@ mutable struct Variable <: AbstractPolynomial
     kind::Type
 
     function Variable(name, kind)
-        if kind ∉ Set([Complex, Real, Bool]) || typeof(name) ∉ Set([String, SubString{String}])
+        if kind ∉ SortedSet([Complex, Real, Bool]) || typeof(name) ∉ SortedSet([String, SubString{String}])
             error("Variable() : attempting to define a variable $name of type $kind, supported types are {Complex, Real, Bool}")
         end
         return new(String(name), kind)
@@ -50,7 +50,7 @@ end
 
 
 """
-    Exponent(expo::OrderedDict{Variable, Degree})
+    Exponent(expo::SortedDict{Variable, Degree})
 
 Define a mathematical exponent, that is a product of `Variable` and conjugated
 `Variable`.
@@ -65,19 +65,19 @@ degrees.
 ### Exemple
 ```julia
 julia > a, b = Variable("a", Complex), Variable("b", Complex)
-julia > Exponent(OrderedDict(a=>Degree(1,0), b=>Degree(1,1))) == a*b*conj(b)
+julia > Exponent(SortedDict(a=>Degree(1,0), b=>Degree(1,1))) == a*b*conj(b)
 ```
 """
 struct Exponent <: AbstractPolynomial
-    expo::OrderedDict{Variable, Degree}
+    expo::SortedDict{Variable, Degree}
     degree::Degree
 
-    function Exponent(expo::OrderedDict{Variable, Degree})
+    function Exponent(expo::SortedDict{Variable, Degree})
         degexpl, degconj = 0,0
         for (var, degree) in expo
             ((degree.explvar < 0) || (degree.conjvar < 0)) && error("Exponent(): Expected non negative exponent for variable $var (got $degree)")
             (isreal(var) && degree.conjvar != 0) && error("Exponent(): Expected nul conj exponent for real variable $var (got $degree)")
-            (isbool(var) && degree.explvar ∉ Set([0,1])) && error("Exponent(): Expected boolean exponent for bool $var (got $degree)")
+            (isbool(var) && degree.explvar ∉ SortedSet([0,1])) && error("Exponent(): Expected boolean exponent for bool $var (got $degree)")
             if degree != Degree(0,0)
                 degexpl += degree.explvar
                 degconj += degree.conjvar
@@ -91,7 +91,7 @@ end
 
 
 """
-    Polynomial(poly::OrderedDict{Exponent, Number}, degree::Degree)
+    Polynomial(poly::SortedDict{Exponent, Number}, degree::Degree)
 
 Define a mathematical polynomial, that is a linear combinaison of product of
 `Variable` and conjugated `Variable`.
@@ -106,15 +106,15 @@ degrees.
 ```julia
 julia > a, b = Variable("a", Complex), Variable("b", Complex)
 julia > p = a*b*conj(b) + (2+3im) * b^3
-julia > p.poly = OrderedDict(a*b*conj(b)=>1, b^3=>2+3im)
+julia > p.poly = SortedDict(a*b*conj(b)=>1, b^3=>2+3im)
 julia > p.degree = (3,1)
 ```
 """
 struct Polynomial <: AbstractPolynomial
-    poly::OrderedDict{Exponent, Number}
+    poly::SortedDict{Exponent, Number}
     degree::Degree
 
-    function Polynomial(poly::OrderedDict{Exponent, Number})
+    function Polynomial(poly::SortedDict{Exponent, Number})
         degexpl, degconj = 0, 0
         for (expo, λ) in poly
             if λ!=0
@@ -129,7 +129,7 @@ struct Polynomial <: AbstractPolynomial
 end
 
 """
-    Point(coords::OrderedDict{Variable, Number})
+    Point(coords::SortedDict{Variable, Number})
 
 Define a mathematical point, that is a pairing of variables and numbers.
 
@@ -139,14 +139,14 @@ Define a mathematical point, that is a pairing of variables and numbers.
 ### Exemple
 ```julia
 julia > a, b = Variable("a", Complex), Variable("b", Complex)
-julia > pt = Point(OrderedDict(a=>π, b=>e+7im))
+julia > pt = Point(SortedDict(a=>π, b=>e+7im))
 ```
 """
 struct Point
-    coords::OrderedDict{Variable, Number}
+    coords::SortedDict{Variable, Number}
 
-    function Point(dict::OrderedDict)
-        dict_pt = OrderedDict{Variable, Number}()
+    function Point(dict::SortedDict)
+        dict_pt = SortedDict{Variable, Number}()
         for (var, val) in dict
             if !isa(var, Variable) || !isa(val, Number)
                 error("Point(): Expected pair of (Variable, Number), got ($var, $val) of type ($typeof(var), $typeof(val)) instead.")
@@ -211,9 +211,9 @@ used variables `variables`.
 
 ### Attributes
 - `objective::Polynomial` : polynomial criterion.
-- `constraints::OrderedDict{String, Constraint}` : dictionnary of constraint name to
+- `constraints::SortedDict{String, Constraint}` : dictionnary of constraint name to
 constraint.
-- `variables::OrderedDict{String, Type}` : dictionnary of variable name to type.
+- `variables::SortedDict{String, Type}` : dictionnary of variable name to type.
 
 ### Exemple
 ```julia
@@ -227,8 +227,8 @@ julia > add_constraint!(pb, 0-1im << z << 1+0im)
 """
 mutable struct Problem
   objective::Polynomial
-  constraints::OrderedDict{String, Constraint}
-  variables::OrderedDict{String, Type}
+  constraints::SortedDict{String, Constraint}
+  variables::SortedDict{String, Type}
 end
 
 

@@ -47,7 +47,7 @@ function print_quad_expo(io, expo::Exponent, cat::String, coeff, maxvarlen, maxc
   end
 end
 
-function print_constraint(io::IO, cstrname::String, cstr::Constraint, maxvarlen::Int, maxcstrlen::Int, expos::OrderedDict{Exponent, String})
+function print_constraint(io::IO, cstrname::String, cstr::Constraint, maxvarlen::Int, maxcstrlen::Int, expos::SortedDict{Exponent, String})
   print_poly!(io, cstr.p, cstrname, maxvarlen, maxcstrlen, expos)
 
   if ismatch(r"_Re", cstrname)
@@ -124,7 +124,7 @@ function print_variables(io::IO, variables, pt::Point, maxvarlen, maxcstrlen)
 end
 
 """
-  print_poly!(io::IO, p::AbstractPolynomial, cat::String, maxvarlen, maxcstrlen, expos::OrderedDict{Exponent, String})
+  print_poly!(io::IO, p::AbstractPolynomial, cat::String, maxvarlen, maxcstrlen, expos::SortedDict{Exponent, String})
 
 Print the `p` polynomial corresponding to the constraint or objective
 `cat` (category) to `io`. Each of the polynomial's exponent is printed in a line,
@@ -132,7 +132,7 @@ either explicitly if its degree is 2 or less, or implicitly by defining an
 exponent name in the `expos` dict if it required, and print the exponent name
 with the coefficient (which essentially is a linear term).
 """
-function print_poly!(io::IO, p::AbstractPolynomial, cat::String, maxvarlen, maxcstrlen, expos::OrderedDict{Exponent, String})
+function print_poly!(io::IO, p::AbstractPolynomial, cat::String, maxvarlen, maxcstrlen, expos::SortedDict{Exponent, String})
   constval = 0
 
   for expo in sort(collect(keys(p)))
@@ -188,8 +188,8 @@ function export_to_dat(pb_optim::Problem, outpath::String, pt::Point = Point())
   end
 
   # Container for monomials definition, to be written lastly
-  expos = OrderedDict{Exponent, String}()
-  precond_cstrs = Set{String}()
+  expos = SortedDict{Exponent, String}()
+  precond_cstrs = SortedSet{String}()
 
   isdir(outpath) || mkpath(outpath)
   filename = joinpath(outpath, "real_minlp_instance.dat")
@@ -259,13 +259,13 @@ function export_matpower_to_dat(QCQP::Problem, filename::String, pt::Point = Poi
   ## Sort constraints by type (voltm, unit and rest), and build dat constraint name
   cstrs_keys = sort(collect(keys(QCQP.constraints)))
 
-  cstr_keys = Set(keys(QCQP.constraints))
+  cstr_keys = SortedSet(keys(QCQP.constraints))
   voltm_keys = filter(x->ismatch(r"VOLTM", x), cstr_keys)
   unit_keys = filter(x->ismatch(r"UNIT", x), cstr_keys)
   load_keys = setdiff(cstr_keys, union(unit_keys, voltm_keys))
-  id_to_loadkey = OrderedDict(nb_from_str(str)=> (str, "LOAD_$(string(nb_from_str(str)))") for str in load_keys)
-  id_to_voltmkey = OrderedDict(nb_from_str(str)=> (str, String(split(str, "_")[2])) for str in voltm_keys)
-  id_to_unitkey = OrderedDict(nb_from_str(str)=> (str, "UNIT_$(string(nb_from_str(str)))") for str in unit_keys)
+  id_to_loadkey = SortedDict(nb_from_str(str)=> (str, "LOAD_$(string(nb_from_str(str)))") for str in load_keys)
+  id_to_voltmkey = SortedDict(nb_from_str(str)=> (str, String(split(str, "_")[2])) for str in voltm_keys)
+  id_to_unitkey = SortedDict(nb_from_str(str)=> (str, "UNIT_$(string(nb_from_str(str)))") for str in unit_keys)
 
   ## Get max length dat constraint name
   maxcstrlen = -1

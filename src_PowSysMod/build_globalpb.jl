@@ -17,8 +17,8 @@ julia > pb = build_globalpb!(OPFpbs)
 """
 
 function build_globalpb!(OPFpbs)
-     constraints = Dict{String,Dict{String,Constraint}}()
-     variables = Dict{String,Dict{String, Type}}()
+     constraints = SortedDict{String,SortedDict{String,Constraint}}()
+     variables = SortedDict{String,SortedDict{String, Type}}()
      pb_global = Problem()
      pb_global = build_Problem!(OPFpbs, basecase_scenario_name())
      for scenario in setdiff(collect(keys(OPFpbs)), [basecase_scenario_name()])
