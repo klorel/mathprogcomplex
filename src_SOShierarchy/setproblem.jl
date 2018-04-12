@@ -1,5 +1,5 @@
 """
-    relax_ctx = set_relaxation(pb::Problem; ismultiordered=false, issparse=false, symmetries=Set(), hierarchykind=:Complex, renamevars=false, di=Dict{String, Int}(), d=-1)
+    relax_ctx = set_relaxation(pb::Problem; ismultiordered=false, issparse=false, symmetries=Set(), hierarchykind=:Complex, renamevars=false, di=SortedDict{String, Int}(), d=-1)
 
     Build a `relax_ctx` object containing relaxation choices and problem features : order by constraint, relaxation order by constraint...
 """
@@ -8,12 +8,12 @@ function set_relaxation(pb::Problem; ismultiordered=false,
                                      symmetries=[],
                                      hierarchykind=:Complex,
                                      renamevars=false,
-                                     di=Dict{String, Int}(),
+                                     di=SortedDict{String, Int}(),
                                      d=-1)
-    println("\n=== set_relaxation(pb; ismultiordered=$ismultiordered, issparse=$issparse, symmetries=$symmetries, hierarchykind=$hierarchykind, renamevars=$renamevars, di=Dict of length $(length(di)), d=$d)")
+    println("\n=== set_relaxation(pb; ismultiordered=$ismultiordered, issparse=$issparse, symmetries=$symmetries, hierarchykind=$hierarchykind, renamevars=$renamevars, di=SortedDict of length $(length(di)), d=$d)")
 
     # Compute each constraint degree
-    ki = Dict{String, Int}()
+    ki = SortedDict{String, Int}()
     for (cstrname, cstr) in pb.constraints
         if isdoublesided(cstr)
             ki[get_cstrlowername(cstrname)] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
@@ -28,8 +28,8 @@ function set_relaxation(pb::Problem; ismultiordered=false,
     end
 
     # Relaxation order management
-    di_relax = Dict{String, Int}()
-    !((di == Dict{String, Int}()) && (d==-1)) || error("RelaxationContext(): Either di or d should be provided as input.")
+    di_relax = SortedDict{String, Int}()
+    !((di == SortedDict{String, Int}()) && (d==-1)) || error("RelaxationContext(): Either di or d should be provided as input.")
 
     for (cstrname, cstr) in pb.constraints
         cur_order = haskey(di, cstrname) ? di[cstrname] : d

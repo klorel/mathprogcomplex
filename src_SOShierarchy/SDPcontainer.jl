@@ -21,7 +21,7 @@ function build_SDP(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxationPb)
                 # Add the current coeff to the SDP problem
                 key = (cstrname, blocname, α, β)
                 if !haskey(sdpbody, key)
-                    sdpbody[key] = OrderedDict{Tuple{Exponent, Exponent}, Number}()
+                    sdpbody[key] = SortedDict{Tuple{Exponent, Exponent}, Number}()
                 end
                 Bi = sdpbody[key]
 
@@ -119,10 +119,10 @@ function print(io::IO, sdprhs::SDPRhs)
     end
 end
 
-function get_maxlenkey(dict::Dict{String, U}) where U
+function get_maxlenkey(dict::SortedDict{String, U}) where U
     return maximum(map(x->length(x), keys(dict)))
 end
 
-function get_maxlenkey(dict::Dict{Tuple{Exponent,Exponent}, U}) where U
+function get_maxlenkey(dict::SortedDict{Tuple{Exponent,Exponent}, U}) where U
     return maximum(map(x->((α, β)=x; length("($α, $β)")), keys(dict)))
 end

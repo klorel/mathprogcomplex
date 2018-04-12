@@ -25,7 +25,7 @@ end
     **Note** that the matrix is indexed by a tuple of exponents, *the first of which contains only conjugated variables*, et second only real ones.
 """
 mutable struct MomentMatrix
-    mm::OrderedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}
+    mm::SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}
     vars::Set{Variable}
     order::Int
 end
@@ -37,7 +37,7 @@ end
 """
 struct MomentRelaxationPb
     objective::AbstractPolynomial
-    constraints::OrderedDict{Tuple{String, String}, MomentMatrix}
+    constraints::SortedDict{Tuple{String, String}, MomentMatrix}
 end
 
 # """
@@ -46,21 +46,21 @@ end
 #     Store the matrix coefficients of the moment variable decomposition of the moment matrix.
 
 #     Arguments:
-#     - basis::Dict{Exponent, AbstractMatrix} : matrice correspondant au moment clé,
+#     - basis::SortedDict{Exponent, AbstractMatrix} : matrice correspondant au moment clé,
 #     - expo2int : carte donnant les coordonnées de l'exposant clé dans la matrice des moments initiale,
 #     - int2expo : carte donnant l'xposant correspondant aux coordonnées clé dans la matrice des moments initiale,
 #     - msize: taille de la matrice des moments initiale (ordre d-k).
 # """
 # mutable struct MomentMatrixBasis
-#     basis::Dict{Tuple{Exponent, Exponent}, AbstractMatrix} # Les exposants sont de degré inférieur à d
-#     expo2int::Dict{Exponent, Int}   # Carte de la matrice des coefficients d-ki
-#     int2expo::Dict{Int, Exponent}
+#     basis::SortedDict{Tuple{Exponent, Exponent}, AbstractMatrix} # Les exposants sont de degré inférieur à d
+#     expo2int::SortedDict{Exponent, Int}   # Carte de la matrice des coefficients d-ki
+#     int2expo::SortedDict{Int, Exponent}
 #     msize::Int                      # size of the matrix
 # end
 
 
-const SDPBody = OrderedDict{Tuple{String, String, Exponent, Exponent}, OrderedDict{Tuple{Exponent, Exponent}, Number}}
-const SDPRhs = OrderedDict{Tuple{Exponent, Exponent}, Number}
+const SDPBody = SortedDict{Tuple{String, String, Exponent, Exponent}, SortedDict{Tuple{Exponent, Exponent}, Number}}
+const SDPRhs = SortedDict{Tuple{Exponent, Exponent}, Number}
 
 """
     SparsityPattern

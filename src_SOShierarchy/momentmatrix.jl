@@ -5,7 +5,7 @@
     Only monomials featuring all `symmetries` appear in the moment matrix.
 """
 function MomentMatrix(relax_ctx, vars::Set{Variable}, d::Int, symmetries::Set{DataType})
-    mm = OrderedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
+    mm = SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
     realexpos = compute_exponents(vars, d)
     conjexpos = compute_exponents(vars, d, compute_conj=true)
     for cexp in conjexpos
@@ -62,7 +62,7 @@ end
 *(mm::MomentMatrix, λ::Number) = λ*mm
 
 function evaluate(mm::MomentMatrix, pt::Point)
-    mm_eval = Dict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
+    mm_eval = SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
     for (key, p) in mm.mm
         res = evaluate(p, pt)
         if res == Polynomial()
@@ -81,11 +81,11 @@ end
     Compute the moment and localizing matrices associated with the problem constraints and clique decomposition.
 """
 
-function MomentRelaxationPb(relax_ctx, problem, moment_param::Dict{String, Tuple{Set{String}, Int}}, max_cliques::Dict{String, Set{Variable}})
-    println("\n=== MomentRelaxationPb(relax_ctx, problem, moment_param::Dict{String, Tuple{Set{String}, Int}}, max_cliques::Dict{String, Set{Variable}})")
+function MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{Set{String}, Int}}, max_cliques::SortedDict{String, Set{Variable}})
+    println("\n=== MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{Set{String}, Int}}, max_cliques::SortedDict{String, Set{Variable}})")
     println("Compute the moment and localizing matrices associated with the problem constraints and clique decomposition and return a MomentRelaxationPb object.")
 
-    momentmatrices = OrderedDict{Tuple{String, String}, MomentMatrix}()
+    momentmatrices = SortedDict{Tuple{String, String}, MomentMatrix}()
 
     for (cstrname, (clique_keys, order)) in moment_param
         # Collect variables involved in constraint

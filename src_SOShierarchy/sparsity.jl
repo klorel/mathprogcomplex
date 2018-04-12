@@ -3,12 +3,12 @@
 
     Build the sparsitty pattern and variables decomposition for laying out the moment or SOS hierarchy
 """
-function build_sparsity(relax_ctx, problem, max_cliques::Dict{String, Set{Variable}})
+function build_sparsity(relax_ctx, problem, max_cliques::SortedDict{String, Set{Variable}})
 
     if relax_ctx.issparse == false
         (length(max_cliques) == 1) || error("build_sparsity(): Relaxation is not sparse, one clique is expected (not $(length(max_cliques)))")
         
-        moments_param = Dict{String, Tuple{Set{String}, Int}}()
+        moments_param = SortedDict{String, Tuple{Set{String}, Int}}()
         for (cstr, di) in relax_ctx.di
             ki = relax_ctx.ki[cstr]
             moments_param[cstr] = (Set(["clique1"]), di-ki)
@@ -27,7 +27,7 @@ end
 function get_maxcliques(relax_ctx, problem)
     if !relax_ctx.issparse
         vars = Set{Variable}([Variable(name, kind) for (name, kind) in problem.variables])
-        return Dict{String, Set{Variable}}("clique1"=>vars)
+        return SortedDict{String, Set{Variable}}("clique1"=>vars)
     else
         error("Sparse relaxation is not supported yet")
     end
@@ -82,29 +82,29 @@ end
 """
     varsbycstr = compute_varsbycstr(problem)
 
-    Compute a `Dict{String, Set{Variable}}` providing the set of variables involved in each constraint.
+    Compute a `SortedDict{String, Set{Variable}}` providing the set of variables involved in each constraint.
 """
 function compute_varsbycstr(problem::Problem)
     println("\n=== compute_varsbycstr(problem::Problem)")
-    println("Compute a `Dict{String, Set{Variable}}` providing the set of variables involved in each constraint.")
+    println("Compute a `SortedDict{String, Set{Variable}}` providing the set of variables involved in each constraint.")
     println("-> Nb poly constraints:                xx")
     println("-> Nb variables by poly constraint:    xx / xx (mean/std)")
-    varsbycstr = Dict{String, Set{Variable}}()
-    return varsbycstr::Dict{String, Set{Variable}}
+    varsbycstr = SortedDict{String, Set{Variable}}()
+    return varsbycstr::SortedDict{String, Set{Variable}}
 end
 
 """
     cliquevarsbycstr = compute_varsbycstr(sparsity_pattern, max_cliques, varsbycstr)
 
-    Compute a `Dict{String, Set{Variable}}` providing the set of variables involved in the SDP localizing matrix corresponding to each constraint.
+    Compute a `SortedDict{String, Set{Variable}}` providing the set of variables involved in the SDP localizing matrix corresponding to each constraint.
 """
 function compute_varsbycstr(sparsity_pattern, max_cliques, varsbycstr)
     println("\n=== compute_varsbycstr(sparsity_pattern, max_cliques, varsbycstr)")
-    println("Compute a `Dict{String, Set{Variable}}` providing the set of variables involved in the SDP localizing matrix corresponding to each constraint.")
+    println("Compute a `SortedDict{String, Set{Variable}}` providing the set of variables involved in the SDP localizing matrix corresponding to each constraint.")
     println("-> Nb SDP constraints:                 xx")
     println("-> Nb variables by SDP constraint:     xx / xx (mean/std)")
-    cliquevarsbycstr = Dict{String, Set{Variable}}()
-    return cliquevarsbycstr::Dict{String, Set{Variable}}
+    cliquevarsbycstr = SortedDict{String, Set{Variable}}()
+    return cliquevarsbycstr::SortedDict{String, Set{Variable}}
 end
 
 """
@@ -117,6 +117,6 @@ function compute_cliqueorders(sparsity_pattern, varsbycstr, max_cliques, relax_c
     println("Compute a `Array{Int}` providing the relaxation order corresponding to each clique.")
     println("-> Nb cliques:                         xx")
     println("-> Relaxation order by clique:         xx / xx (mean/std)")
-    orderbyclique = Dict{Int, Int}()
-    return orderbyclique::Dict{Int, Int}
+    orderbyclique = SortedDict{Int, Int}()
+    return orderbyclique::SortedDict{Int, Int}
 end
