@@ -79,12 +79,13 @@ function build_and_solve_instance(typeofinput, instance_path)
 
     ## Exporting real problem
     if typeofinput != GOCInput
-        instance_name  = String(split(instance_path,'\\')[end])
+        # instance_name  = String(split(instance_path,'\\')[end])
+        instance_name = splitdir(instance_path)[end]
         amplexportpath = joinpath("..","knitro_runs", "$(instance_name[1:end-2])")
     else
-        folder,scenario = split(instance_path, '\\')[end-1:end]
-        folder = String(folder)
-        scenario = String(scenario)
+        # folder,scenario = split(instance_path, '\\')[end-1:end]
+        spath ,scenario = splitdir(instance_path)[end]
+        folder = splitdir(spath)[end-1]
         amplexportpath = joinpath("..","knitro_runs", "$(folder[9:end])_$(scenario)")
     end
     my_timer = @elapsed export_to_dat(pb_global_real, amplexportpath, init_point_real)
