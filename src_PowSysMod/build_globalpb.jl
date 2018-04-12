@@ -28,7 +28,8 @@ function build_globalpb!(OPFpbs)
      end
      for (scenario, vars) in variables
           for var in vars
-               add_variable!(pb_global, var)
+               variable = Variable(var[1],var[2])
+               add_variable!(pb_global, variable)
           end
      end
      for (scenario, constraints) in constraints
