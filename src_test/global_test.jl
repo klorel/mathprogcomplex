@@ -101,7 +101,7 @@ function build_and_solve_instance(typeofinput, instance_path)
     nb_variables = length(pb_global_real.variables)
     nb_constraints = length(pb_global_real.constraints)
 
-    return String(split(instance_path,'\\')[end]) => (nb_variables, nb_constraints, obj, feas, t_buildexport, t_knitro)
+    return String(splitdir(instance_path)[end]) => (nb_variables, nb_constraints, obj, feas, t_buildexport, t_knitro)
 end
 
 function main(ARGS)
