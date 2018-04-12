@@ -15,24 +15,44 @@ function set_relaxation(pb::Problem; ismultiordered=false,
     # Compute each constraint degree
     ki = Dict{String, Int}()
     for (cstrname, cstr) in pb.constraints
-        ki[cstrname] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
-    end
-
-    # Check that either d or di was provided as input
-    ((di == Dict{String, Int}()) ⊻ (d==-1)) || error("RelaxationContext(): Either di or d should be provided as input, not both.")
-
-    if d!=-1
-        for (cstr, ki_) in ki
-            (ki_ <= d) || warn("RelaxationContext(): Provided d ($d) is lower than constraint $cstr order ($ki_). \nUsing value $ki_, hierarchy may be multiordered.")
-            di[cstr] = max(ki_, d)
-        end
-    else
-        (Set(keys(di)) == Set(keys(ki))) || error("RelaxationContext(): Provided di doesn't match the set of constraint names.")
-        for (cstr, ki_) in ki
-            di_ = di[cstr]
-            (ki_ <= di_) || warn("RelaxationContext(): Provided di ($di_) is lower than constraint $cstr order ($ki_). \nUsing value $ki_.")
+        if isdoublesided(cstr)
+            ki[get_cstrlowername(cstrname)] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
+            ki[get_cstruppername(cstrname)] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
+        else
+            ki[cstrname] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
         end
     end
+
+    for (key, val) in ki
+        println("$key \t $val")
+    end
+
+    # Relaxation order management
+    di_relax = Dict{String, Int}()
+    !((di == Dict{String, Int}()) && (d==-1)) || error("RelaxationContext(): Either di or d should be provided as input.")
+
+    for (cstrname, cstr) in pb.constraints
+        cur_order = haskey(di, cstrname) ? di[cstrname] : d
+        
+        # Check provided di is suitable wrt constraint degree, add
+        if isdoublesided(cstr)
+            cur_ki = ki[get_cstrlowername(cstrname)]
+            (cur_ki <= cur_order) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value $cur_ki, hierarchy may be multiordered.")
+            di_relax[get_cstrlowername(cstrname)] = max(cur_ki, cur_order)
+            di_relax[get_cstruppername(cstrname)] = max(cur_ki, cur_order)
+        else
+            cur_ki = ki[cstrname]
+            (cur_ki <= cur_order) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value $cur_ki, hierarchy may be multiordered.")
+            di_relax[cstrname] = max(cur_ki, cur_order)
+        end
+    end
+
+    println("-- di_relax")
+    for (key, val) in di_relax
+        println("$key \t $val")
+    end
+
+
 
     # Check that all variables have a type fitting the hierarchy kind
     for (varname, vartype) in pb.variables
@@ -57,7 +77,7 @@ function set_relaxation(pb::Problem; ismultiordered=false,
     nb_densecstrs = 0
     maxdeg_densecstr = Float32[]
     for (cstr, ki_) in ki
-        if di[cstr] > ki_
+        if di_relax[cstr] > ki_
             nb_densecstrs += 1
             push!(maxdeg_densecstr, ki_)
         end
@@ -87,10 +107,10 @@ function normalize_problem(problem)
     for (cstrname, cstr) in get_constraints(problem)
         if cstr.lb != cstr.ub
             if cstr.lb != -Inf-im*Inf
-                add_constraint!(normpb, cstrname*"_lo", 0 << (cstr.p - cstr.lb))
+                add_constraint!(normpb, get_cstrlowername(cstrname), 0 << (cstr.p - cstr.lb))
             end
             if cstr.ub != Inf+im*Inf
-                add_constraint!(normpb, cstrname*"_hi", 0 << (cstr.ub - cstr.p))
+                add_constraint!(normpb, get_cstruppername(cstrname), 0 << (cstr.ub - cstr.p))
             end
         else
             add_constraint!(normpb, cstrname, (cstr.p - cstr.ub) == 0)

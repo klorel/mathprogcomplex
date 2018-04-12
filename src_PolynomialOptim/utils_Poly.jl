@@ -67,3 +67,12 @@ function get_sumdegs(expo::Exponent)
     end
     return explsum, conjsum
 end
+
+"""
+    isdoublesided(cstr::Constraint)
+
+    Test whether the constraint has two finite bounds.
+"""
+function isdoublesided(cstr::Constraint)
+    return (cstr.lb != -Inf-im*Inf) && (cstr.ub != Inf+im*Inf)
+end

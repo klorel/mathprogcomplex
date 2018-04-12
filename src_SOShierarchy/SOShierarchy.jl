@@ -77,6 +77,7 @@ include("symmetries.jl")
 include("SDPcontainer.jl")
 
 include("example_problems.jl")
+include("utils.jl")
 # include("compute_Bi.jl")
 # include("build_SDP_SOS.jl")
 # include("export_JuMP.jl")
