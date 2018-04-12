@@ -23,12 +23,12 @@ struct GOCNullImpedance_withtransformer <: AbstractLinkLabel
 end
 
 """
-    create_vars!(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}, scenario::String) where T <: GOCNullImpedance_withtransformer
+    create_vars!(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}, scenario::String) where T <: GOCNullImpedance_withtransformer
 
 Create voltage variables and power variables for origin and destination of `link` in `link_vars`.
 Return nothing.
 """
-function create_vars!(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}, scenario::String) where T <: GOCNullImpedance_withtransformer
+function create_vars!(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}, scenario::String) where T <: GOCNullImpedance_withtransformer
     origid, destid = link.orig, link.dest
     link_vars["Volt_orig"] = Variable(variable_name("VOLT", origid, "", scenario), Complex)
     link_vars["Volt_dest"] = Variable(variable_name("VOLT", destid, "", scenario), Complex)
@@ -41,27 +41,27 @@ end
 
 
 """
-    Sorig(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T<:GOCNullImpedance_withtransformer
+    Sorig(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}) where T<:GOCNullImpedance_withtransformer
 
 Return power variable Sorig * baseMVA.
 """
-function Sorig(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T<:GOCNullImpedance_withtransformer
+function Sorig(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}) where T<:GOCNullImpedance_withtransformer
     return get_baseMVA(link.orig)*link_vars[elemid*"_Sorig"]
 end
 
 """
-    Sdest(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T<:GOCNullImpedance_withtransformer
+    Sdest(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}) where T<:GOCNullImpedance_withtransformer
 
 Return power variable Sdest * baseMVA.
 """
-function Sdest(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T<:GOCNullImpedance_withtransformer
+function Sdest(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}) where T<:GOCNullImpedance_withtransformer
    return get_baseMVA(link.dest)*(link_vars[elemid*"_Sorig"]- im * element.susceptance * abs2(link_vars["Volt_dest"]))
 end
 
 
 ## 3. Constraints creation
-function constraint(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T <:GOCNullImpedance_withtransformer
-    cstrs = Dict{String, Constraint}()
+function constraint(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T <:GOCNullImpedance_withtransformer
+    cstrs = SortedDict{String, Constraint}()
 
     #Smax constraints
     Sor = Sorig(element, link, elemid, elem_formulation, link_vars)

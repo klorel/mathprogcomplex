@@ -28,12 +28,12 @@ function read_input(input_type::T, instance_path::String) where T<:Type{GOCInput
     link = read_branch_data(power_data,index)
     #info basecase
     ds = DataSource(bus,link)
-    node_linksin, node_linksout = Dict{String, Set{Link}}(), Dict{String, Set{Link}}()
-    node_vars = Dict{String, Dict{String, Variable}}()
-    link_vars = Dict{Link, Dict{String, Variable}}()
+    node_linksin, node_linksout = SortedDict{String, SortedSet{Link}}(), SortedDict{String, SortedSet{Link}}()
+    node_vars = SortedDict{String, SortedDict{String, Variable}}()
+    link_vars = SortedDict{Link, SortedDict{String, Variable}}()
     gs = GridStructure("BaseCase", node_linksin, node_linksout)
-    node_formulations = Dict{String, Dict{Tuple{Type, String}, Symbol}}()
-    link_formulations = Dict{Link, Dict{Tuple{Type, String}, Symbol}}()
+    node_formulations = SortedDict{String, SortedDict{String, Symbol}}()
+    link_formulations = SortedDict{Link, SortedDict{String, Symbol}}()
     mp = MathematicalProgramming(node_formulations, link_formulations, node_vars,link_vars)
     ##read scenarios
     OPFproblems = scenarios_data(ds, gs, mp, contingency_data,index)
@@ -119,7 +119,7 @@ function get_bus_index(power_data)
     if nb_lines!=nb_bus
         error("number of lines of all_busdata not equal to number of bus in power_data at key totalbus")
     end
-    index = Dict{Int64,Int64}()
+    index = SortedDict{Int64,Int64}()
     for line in 1:nb_lines
         id_bus = Int(raw_bus_data[line,1])
         index[id_bus] = line
@@ -145,7 +145,8 @@ function read_data_bus(power_data)
     if nb_lines!=length(bus_data["BaseKV"])
         error("sizes of all_busName and bus not equal")
     end
-    bus = Dict(bus_name(line) => Dict{String,Any}() for line in 1:nb_bus)
+    bus = SortedDict{String, SortedDict{String,Any}}()
+    # bus = SortedDict(bus_name(line) => SortedDict{String,Any}() for line in 1:nb_bus)
     for line in 1:nb_lines
         id_bus = Int(raw_bus_data[line,1])
         # index[id_bus] = line
@@ -153,7 +154,10 @@ function read_data_bus(power_data)
         baseKV = bus_data["BaseKV"][line]
         baseMVA = 1.0
         voltage_magnitude_min , voltage_magnitude_max  = get_bus_data(bus_data, ["VoltageMagnitudeMin", "VoltageMagnitudeMax"], line)
-        bus[busname][volt_name()] = GOCVolt(id_bus, baseKV, baseMVA, voltage_magnitude_min, voltage_magnitude_max)
+        if !haskey(bus, busname)
+            bus[busname] = SortedDict{String,Any}()
+        end
+        bus[busname][volt_name()] = GOCVolt(busname, baseKV, baseMVA, voltage_magnitude_min, voltage_magnitude_max)
     end
 
     all_loadID_key = filter(x->ismatch(r"all_loadID", x), collect(keys(power_data)))[1]
@@ -167,7 +171,7 @@ function read_data_bus(power_data)
         load = load_data[line,5] + im * load_data[line,6]
         id_load = id_elem(load_id,line)
         loadname = load_name(id_load)
-        bus[busname][loadname] = GOCLoad(id_bus,loadname,load)
+        bus[busname][loadname] = GOCLoad(busname,loadname,load)
     end
 
     all_fixedshuntID_key = filter(x->ismatch(r"all_fixedshuntID", x), collect(keys(power_data)))[1]
@@ -180,7 +184,7 @@ function read_data_bus(power_data)
         shunt = shunt_data[line,3] + im * shunt_data[line,4]
         id_shunt = id_elem(shunt_id,line)
         shuntname = shunt_name(id_shunt)
-        bus[busname][shuntname] = GOCShunt(id_bus,shuntname,shunt)
+        bus[busname][shuntname] = GOCShunt(busname,shuntname,shunt)
     end
 
     return bus,index
@@ -214,7 +218,7 @@ end
 
 
 function generator_data_to_dict(generator_data,index) ##conversion array to dict
-    generator_data_dict = Dict{String, Dict{String,Dict{Int64,Float64}}}()
+    generator_data_dict = SortedDict{String, SortedDict{String,SortedDict{Int64,Float64}}}()
     for line in 1:size(generator_data,1)
         bus_id = Int(generator_data[line,1])
         busname = bus_name(index[bus_id])
@@ -225,10 +229,10 @@ function generator_data_to_dict(generator_data,index) ##conversion array to dict
         end
         genname = generator_name(gen_id)
         if !haskey(generator_data_dict, busname)
-            generator_data_dict[busname] = Dict{String,Dict{Int64,Float64}}()
+            generator_data_dict[busname] = SortedDict{String,SortedDict{Int64,Float64}}()
         end
         if !haskey(generator_data_dict[busname],genname)
-            generator_data_dict[busname][genname] = Dict{Int64,Float64}()
+            generator_data_dict[busname][genname] = SortedDict{Int64,Float64}()
         end
         term_id = Int(generator_data[line,3])
         value = generator_data[line,4]
@@ -275,12 +279,12 @@ function add_generator_data!(power_data,generator_data_dict,bus,index)
         power_max = Pmax + im*Qmax
         # cost_degrees = generator_data["RealPowerCostExponent"][gen,:]
         # cost_coeffs = generator_data["RealPowerCostCoefficient"][gen,:]
-        gen_id2 = remove_simple_quotes_if_present(gen_id)
-        if typeof(gen_id2)==Float64
-            gen_id2 = Int(gen_id2)
+        gen_id = remove_simple_quotes_if_present(gen_id)
+        if typeof(gen_id)==Float64
+            gen_id = Int(gen_id)
         end
-        generatorname = generator_name(gen_id2)
-        dict_obj_coeffs = Dict{Int64,Float64}()
+        generatorname = generator_name(gen_id)
+        dict_obj_coeffs = SortedDict{Int64,Float64}()
         for (degree, value) in generator_data_dict[busname][generatorname]
             if (degree ∈ [0,1,2])
                 dict_obj_coeffs[degree] = value
@@ -292,7 +296,7 @@ function add_generator_data!(power_data,generator_data_dict,bus,index)
             if !haskey(dict_obj_coeffs,1) dict_obj_coeffs[1] = 0 end
             if !haskey(dict_obj_coeffs,2) dict_obj_coeffs[2] = 0 end
        end
-        bus[busname][generatorname] = GOCGenerator(bus_id,gen_id,power_min,power_max,participation_factor,dict_obj_coeffs)
+        bus[busname][generatorname] = GOCGenerator(busname,generatorname,power_min,power_max,participation_factor,dict_obj_coeffs)
     end
     return bus
 end
@@ -324,7 +328,7 @@ function read_branch_data(power_data, index)
     all_lineCKT_key = filter(x->ismatch(r"all_lineCKT", x), collect(keys(power_data)))[1]
     lines_data = power_data[all_lineCKT_key]
     nb_lines = length(lines_data)
-    link = Dict{Link, Dict{String,Any}}()
+    link = SortedDict{Link, SortedDict{String,Any}}()
     branch_data = power_data["branch"]
 
     #lines without transformer
@@ -338,15 +342,15 @@ function read_branch_data(power_data, index)
         end
         resistance, reactance, susceptance, power_magnitude_max = get_branch_data(branch_data, ["SeriesResistance","SeriesReactance","ChargingSusceptance","PowerMagnitudeMax"], branch)
         if !haskey(link, linkname)
-            link[linkname] = Dict{String,Any}()
+            link[linkname] = SortedDict{String,Any}()
         end
         if resistance == reactance == 0
             println(linkname, " nullimpedance line without transformer")
             name_line = nullimpedance_notransformer_name(branch_id)
-            link[linkname][name_line] = GOCNullImpedance_notransformer(origin,destination,name_line,susceptance, power_magnitude_max)
+            link[linkname][name_line] = GOCNullImpedance_notransformer(linkname,name_line,susceptance, power_magnitude_max)
         else
             name_line = linepi_notransformer_name(branch_id)
-            link[linkname][name_line] = GOCLineπ_notransformer(origin,destination,name_line,resistance,reactance,susceptance, power_magnitude_max)
+            link[linkname][name_line] = GOCLineπ_notransformer(linkname,name_line,resistance,reactance,susceptance, power_magnitude_max)
         end
     end
 
@@ -365,15 +369,15 @@ function read_branch_data(power_data, index)
         resistance, reactance, susceptance, power_magnitude_max = get_branch_data(branch_data, ["SeriesResistance","SeriesReactance","ChargingSusceptance","PowerMagnitudeMax"], branch)
         transfo_ratio, transfo_phase = get_branch_data(branch_data, ["TapRatio", "PhaseShift"], branch)
         if !haskey(link, linkname)
-            link[linkname] = Dict{String,Any}()
+            link[linkname] = SortedDict{String,Any}()
         end
         if resistance == reactance == 0
             println(linkname, " nullimpedance line with transformer")
             name_line = nullimpedance_withtransformer_name(branch_id)
-            link[linkname][name_line] = GOCNullImpedance_withtransformer(origin,destination,name_line,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
+            link[linkname][name_line] = GOCNullImpedance_withtransformer(linkname,name_line,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
         else
             name_line = linepi_withtransformer_name(branch_id)
-            link[linkname][name_line] = GOCLineπ_withtransformer(origin,destination,name_line,resistance,reactance,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
+            link[linkname][name_line] = GOCLineπ_withtransformer(linkname,name_line,resistance,reactance,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
         end
     end
 
@@ -389,7 +393,7 @@ Return an `OPFproblems` structure : "scenario" => Scenario
 
 """
 function scenarios_data(ds,gs,mp,contingency_data,index)
-    output = Dict("BaseCase" => Scenario(ds,gs,mp))
+    output = SortedDict("BaseCase" => Scenario(ds,gs,mp))
     ds = output["BaseCase"].ds
     nb_contingencies = size(contingency_data,1)
     for ct in 1:nb_contingencies
@@ -399,8 +403,14 @@ function scenarios_data(ds,gs,mp,contingency_data,index)
         #B, T or G (Branch, Transformer, Generator)
         gs_scenario = copy(gs)
         gs_scenario.scenario = scenario_name
-        ds_scenario_bus = Dict(busname => Dict{String,Any}() for busname in keys(ds.bus))
-        ds_scenario_link = Dict(linkname => Dict{String,Any}() for linkname in keys(ds.link))
+        ds_scenario_bus = SortedDict{String, SortedDict{String,Any}}()
+        for busname in keys(ds.bus)
+            ds_scenario_bus[busname] = SortedDict{String,Any}()
+        end
+        ds_scenario_link = SortedDict{Link, SortedDict{String,Any}}()
+        for linkname in keys(ds.link)
+            ds_scenario_link[linkname] = SortedDict{String,Any}()
+        end
         ds_scenario = DataSource(ds_scenario_bus,ds_scenario_link)
         if type_contingency == "G"
             println(type_contingency)

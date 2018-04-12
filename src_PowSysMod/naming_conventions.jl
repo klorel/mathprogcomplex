@@ -21,7 +21,7 @@ function variable_name(varname::String, link::Link, elemid::String, scenario::St
     end
 end
 
-function cstrname_nodal_balance(cstrnames::Set{String}, scenario::String, bus::String)
+function cstrname_nodal_balance(cstrnames::SortedSet{String}, scenario::String, bus::String)
     cstr = ""
     for cstrname in sort(collect(cstrnames))
         cstr = "$(cstr)_$cstrname"

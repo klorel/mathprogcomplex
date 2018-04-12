@@ -24,9 +24,9 @@ nb_repeat = 3
 
 instancename = sort(collect(instances))[1]
 
-data_OPFpbs = Dict{String, Measurement}()
-data_Problems = Dict{String, Measurement}()
-data_errors = Dict{String, Float64}()
+data_OPFpbs = SortedDict{String, Measurement}()
+data_Problems = SortedDict{String, Measurement}()
+data_errors = SortedDict{String, Float64}()
 
 instnb = 1
 for instancename in sort(collect(instances))

@@ -15,12 +15,12 @@ instances_path = joinpath("instances", "GOC")
 folders = readdir(instances_path)
 
 ##empty dictionaries which will contain data to export in csv
-instances_nb_scenario_data = Dict{String,Int64}()
-instances_nb_contingency_data = Dict{String,Int64}()
-instances_nb_bus_data = Dict{String,Int64}()
-instances_nb_links_data = Dict{String,Int64}()
-instances_nb_violated_constraints = Dict{String, Float64}()
-instances_nb_cc_Qgen_active = Dict{String, Float64}()
+instances_nb_scenario_data = SortedDict{String,Int64}()
+instances_nb_contingency_data = SortedDict{String,Int64}()
+instances_nb_bus_data = SortedDict{String,Int64}()
+instances_nb_links_data = SortedDict{String,Int64}()
+instances_nb_violated_constraints = SortedDict{String, Float64}()
+instances_nb_cc_Qgen_active = SortedDict{String, Float64}()
 
 
 ##loop on instances to get data

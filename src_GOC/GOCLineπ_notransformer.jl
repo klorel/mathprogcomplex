@@ -23,12 +23,12 @@ struct GOCLineπ_notransformer <: AbstractLinkLabel
 end
 
 """
-    create_vars!(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}, scenario::String) where T <: GOCLineπ_notransformer
+    create_vars!(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}, scenario::String) where T <: GOCLineπ_notransformer
 
 Create voltage variables for origin and destination of `link` in `link_vars`.
 Return nothing.
 """
-function create_vars!(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}, scenario::String) where T <: GOCLineπ_notransformer
+function create_vars!(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}, scenario::String) where T <: GOCLineπ_notransformer
     origid, destid = link.orig, link.dest
     link_vars["Volt_orig"] = Variable(variable_name("VOLT", origid, "", scenario), Complex)
     link_vars["Volt_dest"] = Variable(variable_name("VOLT", destid, "", scenario), Complex)
@@ -37,7 +37,7 @@ end
 
 
 """
-    Sorig(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T<:GOCLineπ_notransformer
+    Sorig(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}) where T<:GOCLineπ_notransformer
 
 Return the polynomial power at the origin of the line depending quadratically on the voltages :
 ```julia
@@ -50,12 +50,12 @@ Yft = -ys
 Sorig = (Yff*link_variables["Volt_orig"] + Yft*link_variables["Volt_dest"]) * baseMVA
 ```
 """
-function Sorig(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T<:GOCLineπ_notransformer
+function Sorig(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}) where T<:GOCLineπ_notransformer
     return get_baseMVA(link.orig) * link_vars["Volt_orig"] * conj(get_IorigGOC(element, link_vars))
 end
 
 """
-    Sdest(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T<:GOCLineπ_notransformer
+    Sdest(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}) where T<:GOCLineπ_notransformer
 
 Return the polynomial power at the destination of the line depending quadratically on the voltages :
 ```julia
@@ -68,14 +68,14 @@ Ytt = ys+im*bc/2
 Sdest = (Ytf*link_variables["Volt_orig"] + Ytt*link_variables["Volt_dest"]) * baseMVA
 ```
 """
-function Sdest(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T<:GOCLineπ_notransformer
+function Sdest(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}) where T<:GOCLineπ_notransformer
    return get_baseMVA(link.dest) * link_vars["Volt_dest"] * conj(get_IdestGOC(element, link_vars))
 end
 
 
 ## 3. Constraints creation
-function constraint(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T <: GOCLineπ_notransformer
-    cstrs = Dict{String, Constraint}()
+function constraint(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T <: GOCLineπ_notransformer
+    cstrs = SortedDict{String, Constraint}()
 
     Sor = Sorig(element, link, elemid, elem_formulation, link_vars)
     Sde = Sdest(element, link, elemid, elem_formulation, link_vars)
@@ -93,7 +93,7 @@ end
 
 
 ## Utils functions
-function get_IorigGOC(element::T, link_variables::Dict{String, Variable}) where T<: GOCLineπ_notransformer
+function get_IorigGOC(element::T, link_variables::SortedDict{String, Variable}) where T<: GOCLineπ_notransformer
   rs = element.resistance
   xs = element.reactance
   bc = element.susceptance
@@ -103,7 +103,7 @@ function get_IorigGOC(element::T, link_variables::Dict{String, Variable}) where 
   return Yff*link_variables["Volt_orig"] + Yft*link_variables["Volt_dest"]
 end
 
-function get_IdestGOC(element::T, link_variables::Dict{String, Variable}) where T<: GOCLineπ_notransformer
+function get_IdestGOC(element::T, link_variables::SortedDict{String, Variable}) where T<: GOCLineπ_notransformer
   rs = element.resistance
   xs = element.reactance
   bc = element.susceptance

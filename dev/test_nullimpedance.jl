@@ -53,18 +53,18 @@ for (line, dict) in link
     if line.orig == "BUS_4" && line.dest == "BUS_7"
         data = dict["Lineπ_transfo_BL"]
         branch_id = "BL"
-        link[line] = Dict(nullimpedance_withtransformer_name(branch_id) => GOCNullImpedance_withtransformer(line, data.id, data.susceptance, data.transfo_ratio, data.transfo_phase, data.power_magnitude_max))
+        link[line] = SortedDict(nullimpedance_withtransformer_name(branch_id) => GOCNullImpedance_withtransformer(line, data.id, data.susceptance, data.transfo_ratio, data.transfo_phase, data.power_magnitude_max))
     end
 end
 ######################
 #info basecase
 ds = DataSource(bus,link)
-node_linksin, node_linksout = Dict{String, Set{Link}}(), Dict{String, Set{Link}}()
-node_vars = Dict{String, Dict{String, Variable}}()
-link_vars = Dict{Link, Dict{String, Variable}}()
+node_linksin, node_linksout = SortedDict{String, SortedSet{Link}}(), SortedDict{String, SortedSet{Link}}()
+node_vars = SortedDict{String, SortedDict{String, Variable}}()
+link_vars = SortedDict{Link, SortedDict{String, Variable}}()
 gs = GridStructure("BaseCase", node_linksin, node_linksout)
-node_formulations = Dict{String, Dict{Tuple{Type, String}, Symbol}}()
-link_formulations = Dict{Link, Dict{Tuple{Type, String}, Symbol}}()
+node_formulations = SortedDict{String, SortedDict{Tuple{Type, String}, Symbol}}()
+link_formulations = SortedDict{Link, SortedDict{Tuple{Type, String}, Symbol}}()
 mp = MathematicalProgramming(node_formulations, link_formulations, node_vars,link_vars)
 ##read scenarios
 OPFpbs = scenarios_data(ds, gs, mp, power_data, contingency_data,index)
@@ -73,16 +73,16 @@ OPFpbs = scenarios_data(ds, gs, mp, power_data, contingency_data,index)
 #LOAD OPF
 ##################
 for scenario in keys(OPFpbs)
-  node_linksin, node_linksout = Dict{String, Set{Link}}(), Dict{String, Set{Link}}()
+  node_linksin, node_linksout = SortedDict{String, SortedSet{Link}}(), SortedDict{String, SortedSet{Link}}()
 
   for (linkname, _) in OPFpbs[scenario].ds.link
     if !haskey(node_linksin, linkname.dest)
-      node_linksin[linkname.dest] = Set{Link}()
+      node_linksin[linkname.dest] = SortedSet{Link}()
     end
     union!(node_linksin[linkname.dest], [linkname])
 
     if !haskey(node_linksout, linkname.orig)
-      node_linksout[linkname.orig] = Set{Link}()
+      node_linksout[linkname.orig] = SortedSet{Link}()
     end
     union!(node_linksout[linkname.orig], [linkname])
   end
@@ -90,16 +90,16 @@ for scenario in keys(OPFpbs)
   OPFpbs[scenario].gs.node_linksin = node_linksin
   OPFpbs[scenario].gs.node_linksout = node_linksout
 
-  node_vars=Dict{String, Dict{String, Variable}}(busname => Dict{String, Variable}() for busname in keys(OPFpbs[scenario].ds.bus))
-  link_vars=Dict{Link, Dict{String, Polynomial}}(link => Dict{String, Polynomial}() for link in keys(OPFpbs[scenario].ds.link))
+  node_vars=SortedDict{String, SortedDict{String, Variable}}(busname => SortedDict{String, Variable}() for busname in keys(OPFpbs[scenario].ds.bus))
+  link_vars=SortedDict{Link, SortedDict{String, Polynomial}}(link => SortedDict{String, Polynomial}() for link in keys(OPFpbs[scenario].ds.link))
 
-  node_formulations = Dict{String, Dict{String, Symbol}}()
-  link_formulations = Dict{Link, Dict{String, Symbol}}()
+  node_formulations = SortedDict{String, SortedDict{String, Symbol}}()
+  link_formulations = SortedDict{Link, SortedDict{String, Symbol}}()
   for bus in keys(OPFpbs[scenario].ds.bus)
-    node_formulations[bus] = Dict{String, Symbol}(elem => :NbMinVar for elem in keys(OPFpbs[scenario].ds.bus[bus]))
+    node_formulations[bus] = SortedDict{String, Symbol}(elem => :NbMinVar for elem in keys(OPFpbs[scenario].ds.bus[bus]))
   end
   for link in keys(OPFpbs[scenario].ds.link)
-    link_formulations[link] = Dict{String, Symbol}(elem => :NbMinVar for elem in keys(OPFpbs[scenario].ds.link[link]))
+    link_formulations[link] = SortedDict{String, Symbol}(elem => :NbMinVar for elem in keys(OPFpbs[scenario].ds.link[link]))
   end
 
   OPFpbs[scenario].mp = MathematicalProgramming(node_formulations, link_formulations, node_vars, link_vars)

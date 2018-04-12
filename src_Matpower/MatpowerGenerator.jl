@@ -21,13 +21,13 @@ end
 
 
 """
-    create_vars!(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::Dict{String, Variable}, scenario::String) where T <: MatpowerGenerator
+    create_vars!(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::SortedDict{String, Variable}, scenario::String) where T <: MatpowerGenerator
 
 Create power variables n for generator `elemid` at `bus` in `bus_vars` if `elem_formulation == :NewVar`\n
 Return nothing
 
 """
-function create_vars!(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::Dict{String, Variable}, scenario::String) where T <: MatpowerGenerator
+function create_vars!(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::SortedDict{String, Variable}, scenario::String) where T <: MatpowerGenerator
   if elem_formulation == :NewVar
     bus_vars[elemid] = Variable(variable_name("Sgen", bus, elemid, scenario), Complex)
   end
@@ -35,14 +35,14 @@ function create_vars!(element::T, bus::String, elemid::String, elem_formulation:
 end
 
 """
-[cstrname, polynom, lb, ub] = Snodal(element::T, busid::String, elemid::String, elem_formulation::Symbol, bus_vars::Dict{String, Variable}) where T <: MatpowerGenerator
+[cstrname, polynom, lb, ub] = Snodal(element::T, busid::String, elemid::String, elem_formulation::Symbol, bus_vars::SortedDict{String, Variable}) where T <: MatpowerGenerator
 
 Return the polynomial contribution in power of generator `elemid` at `bus`(name, value, lower bound, upper bound). Will be used to construct power balance constraints in polynomial problem.\n
 If `elem_formulation == :NbMinVar`, return generator bounds `["UNIT", Polynomial() ,Smin, Smax]`\n
 If `elem_formulation == :NewVar`, return -Sgen `["UNIT", -Sgen, 0, 0]`\n
 Return no contribution `["", Polynomial(), 0, 0]` otherwise
 """
-function Snodal(element::T, busid::String, elemid::String, elem_formulation::Symbol, bus_vars::Dict{String, Variable}) where T <: MatpowerGenerator
+function Snodal(element::T, busid::String, elemid::String, elem_formulation::Symbol, bus_vars::SortedDict{String, Variable}) where T <: MatpowerGenerator
   cstrname = "UNIT"
   if elem_formulation == :NbMinVar
     lb = element.power_min
@@ -59,13 +59,13 @@ end
 
 
 """
-    constraint(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::Dict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T <: MatpowerGenerator
+    constraint(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::SortedDict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T <: MatpowerGenerator
 
 Return all the constraints defined by generator `elemid` at `bus`. Will be used to construct constraints in polynomial problem.\n
 If `elem_formulation == :NewVar`, return generator bounds : "Genbounds" => Smin <= Sgen <= Smax\n
 Return empty dictionary otherwise
 """
-function constraint(element::T, busid::String, elemid::String, elem_formulation::Symbol, bus_vars::Dict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T <: MatpowerGenerator
+function constraint(element::T, busid::String, elemid::String, elem_formulation::Symbol, bus_vars::SortedDict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T <: MatpowerGenerator
   if elem_formulation == :NewVar
     lb = element.power_min
     ub = element.power_max
@@ -74,18 +74,18 @@ function constraint(element::T, busid::String, elemid::String, elem_formulation:
     end
     cstrname = get_GenBounds_cstrname()
     p = Polynomial(-bus_vars[elemid])
-    return Dict{String, Constraint}(cstrname => lb << p << ub)
+    return SortedDict{String, Constraint}(cstrname => lb << p << ub)
   end
-  return Dict{String, Constraint}()
+  return SortedDict{String, Constraint}()
 end
 
 
 """
-    cost(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_elems_vars::Dict{String, Variable}, Snode::Polynomial, lb, ub) where T <: MatpowerGenerator
+    cost(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_elems_vars::SortedDict{String, Variable}, Snode::Polynomial, lb, ub) where T <: MatpowerGenerator
 
 Return the polynomial contribution in objective generator `elemid` at `bus`.
 """
-function cost(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_elems_var::Dict{String, Variable}, Snode::Polynomial, lb, ub) where T <: MatpowerGenerator
+function cost(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_elems_var::SortedDict{String, Variable}, Snode::Polynomial, lb, ub) where T <: MatpowerGenerator
   Sgen = Polynomial()
   gencost = Polynomial()
   if elem_formulation == :NbMinVar

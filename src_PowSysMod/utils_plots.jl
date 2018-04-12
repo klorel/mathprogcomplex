@@ -1,26 +1,26 @@
 function get_scen_vars(pt::Point, scenario::String)
     a = Iterators.filter(x->contains(x.name, scenario), keys(pt))
-    return Point(Dict([k=>pt[k] for k in a]))
+    return Point(SortedDict([k=>pt[k] for k in a]))
 end
 
 function get_volt_vars(pt::Point)
     a = Iterators.filter(x->contains(x.name, "VOLT"), keys(pt))
-    return Point(Dict([k=>pt[k] for k in a]))
+    return Point(SortedDict([k=>pt[k] for k in a]))
 end
 
 function get_bin_vars(pt::Point)
     a = Iterators.filter(x->contains(x.name, "Bin"), keys(pt))
-    return Point(Dict([k=>pt[k] for k in a]))
+    return Point(SortedDict([k=>pt[k] for k in a]))
 end
 
 function get_prod_vars(pt::Point)
     a = Iterators.filter(x->contains(x.name, "Sgen"), keys(pt))
-    return Point(Dict([k=>pt[k] for k in a]))
+    return Point(SortedDict([k=>pt[k] for k in a]))
 end
 
 function get_delta_var(pt::Point, scenario::String)
     a = Iterators.filter(x->contains(x.name, get_delta_varname(scenario)), keys(pt))
-    return Point(Dict([k=>pt[k] for k in a]))
+    return Point(SortedDict([k=>pt[k] for k in a]))
 end
 
 function get_splitted_Cpt(pt, scenario)
@@ -56,7 +56,7 @@ end
 function plot_Sgen_vars(pt_global, scenarios)
     fig = plot()
     pt = real2cplx(get_prod_vars(pt_global))
-    Sgens = Dict()
+    Sgens = SortedDict()
     # Get prod by scenarios
     for scenario in scenarios
         _, _, bc_prod_vars = get_splitted_Cpt(pt_knitro, "BaseCase")
@@ -66,7 +66,7 @@ function plot_Sgen_vars(pt_global, scenarios)
     # One color per bus/generator
     init_scen = sort(collect(keys(Sgens)))[1]
     i=1
-    cols = Dict()
+    cols = SortedDict()
     for (varsc, valsc) in Sgens[init_scen]
         scenario, busid, genname, varname = split(varsc.name, "_")
         cols[(busid, genname)] = i
@@ -103,7 +103,7 @@ function plot_ViVj_vars(pt, scenarios)
     r2 = 1.1^2
     plot!(r2*cos.(-π:0.01:π), r2*sin.(-π:0.01:π), label=:Vmax2)
 
-    cols = Dict()
+    cols = SortedDict()
     i = 1
     for scen in scenarios
         cols[scen] = i
@@ -113,7 +113,7 @@ function plot_ViVj_vars(pt, scenarios)
     for scen in scenarios
         volt_vars, _, _ = get_splitted_Cpt(pt_knitro, scen)
         V = Vector{Complex}([val for (var, val) in volt_vars])
-        ViVj = collect(Set(V*V'))
+        ViVj = collect(SortedSet(V*V'))
         scatter!(ViVj, label=scen, color=cols[scen])
     end
     return plt

@@ -3,12 +3,12 @@
 ##################################
 
 """
-    add_to_dict!(dict::Dict{Any, V}, key, val::V) where V<:Number
+    add_to_dict!(dict::SortedDict{Any, V}, key, val::V) where V<:Number
 
     *Sparsely* add `val` to the `key` entry of `dict` dictionnary. That is creates
     the entry if needed, deletes it if the resulting value is null.
 """
-function add_to_dict!(dict::Dict{U, Number}, key::U, val::T) where T<:Number where U
+function add_to_dict!(dict::SortedDict{U, Number}, key::U, val::T) where T<:Number where U
     if !haskey(dict, key)
         dict[key] = 0
     end
@@ -23,11 +23,11 @@ function setindex!(pt::Point, val::Number, var::Variable)
 end
 
 ## Empty constructors
-Point() = Point(Dict{Variable, Number}())
-Exponent() = Exponent(Dict{Variable, Degree}())
-Polynomial() = Polynomial(Dict{Exponent, Number}())
+Point() = Point(SortedDict{Variable, Number}())
+Exponent() = Exponent(SortedDict{Variable, Degree}())
+Polynomial() = Polynomial(SortedDict{Exponent, Number}())
 
-Exponent(x::Variable) = Exponent(Dict{Variable, Degree}(x=>Degree(1,0)))
+Exponent(x::Variable) = Exponent(SortedDict{Variable, Degree}(x=>Degree(1,0)))
 function Point(vars::Array{Variable}, vals::Array{<:Number})
   if length(vars) != length(vals)
     error("Point(): input arrays must have same size.")
@@ -85,23 +85,23 @@ end
 
 ## convert functions
 function convert(::Type{Polynomial}, expo::Exponent)
-    return Polynomial(Dict{Exponent, Number}(expo=>1.0))
+    return Polynomial(SortedDict{Exponent, Number}(expo=>1.0))
 end
 
 function convert(::Type{Polynomial}, x::Variable)
-    return Polynomial(Dict{Exponent, Number}(Exponent(Dict(x=>Degree(1,0)))=>1.0))
+    return Polynomial(SortedDict{Exponent, Number}(Exponent(SortedDict(x=>Degree(1,0)))=>1.0))
 end
 
 function convert(::Type{Polynomial}, λ::Number)
-    return Polynomial(Dict{Exponent, Number}(Exponent()=>λ))
+    return Polynomial(SortedDict{Exponent, Number}(Exponent()=>λ))
 end
 
-function convert(::Type{Point}, pt::Dict{Variable, T}) where T
-    return Point(convert(Dict{Variable, Number}, pt))
+function convert(::Type{Point}, pt::SortedDict{Variable, T}) where T
+    return Point(convert(SortedDict{Variable, Number}, pt))
 end
 
 function convert(::Type{AbstractPolynomial}, λ::Number)
-    return Polynomial(Dict{Exponent, Number}(Exponent()=>λ))
+    return Polynomial(SortedDict{Exponent, Number}(Exponent()=>λ))
 end
 
 ##
@@ -116,14 +116,14 @@ end
 
 function conj(x::Variable)
     if x.kind<:Complex
-        return Exponent(Dict(x=>Degree(0,1)))
+        return Exponent(SortedDict(x=>Degree(0,1)))
     else
-        return Exponent(Dict(x=>Degree(1,0)))
+        return Exponent(SortedDict(x=>Degree(1,0)))
     end
 end
 
 function conj(expo::Exponent)
-    expodict = Dict{Variable, Degree}()
+    expodict = SortedDict{Variable, Degree}()
     for (var, deg) in expo.expo
         if iscomplex(var)
             expodict[var] = conj(deg)
@@ -135,7 +135,7 @@ function conj(expo::Exponent)
 end
 
 function conj(p::Polynomial)
-    pdict = Dict{Exponent, Number}()
+    pdict = SortedDict{Exponent, Number}()
     for (expo, λ) in p
         pdict[conj(expo)] = conj(λ)
     end

@@ -1,23 +1,22 @@
 """
     moments_param = build_sparsity(relax_ctx, problem)
-
     Build the sparsitty pattern and variables decomposition for laying out the moment or SOS hierarchy
 """
 function build_sparsity(relax_ctx, problem, max_cliques::Dict{String, Set{Variable}})
 
     if relax_ctx.issparse == false
         (length(max_cliques) == 1) || error("build_sparsity(): Relaxation is not sparse, one clique is expected (not $(length(max_cliques)))")
-        
+
         moments_param = Dict{String, Tuple{Set{String}, Int}}()
         for (cstr, pb) in problem.constraints
             di, ki = relax_ctx.di[cstr], relax_ctx.ki[cstr]
-            moments_param[cstr] = (Set(["clique1"]), di-ki)
+            moments_param[cstr] = (Set(["oneclique"]), di-ki)
         end
         return moments_param
 
     else
         error("build_sparsity(): Sparse hierarchy not handled yet.")
-        
+
         # TODO
     end
 end
@@ -27,7 +26,7 @@ end
 function get_maxcliques(relax_ctx, problem)
     if !relax_ctx.issparse
         vars = Set{Variable}([Variable(name, kind) for (name, kind) in problem.variables])
-        return Dict{String, Set{Variable}}("clique1"=>vars)
+        return Dict{String, Set{Variable}}("oneclique"=>vars)
     else
         error("Sparse relaxation is not supported yet")
     end
@@ -39,7 +38,6 @@ end
 
 """
     sparsity_pattern = compute_sparsitypattern(problem, di, ki)
-
     Compute the sparsity_pattern corresponding to the given partial orders.
 """
 function compute_sparsitypattern(problem::Problem, relax_ctx)
@@ -53,7 +51,6 @@ end
 
 """
     compute_chordalextension!(sparsity_pattern)
-
     Compute the chordal extension on the provided sparsity_pattern.
 """
 function compute_chordalextension!(sparsity_pattern::SparsityPattern)
@@ -66,7 +63,6 @@ end
 
 """
     maxcliques = compute_maxcliques(sparsity_pattern)
-
     Compute a `Array{Set{Variable}}` describing the maximum cliques on the provided sparsity_pattern.
 """
 function compute_maxcliques(sparsity_pattern::SparsityPattern)
@@ -81,7 +77,6 @@ end
 
 """
     varsbycstr = compute_varsbycstr(problem)
-
     Compute a `Dict{String, Set{Variable}}` providing the set of variables involved in each constraint.
 """
 function compute_varsbycstr(problem::Problem)
@@ -95,7 +90,6 @@ end
 
 """
     cliquevarsbycstr = compute_varsbycstr(sparsity_pattern, max_cliques, varsbycstr)
-
     Compute a `Dict{String, Set{Variable}}` providing the set of variables involved in the SDP localizing matrix corresponding to each constraint.
 """
 function compute_varsbycstr(sparsity_pattern, max_cliques, varsbycstr)
@@ -109,7 +103,6 @@ end
 
 """
     orderbyclique = compute_cliqueorders(sparsity_pattern, di, varsbycstr, max_cliques)
-
     Compute a `Array{Int}` providing the relaxation order corresponding to each clique.
 """
 function compute_cliqueorders(sparsity_pattern, varsbycstr, max_cliques, relax_ctx)

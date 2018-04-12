@@ -17,62 +17,51 @@ function main()
     # Normalizing pb and setting relaxation order by constraint
     # problem = normalize_problem(rawproblem)
     # relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
-    
-    real_pb = false
-    if real_pb
-        # Construction of the initial problem
-        rawproblem = buildPOPR_2v2cbis()
 
-        # Transform the problem to canonical form and set relaxation parameters
+    real_pb = true
+    if real_pb
+        rawproblem = buildPOPR_2v1c()
         problem = normalize_problem(rawproblem)
         relax_ctx = set_relaxation(problem, hierarchykind=:Real, d = 2)
     else
-        # Construction of the initial problem
         rawproblem = buildPOP_WB2_expl()
-
-        # Transform the problem to canonical form and set relaxation parameters
         problem = normalize_problem(rawproblem)
-        relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 2)
+        relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
         relax_ctx.di["moment_cstr"] = 2
     end
 
     println("\n--------------------------------------------------------")
-    println("relax_ctx = \n$relax_ctx")
-    
+    println("relax_ctx = $relax_ctx")
+
     println("\n--------------------------------------------------------")
-    println("problem = \n$problem")
-    
+    println("problem = $problem")
+
     ########################################
-    # Build sparsity pattern, compute maximal cliques
+    # Construction du sparsity pattern, extension chordale, cliques maximales.
     max_cliques = get_maxcliques(relax_ctx, problem)
-    
+    # max_cliques["onemore"] = Set([first(max_cliques["oneclique"])])
+
     println("\n--------------------------------------------------------")
-    println("max cliques = \n$max_cliques")
-    
-    ########################################
-    # Compute moment matrices parameters: order et variables
+    println("max cliques = $max_cliques")
+
     moments_params = build_sparsity(relax_ctx, problem, max_cliques)
     println("\n--------------------------------------------------------")
-    println("Matrix moment parameters =")
+    println("moment params =")
     for (key, (val1, val2)) in moments_params
         println("$key \t -> $val1, di-ki=$val2")
     end
-    
+
     ########################################
-    # Compute partial moment hierarchy
+    # Calcul des matrices de moment
+
     mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, moments_params, max_cliques)
     println("\n--------------------------------------------------------")
     println("mmtrel_pb = $mmtrel_pb")
-    
-    ########################################
-    # Convert to a primal SDP problem
-    SDP_body, SDP_rhs = build_SDP(relax_ctx, mmtrel_pb)
-    println("\n--------------------------------------------------------")
-    println("SDP_body = \n$SDP_body")
 
-    println("\n--------------------------------------------------------")
-    println("SDP_rhs = \n$SDP_rhs")
 
+    # B_i = compute_Bibycstr(problem, momentmatrices, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
+
+    # SDP_SOS = build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbyclique, relax_ctx)
 
     ########################################
     # Calcul d'une solution par un solveur

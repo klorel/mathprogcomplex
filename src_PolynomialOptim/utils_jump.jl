@@ -33,7 +33,7 @@ print(m)
 function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
     pb_poly_real = problem_poly
     m = Model(solver = mysolver)
-    variables_jump = Dict{String, JuMP.Variable}()
+    variables_jump = SortedDict{String, JuMP.Variable}()
     for (varname, vartype) in pb_poly_real.variables
         if vartype==Real
             variables_jump["$varname"] = @variable(m, basename="$varname", start=1.1)
@@ -41,7 +41,7 @@ function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
             variables_jump["$varname"] = @variable(m, category=:Bin, basename="$varname", start=0)
         end
     end
-    ctr_jump = Dict{String,JuMP.ConstraintRef}()
+    ctr_jump = SortedDict{String,JuMP.ConstraintRef}()
     for (ctr, modeler_ctr) in pb_poly_real.constraints
         polynome = modeler_ctr.p
         lb = modeler_ctr.lb
@@ -63,7 +63,7 @@ function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
     return m, variables_jump
 end
 
-function poly_to_NLexpression(m::JuMP.Model, variables_jump::Dict{String, JuMP.Variable},polynome::Polynomial)
+function poly_to_NLexpression(m::JuMP.Model, variables_jump::SortedDict{String, JuMP.Variable},polynome::Polynomial)
     s = 0
     for (monome,coeff) in polynome.poly
         prod = 1
@@ -164,18 +164,18 @@ print(m)
 """
 function get_JuMP_polar_model(pb::Problem, mysolver)
     m = Model(solver = mysolver)
-    jump_vars = Dict{String, JuMP.Variable}()
+    jump_vars = SortedDict{String, JuMP.Variable}()
     for (varname, vartype) in pb.variables
         mod = "ρ_$varname"
         jump_vars["ρ_$varname"] = @variable(m, basename="ρ_$varname")
         jump_vars["θ_$varname"] = @variable(m, basename="θ_$varname")
     end
-    ctr_jump = Dict{String,JuMP.ConstraintRef}()
+    ctr_jump = SortedDict{String,JuMP.ConstraintRef}()
     for (ctr, modeler_ctr) in pb.constraints
         p = modeler_ctr.p
         lb = modeler_ctr.lb
         ub = modeler_ctr.ub
-        ps = Dict{Exponent, Tuple{Real, Real}}(exp=>(real(coeff), imag(coeff)) for (exp, coeff) in p)
+        ps = SortedDict{Exponent, Tuple{Real, Real}}(exp=>(real(coeff), imag(coeff)) for (exp, coeff) in p)
         ## Real part of constraint
         @NLconstraint(m, real(lb) <= sum( coeff[1] * prod(jump_vars["ρ_$var"]^(exp[1]+exp[2]) for (var,exp) in mon) * cos(sum( (exp[1]-exp[2])*jump_vars["θ_$var"] for (var,exp) in mon))
                                         - coeff[2] * prod(jump_vars["ρ_$var"]^(exp[1]+exp[2]) for (var,exp) in mon) * sin(sum( (exp[1]-exp[2])*jump_vars["θ_$var"] for (var,exp) in mon))
@@ -187,7 +187,7 @@ function get_JuMP_polar_model(pb::Problem, mysolver)
                                         for (mon, coeff) in ps) <= imag(ub))
 
     polynome_obj = pb.objective
-    ps = Dict{Exponent, Tuple{Real, Real}}(exp=>(real(coeff), imag(coeff)) for (exp, coeff) in polynome_obj)
+    ps = SortedDict{Exponent, Tuple{Real, Real}}(exp=>(real(coeff), imag(coeff)) for (exp, coeff) in polynome_obj)
     lb_real, ub_real = real(lb), real(ub)
     @NLobjective(m, :Min, lb_real <= sum( coeff[1] * prod(jump_vars["ρ_$var"]^(exp[1]+exp[2]) for (var,exp) in mon) * cos(sum( (exp[1]-exp[2])*jump_vars["θ_$var"] for (var,exp) in mon))
                                         - coeff[2] * prod(jump_vars["ρ_$var"]^(exp[1]+exp[2]) for (var,exp) in mon) * sin(sum( (exp[1]-exp[2])*jump_vars["θ_$var"] for (var,exp) in mon))

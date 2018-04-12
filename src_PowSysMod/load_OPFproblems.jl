@@ -19,7 +19,7 @@ Return a dictonary Scenario => Scenario structure
 ```
 julia > OPFpbs = load_OPFproblems(MatpowerInput, "instances\\matpower\\WB2.m")
 julia > OPFpbs
-Dict{String,Scenario} with 1 entry:
+SortedDict{String,Scenario} with 1 entry:
   "BaseCase" => Scenario
 ```
 """
@@ -40,16 +40,16 @@ function load_OPFproblems(input_type, instance_path::String)
   # ds = DataSource(baseMVA, bus, link)
 
   for scenario in keys(OPFpbs)
-    node_linksin, node_linksout = Dict{String, Set{Link}}(), Dict{String, Set{Link}}()
+    node_linksin, node_linksout = SortedDict{String, SortedSet{Link}}(), SortedDict{String, SortedSet{Link}}()
 
     for (linkname, _) in OPFpbs[scenario].ds.link
       if !haskey(node_linksin, linkname.dest)
-        node_linksin[linkname.dest] = Set{Link}()
+        node_linksin[linkname.dest] = SortedSet{Link}()
       end
       union!(node_linksin[linkname.dest], [linkname])
 
       if !haskey(node_linksout, linkname.orig)
-        node_linksout[linkname.orig] = Set{Link}()
+        node_linksout[linkname.orig] = SortedSet{Link}()
       end
       union!(node_linksout[linkname.orig], [linkname])
     end
@@ -57,16 +57,16 @@ function load_OPFproblems(input_type, instance_path::String)
     OPFpbs[scenario].gs.node_linksin = node_linksin
     OPFpbs[scenario].gs.node_linksout = node_linksout
 
-    node_vars=Dict{String, Dict{String, Variable}}(busname => Dict{String, Variable}() for busname in keys(OPFpbs[scenario].ds.bus))
-    link_vars=Dict{Link, Dict{String, Variable}}(link => Dict{String, Variable}() for link in keys(OPFpbs[scenario].ds.link))
+    node_vars=SortedDict{String, SortedDict{String, Variable}}(busname => SortedDict{String, Variable}() for busname in keys(OPFpbs[scenario].ds.bus))
+    link_vars=SortedDict{Link, SortedDict{String, Variable}}(link => SortedDict{String, Variable}() for link in keys(OPFpbs[scenario].ds.link))
 
-    node_formulations = Dict{String, Dict{String, Symbol}}()
-    link_formulations = Dict{Link, Dict{String, Symbol}}()
+    node_formulations = SortedDict{String, SortedDict{String, Symbol}}()
+    link_formulations = SortedDict{Link, SortedDict{String, Symbol}}()
     for bus in keys(OPFpbs[scenario].ds.bus)
-      node_formulations[bus] = Dict{String, Symbol}(elem => :NbMinVar for elem in keys(OPFpbs[scenario].ds.bus[bus]))
+      node_formulations[bus] = SortedDict{String, Symbol}(elem => :NbMinVar for elem in keys(OPFpbs[scenario].ds.bus[bus]))
     end
     for link in keys(OPFpbs[scenario].ds.link)
-      link_formulations[link] = Dict{String, Symbol}(elem => :NbMinVar for elem in keys(OPFpbs[scenario].ds.link[link]))
+      link_formulations[link] = SortedDict{String, Symbol}(elem => :NbMinVar for elem in keys(OPFpbs[scenario].ds.link[link]))
     end
 
     OPFpbs[scenario].mp = MathematicalProgramming(node_formulations, link_formulations, node_vars, link_vars)
@@ -80,16 +80,16 @@ function load_OPFproblems(rawfile::String, genfile::String, confile::String)
   OPFpbs = read_GOCfiles(rawfile, genfile, confile)
 
   for scenario in keys(OPFpbs)
-    node_linksin, node_linksout = Dict{String, Set{Link}}(), Dict{String, Set{Link}}()
+    node_linksin, node_linksout = SortedDict{String, SortedSet{Link}}(), SortedDict{String, SortedSet{Link}}()
 
     for (linkname, _) in OPFpbs[scenario].ds.link
       if !haskey(node_linksin, linkname.dest)
-        node_linksin[linkname.dest] = Set{Link}()
+        node_linksin[linkname.dest] = SortedSet{Link}()
       end
       union!(node_linksin[linkname.dest], [linkname])
 
       if !haskey(node_linksout, linkname.orig)
-        node_linksout[linkname.orig] = Set{Link}()
+        node_linksout[linkname.orig] = SortedSet{Link}()
       end
       union!(node_linksout[linkname.orig], [linkname])
     end
@@ -97,16 +97,16 @@ function load_OPFproblems(rawfile::String, genfile::String, confile::String)
     OPFpbs[scenario].gs.node_linksin = node_linksin
     OPFpbs[scenario].gs.node_linksout = node_linksout
 
-    node_vars=Dict{String, Dict{String, Variable}}(busname => Dict{String, Variable}() for busname in keys(OPFpbs[scenario].ds.bus))
-    link_vars=Dict{Link, Dict{String, Variable}}(link => Dict{String, Variable}() for link in keys(OPFpbs[scenario].ds.link))
+    node_vars=SortedDict{String, SortedDict{String, Variable}}(busname => SortedDict{String, Variable}() for busname in keys(OPFpbs[scenario].ds.bus))
+    link_vars=SortedDict{Link, SortedDict{String, Variable}}(link => SortedDict{String, Variable}() for link in keys(OPFpbs[scenario].ds.link))
 
-    node_formulations = Dict{String, Dict{String, Symbol}}()
-    link_formulations = Dict{Link, Dict{String, Symbol}}()
+    node_formulations = SortedDict{String, SortedDict{String, Symbol}}()
+    link_formulations = SortedDict{Link, SortedDict{String, Symbol}}()
     for bus in keys(OPFpbs[scenario].ds.bus)
-      node_formulations[bus] = Dict{String, Symbol}(elem => :NbMinVar for elem in keys(OPFpbs[scenario].ds.bus[bus]))
+      node_formulations[bus] = SortedDict{String, Symbol}(elem => :NbMinVar for elem in keys(OPFpbs[scenario].ds.bus[bus]))
     end
     for link in keys(OPFpbs[scenario].ds.link)
-      link_formulations[link] = Dict{String, Symbol}(elem => :NbMinVar for elem in keys(OPFpbs[scenario].ds.link[link]))
+      link_formulations[link] = SortedDict{String, Symbol}(elem => :NbMinVar for elem in keys(OPFpbs[scenario].ds.link[link]))
     end
 
     OPFpbs[scenario].mp = MathematicalProgramming(node_formulations, link_formulations, node_vars, link_vars)
