@@ -74,8 +74,7 @@ function build_and_solve_instance(typeofinput, instance_path)
 
     ## Reading GOC initial point
     init_point = Point()
-    (typeofinput != GOCInput) || (init_point = read_solution_point_GOC(instance_path, instance_path))
-    export_to_dat(pb_global, pwd(), init_point)
+    (typeofinput != GOCInput) || (init_point = solution_point(instance_path))
     init_point_real = cplx2real(init_point)
 
     ## Exporting real problem
@@ -86,7 +85,6 @@ function build_and_solve_instance(typeofinput, instance_path)
     else
         # folder,scenario = split(instance_path, '\\')[end-1:end]
         spath, scenario = splitdir(instance_path)
-        println(spath)
         folder = splitdir(spath)[end]
         amplexportpath = joinpath("..","knitro_runs", "$(folder[9:end])_$(scenario)")
     end
