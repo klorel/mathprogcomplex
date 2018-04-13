@@ -1,5 +1,5 @@
 """
-    relax_ctx = set_relaxation(pb::Problem; ismultiordered=false, issparse=false, symmetries=OrderedSet(), hierarchykind=:Complex, renamevars=false, di=SortedDict{String, Int}(), d=-1)
+    relax_ctx = set_relaxation(pb::Problem; ismultiordered=false, issparse=false, symmetries=SortedSet(), hierarchykind=:Complex, renamevars=false, di=SortedDict{String, Int}(), d=-1)
 
     Build a `relax_ctx` object containing relaxation choices and problem features : order by constraint, relaxation order by constraint...
 """
@@ -61,10 +61,10 @@ function set_relaxation(pb::Problem; ismultiordered=false,
         (hierarchykind==:Real) && !(vartype<:Real) && error("set_relaxation() : variable $varname,$vartype should be real for real hierarchy.")
     end
 
-    relax_ctx = RelaxationContext(ismultiordered, issparse, OrderedSet{DataType}(), hierarchykind, renamevars, di, ki)
+    relax_ctx = RelaxationContext(ismultiordered, issparse, SortedSet{DataType}(), hierarchykind, renamevars, di, ki)
 
     # Check whether the problem has the suggested symmetries
-    pbsymmetries = OrderedSet{DataType}()
+    pbsymmetries = SortedSet{DataType}()
     isa(symmetries, Array) || error("set_relaxation(): symmetries should be an Array of types.")
     for symtype in symmetries
         if has_symmetry(relax_ctx, pb, symtype)
@@ -117,9 +117,9 @@ function normalize_problem(problem)
         end
     end
 
-    add_constraint!(normpb, "moment_cstr", 0 << Exponent())
+    add_constraint!(normpb, get_momentcstrname(), 0 << Exponent())
 
-    exposet = OrderedSet()
+    exposet = SortedSet()
     nb_expotot = 0
     degbycstr = Int64[]
     for (cstrname, cstr) in get_constraints(normpb)

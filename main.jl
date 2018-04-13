@@ -35,7 +35,7 @@ function main()
         relax_ctx = set_relaxation(problem; hierarchykind=:Complex,
                                             d = 2,
                                             symmetries = [PhaseInvariance])
-        relax_ctx.di["moment_cstr"] = 2
+        relax_ctx.di[get_momentcstrname()] = 2
     end
 
     println("\n--------------------------------------------------------")

@@ -1,10 +1,10 @@
 """
-    mm = MomentMatrix(vars::OrderedSet{Variable}, d, symmetries)
+    mm = MomentMatrix(vars::SortedSet{Variable}, d, symmetries)
 
     Build the moment matrix corresponding to the moment of degree up to `d` of the `vars` polynomial algebra. 
     Only monomials featuring all `symmetries` appear in the moment matrix.
 """
-function MomentMatrix(relax_ctx, vars::OrderedSet{Variable}, d::Int, symmetries::OrderedSet{DataType})
+function MomentMatrix(relax_ctx, vars::SortedSet{Variable}, d::Int, symmetries::SortedSet{DataType})
     mm = SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
     realexpos = compute_exponents(vars, d)
     conjexpos = compute_exponents(vars, d, compute_conj=true)
@@ -20,7 +20,7 @@ function MomentMatrix(relax_ctx, vars::OrderedSet{Variable}, d::Int, symmetries:
             end
         end
     end
-    return MomentMatrix(mm, copy(vars), d)
+    return MomentMatrix(mm, SortedSet(vars), d)
 end
 
 function copy(mm::MomentMatrix)
@@ -71,30 +71,30 @@ function evaluate(mm::MomentMatrix, pt::Point)
             mm_eval[key] = res
         end
     end
-    return MomentMatrix(mm_eval, setdiff(mm.vars, OrderedSet(keys(pt))), mm.order)
+    return MomentMatrix(mm_eval, setdiff(mm.vars, SortedSet(keys(pt))), mm.order)
 end
 
 
 """
-    momentmatrices = compute_momentmat(problem, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
+    momentrelaxation = MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{SortedSet{String}, Int}}, max_cliques::SortedDict{String, SortedSet{Variable}})
 
-    Compute the moment and localizing matrices associated with the problem constraints and clique decomposition.
+    Compute the `momentrelaxation` of `problem` corresponding to the clique decomposition `max_cliques` and parameters `moment_param`.
 """
-
-function MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{OrderedSet{String}, Int}}, max_cliques::SortedDict{String, OrderedSet{Variable}})
-    println("\n=== MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{OrderedSet{String}, Int}}, max_cliques::SortedDict{String, OrderedSet{Variable}})")
+function MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{SortedSet{String}, Int}}, max_cliques::SortedDict{String, SortedSet{Variable}})
+    println("\n=== MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{SortedSet{String}, Int}}, max_cliques::SortedDict{String, SortedSet{Variable}})")
     println("Compute the moment and localizing matrices associated with the problem constraints and clique decomposition and return a MomentRelaxationPb object.")
 
     momentmatrices = SortedDict{Tuple{String, String}, MomentMatrix}()
 
     for (cstrname, (clique_keys, order)) in moment_param
         # Collect variables involved in constraint
-        vars = OrderedSet{Variable}()
+        vars = SortedSet{Variable}()
         blocname = ""
         for clique_key in clique_keys
             union!(vars, max_cliques[clique_key])
             blocname = blocname*clique_key*"_"
         end
+        # Build localizing matrices
         momentmatrices[(cstrname, blocname[1:end-1])] = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries) * problem.constraints[cstrname].p
     end
 
