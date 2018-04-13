@@ -80,7 +80,10 @@ end
 function read_data_bus_fromraw(bus_data, load_data, shunt_data, baseMVA)
     nb_bus = size(bus_data,1)
     index = SortedDict(bus_data[i,1] => i for i in 1:nb_bus)
-    bus = SortedDict(bus_name(i) => SortedDict{String,Any}() for i in 1:nb_bus)
+    bus = SortedDict{String, SortedDict{String,Any}}()
+    for i in 1:nb_bus
+        bus[bus_name(i)] = SortedDict{String,Any}()
+    end
     for i in 1:nb_bus
         id_bus = bus_data[i,1]
         busname = bus_name(i)
@@ -299,8 +302,8 @@ function read_GOCfiles(rawfile, genfile,confile)
     node_vars = SortedDict{String, SortedDict{String, Variable}}()
     link_vars = SortedDict{Link, SortedDict{String, Variable}}()
     gs = GridStructure("BaseCase", node_linksin, node_linksout)
-    node_formulations = SortedDict{String, SortedDict{Tuple{Type, String}, Symbol}}()
-    link_formulations = SortedDict{Link, SortedDict{Tuple{Type, String}, Symbol}}()
+    node_formulations = SortedDict{String, SortedDict{String, Symbol}}()
+    link_formulations = SortedDict{Link, SortedDict{String, Symbol}}()
     mp = MathematicalProgramming(node_formulations, link_formulations, node_vars,link_vars)
     ##read scenarios
     OPFproblems = scenarios_data(ds, gs, mp, con_data_csv,index)
