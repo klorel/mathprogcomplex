@@ -31,11 +31,11 @@ Phase 1 : resolution  of continuous relaxation\n
                           KTR_PARAM_HONORBNDS=0,
                           KTR_PARAM_MIP_INTVAR_STRATEGY=1)
   tic()
-  my_timer = @elapsed m1, variables_jump1 = get_JuMP_cartesian_model(pb_global_real, mysolver)
+  my_timer = @elapsed m, variables_jump = get_JuMP_cartesian_model(pb_global_real, mysolver)
   @printf("%-35s%10.6f s\n", "get_JuMP_cartesian_model", my_timer)
   toc()
   #resolution
-  solve(m1)
+  solve(m)
 
   ##phase 2 : resolution with complementary constraints + initial point = solution continuous relaxation
   println("
@@ -43,7 +43,7 @@ Phase 1 : resolution  of continuous relaxation\n
 Phase 2 : resolution with complementary constraints from the solution of continuous relaxation\n
 ##############################################################################################")
 
-  mysolver = KnitroSolver(KTR_PARAM_OUTLEV=3,
+  mysolver2 = KnitroSolver(KTR_PARAM_OUTLEV=3,
                           KTR_PARAM_MAXIT=600,
                           KTR_PARAM_SCALE=0,
                           KTR_PARAM_FEASTOL=1.0,
@@ -54,23 +54,26 @@ Phase 2 : resolution with complementary constraints from the solution of continu
                           KTR_PARAM_PRESOLVE=0,
                           KTR_PARAM_HONORBNDS=0,
                           KTR_PARAM_MIP_INTVAR_STRATEGY=2)
-  tic()
-  my_timer = @elapsed m2, variables_jump2 = get_JuMP_cartesian_model(pb_global_real, mysolver)
-  @printf("%-35s%10.6f s\n", "get_JuMP_cartesian_model", my_timer)
-  for (varname, varjump) in variables_jump1
-    setvalue(variables_jump2[varname], getvalue(varjump))
+
+
+  setsolver(m, mysolver2)
+  # tic()
+  # my_timer = @elapsed m2, variables_jump2 = get_JuMP_cartesian_model(pb_global_real, mysolver)
+  # @printf("%-35s%10.6f s\n", "get_JuMP_cartesian_model", my_timer)
+  for (varname, varjump) in variables_jump
+    setvalue(variables_jump[varname], getvalue(varjump))
   end
-  toc()
+  # toc()
   #resolution
-  solve(m2)
+  solve(m)
 
   ##get values
-  println("Objective value : ", getobjectivevalue(m2),"\n")
+  println("Objective value : ", getobjectivevalue(m),"\n")
 
   println("----Solution csv writing")
   f = open("JuMP_solution.csv","w")
   write(f, "Varname ; Value\n")
-  for (varname, var) in variables_jump2
+  for (varname, var) in variables_jump
     value = getvalue(var)
     write(f, "$varname; $value\n")
   end
@@ -79,7 +82,7 @@ Phase 2 : resolution with complementary constraints from the solution of continu
 
   ##create solution1.txt and solution2.txt
   println("--Solution txt writing")
-  write_solutions(OPFpbs, variables_jump2)
+  write_solutions(OPFpbs, variables_jump)
   println("--End solution txt writing\n")
    return pb_global_real
 

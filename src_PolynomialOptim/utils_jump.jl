@@ -39,6 +39,8 @@ function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
             variables_jump["$varname"] = @variable(m, basename="$varname", start=1.1)
         elseif vartype==Bool
             variables_jump["$varname"] = @variable(m, category=:Bin, basename="$varname", start=0)
+        else
+            error("$varname must be of type Real or Bool, here type is $vartype")
         end
     end
     ctr_jump = SortedDict{String,JuMP.ConstraintRef}()
@@ -46,7 +48,7 @@ function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
         polynome = modeler_ctr.p
         lb = modeler_ctr.lb
         ub = modeler_ctr.ub
-
+        precond = modeler_ctr.precond
         for value in values(polynome)
             if imag(value)!=0
                 error("Polynom coefficients have to be real numbers")
@@ -54,7 +56,15 @@ function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
         end
         my_timer = @elapsed s_ctr = poly_to_NLexpression(m, variables_jump,polynome)
         # @printf("%-35s%10.6f s\n", "poly_to_NLexpression for $ctr", my_timer)
-        ctr_jump[ctr] = @NLconstraint(m, lb <= s_ctr <= ub)
+        if precond == :sqrt
+            if lb == -Inf && ub >0
+                ctr_jump[ctr] = @NLconstraint(m, -Inf <= s_ctr <= ub)
+            else
+                error("sqrt non applicable to $lb <= $s_ctr <= $ub")
+            end
+        else
+            ctr_jump[ctr] = @NLconstraint(m, lb <= s_ctr <= ub)
+        end
     end
     polynome_obj = pb_poly_real.objective
     my_timer = @elapsed s_obj = poly_to_NLexpression(m, variables_jump,polynome_obj)
