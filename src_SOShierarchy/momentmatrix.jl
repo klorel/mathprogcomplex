@@ -86,20 +86,53 @@ function MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String,
 
     momentmatrices = SortedDict{Tuple{String, String}, MomentMatrix}()
 
-    for (cstrname, (clique_keys, order)) in moment_param
-        # Collect variables involved in constraint
-        vars = SortedSet{Variable}()
-        blocname = ""
-        for clique_key in clique_keys
-            union!(vars, max_cliques[clique_key])
-            blocname = blocname*clique_key*"_"
+    ## Build moment matrix
+    # NOTE: sparsity work tbd here : several moment matrices ?
+    clique_keys, order = moment_param[get_momentcstrname()]
+    vars, blocname = collect_cliquesvars(clique_keys, max_cliques)
+    
+    momentmatrices[(get_momentcstrname(), blocname)] = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries)
+
+    ## Build localizing matrices
+    for (cstrname, cstr) in problem.constraints
+
+        cstrtype = get_cstrtype(cstr)
+        if cstrtype == :ineqdouble
+            # Deal with lower inequality
+            clique_keys, order = moment_param[get_cstrname(cstrname, :ineqlo)]
+            vars, blocname = collect_cliquesvars(clique_keys, max_cliques)
+            
+            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries)
+            momentmatrices[(get_cstrname(cstrname, :ineqlo), blocname)] = mmt * (cstr.p - cstr.lb)
+
+            # Deal with upper inequality, no recomputing of variables or moment matrix if possible
+            clique_keys_upp, order_upp = moment_param[get_cstrname(cstrname, :ineqhi)]
+            if collect(clique_keys) != collect(clique_keys_upp)
+                warn("clique keys different from lower and upper side of double constraint")
+                vars, blocname = collect_cliquesvars(clique_keys_upp, max_cliques)
+
+                mmt = MomentMatrix(relax_ctx, vars, order_upp, relax_ctx.symmetries)
+            elseif order_upp != order
+                warn("order different from lower and upper side of double constraint")
+                mmt = MomentMatrix(relax_ctx, vars, order_upp, relax_ctx.symmetries)
+            end
+            
+            momentmatrices[(get_cstrname(cstrname, :ineqhi), blocname)] = mmt * (cstr.ub - cstr.p)
+
+        else
+            # either cstrtype == :ineqlo, :ineqhi, :eq
+            clique_keys, order = moment_param[get_cstrname(cstrname, cstrtype)]
+            vars, blocname = collect_cliquesvars(clique_keys, max_cliques)
+            
+            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries)
+            momentmatrices[(get_cstrname(cstrname, cstrtype), blocname)] = mmt * get_normalizedpoly(cstr, cstrtype)
         end
-        # Build localizing matrices
-        momentmatrices[(cstrname, blocname[1:end-1])] = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries) * problem.constraints[cstrname].p
     end
+
 
     return MomentRelaxationPb(problem.objective, momentmatrices)
 end
+
 
 function print(io::IO, momentrelax::MomentRelaxationPb)
     println(io, "Moment Relaxation Problem:")

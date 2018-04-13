@@ -40,24 +40,6 @@ struct MomentRelaxationPb
     constraints::SortedDict{Tuple{String, String}, MomentMatrix}
 end
 
-# """
-#     MomentMatrixBasis(basis, expo2int, int2expo, msize)
-
-#     Store the matrix coefficients of the moment variable decomposition of the moment matrix.
-
-#     Arguments:
-#     - basis::SortedDict{Exponent, AbstractMatrix} : matrice correspondant au moment clé,
-#     - expo2int : carte donnant les coordonnées de l'exposant clé dans la matrice des moments initiale,
-#     - int2expo : carte donnant l'xposant correspondant aux coordonnées clé dans la matrice des moments initiale,
-#     - msize: taille de la matrice des moments initiale (ordre d-k).
-# """
-# mutable struct MomentMatrixBasis
-#     basis::SortedDict{Tuple{Exponent, Exponent}, AbstractMatrix} # Les exposants sont de degré inférieur à d
-#     expo2int::SortedDict{Exponent, Int}   # Carte de la matrice des coefficients d-ki
-#     int2expo::SortedDict{Int, Exponent}
-#     msize::Int                      # size of the matrix
-# end
-
 
 const SDPBody = SortedDict{Tuple{String, String, Exponent, Exponent}, SortedDict{Tuple{Exponent, Exponent}, Number}}
 const SDPRhs = SortedDict{Tuple{Exponent, Exponent}, Number}

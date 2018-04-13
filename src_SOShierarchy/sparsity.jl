@@ -8,11 +8,23 @@ function build_sparsity(relax_ctx, problem, max_cliques::SortedDict{String, Sort
     if relax_ctx.issparse == false
         (length(max_cliques) == 1) || error("build_sparsity(): Relaxation is not sparse, one clique is expected (not $(length(max_cliques)))")
         
+        # For each *problem* constraint, compute relevant variable sets and matrix order
         moments_param = SortedDict{String, Tuple{SortedSet{String}, Int}}()
-        for (cstr, di) in relax_ctx.di
-            ki = relax_ctx.ki[cstr]
-            moments_param[cstr] = (SortedSet(["clique1"]), di-ki)
+        for (cstrname, cstr) in problem.constraints
+            cstrtype = get_cstrtype(cstr)
+            if cstrtype == :ineqdouble
+                di, ki = relax_ctx.di[get_cstrname(cstrname, :ineqlo)], relax_ctx.ki[get_cstrname(cstrname, :ineqlo)]
+                moments_param[get_cstrname(cstrname, :ineqlo)] = (SortedSet(["clique1"]), di-ki)
+                moments_param[get_cstrname(cstrname, :ineqhi)] = (SortedSet(["clique1"]), di-ki)
+            else
+                di, ki = relax_ctx.di[get_cstrname(cstrname, cstrtype)], relax_ctx.ki[get_cstrname(cstrname, cstrtype)]
+                moments_param[get_cstrname(cstrname, cstrtype)] = (SortedSet(["clique1"]), di-ki)
+            end
         end
+
+        # Handle the moment constraint
+        di, ki = relax_ctx.di[get_momentcstrname()], relax_ctx.ki[get_momentcstrname()]
+        moments_param[get_momentcstrname()] = (SortedSet(["clique1"]), di-ki)
         return moments_param
 
     else
@@ -33,6 +45,21 @@ function get_maxcliques(relax_ctx, problem)
     end
 end
 
+"""
+    vars, blocname = collect_cliquesvars(clique_keys, max_cliques)
+
+    Collect variables of `cliques_keys` cliques, described in `max_cliques`
+"""
+function collect_cliquesvars(clique_keys, max_cliques)
+    # Collect variables involved in constraint
+    vars = SortedSet{Variable}()
+    blocname = ""
+    for clique_key in clique_keys
+        union!(vars, max_cliques[clique_key])
+        blocname = blocname*clique_key*"_"
+    end
+    return vars, blocname[1:end-1]
+end
 #################################################################################
 ## Old stuff
 

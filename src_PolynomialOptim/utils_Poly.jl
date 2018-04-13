@@ -69,10 +69,20 @@ function get_sumdegs(expo::Exponent)
 end
 
 """
-    isdoublesided(cstr::Constraint)
+    cstrtype = get_cstrtype(cstr::Constraint)
 
-    Test whether the constraint has two finite bounds.
+    Return a cstraint type among `:eq`, `:ineqhi`, `:ineqlo`, `:ineqdouble`.
 """
-function isdoublesided(cstr::Constraint)
-    return (cstr.lb != -Inf-im*Inf) && (cstr.ub != Inf+im*Inf)
+function get_cstrtype(cstr::Constraint)
+    if cstr.lb == cstr.ub && isfinite(cstr.ub)
+        return :eq
+    elseif (cstr.lb == -Inf-im*Inf) && (cstr.lb != Inf+im*Inf)
+        return :ineqhi
+    elseif (cstr.lb != -Inf-im*Inf) && (cstr.lb == Inf+im*Inf)
+        return :ineqlo
+    elseif (cstr.lb != -Inf-im*Inf) && (cstr.lb != Inf+im*Inf)
+        return :ineqdouble
+    else
+        error("get_cstrtype(): unknown constraint type.\nConstraint is $cstr")
+    end
 end

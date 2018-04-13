@@ -6,32 +6,27 @@ function main()
 
     ########################################
     # Construction du problème type
-    # rawproblem = buildPOP_1v1c()
-    # rawproblem = buildPOPR_2v1c()
-    # rawproblem = buildPOP_1v2c()
-    # rawproblem = buildPOP_2v3c()
-    # rawproblem = buildPOP_WB2()
-    # rawproblem = buildPOP_WB2_expl()
+    # problem = buildPOP_1v1c()
+    # problem = buildPOPR_2v1c()
+    # problem = buildPOP_1v2c()
+    # problem = buildPOP_2v3c()
+    # problem = buildPOP_WB2()
+    # problem = buildPOP_WB2_expl()
 
     ########################################
     # Normalizing pb and setting relaxation order by constraint
-    # problem = normalize_problem(rawproblem)
     # relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
     
     real_pb = false
     if real_pb
-        # Construction of the initial problem
-        rawproblem = buildPOPR_2v2cbis()
-
-        # Transform the problem to canonical form and set relaxation parameters
-        problem = normalize_problem(rawproblem)
-        relax_ctx = set_relaxation(problem, hierarchykind=:Real, d = 2)
+        # Build the init problem and set relaxation parameters
+        problem = buildPOPR_2v2cbis()
+        relax_ctx = set_relaxation(problem; hierarchykind=:Real, 
+                                            d = 2,
+                                            symmetries = [PhaseInvariance])
     else
-        # Construction of the initial problem
-        rawproblem = buildPOP_WB2_expl()
-
-        # Transform the problem to canonical form and set relaxation parameters
-        problem = normalize_problem(rawproblem)
+        # Build the init problem and set relaxation parameters
+        problem = buildPOP_WB2_expl()
         relax_ctx = set_relaxation(problem; hierarchykind=:Complex,
                                             d = 2,
                                             symmetries = [PhaseInvariance])
@@ -39,17 +34,22 @@ function main()
     end
 
     println("\n--------------------------------------------------------")
-    println("relax_ctx = \n$relax_ctx")
+    println("problem = \n$problem")
     
     println("\n--------------------------------------------------------")
-    println("problem = \n$problem")
+    println("relax_ctx = \n$relax_ctx")
     
     ########################################
     # Build sparsity pattern, compute maximal cliques
     max_cliques = get_maxcliques(relax_ctx, problem)
     
     println("\n--------------------------------------------------------")
-    println("max cliques = \n$max_cliques")
+    println("max cliques =")
+    for (cliquename, vars) in max_cliques
+        print("$cliquename = ")
+        for var in vars print("$var, ") end
+        @printf("\b\b \n")
+    end
     
     ########################################
     # Compute moment matrices parameters: order et variables
@@ -57,7 +57,9 @@ function main()
     println("\n--------------------------------------------------------")
     println("Matrix moment parameters =")
     for (key, (val1, val2)) in moments_params
-        println("$key \t -> $val1, di-ki=$val2")
+        print("$key \t -> di-ki = $val2, \tcliques = ")
+        for clique in val1 print("$clique, ") end
+        @printf("\b\b \n")
     end
     
     ########################################

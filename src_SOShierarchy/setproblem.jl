@@ -12,20 +12,26 @@ function set_relaxation(pb::Problem; ismultiordered=false,
                                      d=-1)
     println("\n=== set_relaxation(pb; ismultiordered=$ismultiordered, issparse=$issparse, symmetries=$symmetries, hierarchykind=$hierarchykind, renamevars=$renamevars, di=SortedDict of length $(length(di)), d=$d)")
 
+    # Check that all variables have a type fitting the hierarchy kind
+    for (varname, vartype) in pb.variables
+        (vartype<:Int) && error("set_relaxation() : variable $varname,$vartype is integer, unfit for SOS relaxation.\nConsider relaxing it and adding a complementarity constraint.")
+        (hierarchykind==:Complex) && !(vartype<:Complex) && error("set_relaxation() : variable $varname,$vartype should be complex for complex hierarchy.")
+        (hierarchykind==:Real) && !(vartype<:Real) && error("set_relaxation() : variable $varname,$vartype should be real for real hierarchy.")
+    end
+
     # Compute each constraint degree
     ki = SortedDict{String, Int}()
+    ki[get_momentcstrname()] = 0
     for (cstrname, cstr) in pb.constraints
-        if isdoublesided(cstr)
-            ki[get_cstrlowername(cstrname)] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
-            ki[get_cstruppername(cstrname)] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
+        cstrtype = get_cstrtype(cstr)
+        if cstrtype == :ineqdouble
+            ki[get_cstrname(cstrname, :ineqlo)] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
+            ki[get_cstrname(cstrname, :ineqhi)] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
         else
-            ki[cstrname] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
+            ki[get_cstrname(cstrname, cstrtype)] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
         end
     end
 
-    for (key, val) in ki
-        println("$key \t $val")
-    end
 
     # Relaxation order management
     di_relax = SortedDict{String, Int}()
@@ -35,33 +41,28 @@ function set_relaxation(pb::Problem; ismultiordered=false,
         cur_order = haskey(di, cstrname) ? di[cstrname] : d
         
         # Check provided di is suitable wrt constraint degree, add
-        if isdoublesided(cstr)
-            cur_ki = ki[get_cstrlowername(cstrname)]
+        cstrtype = get_cstrtype(cstr)
+        if cstrtype == :ineqdouble
+            cur_ki = ki[get_cstrname(cstrname, :ineqlo)]
             (cur_ki <= cur_order) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value $cur_ki, hierarchy may be multiordered.")
-            di_relax[get_cstrlowername(cstrname)] = max(cur_ki, cur_order)
-            di_relax[get_cstruppername(cstrname)] = max(cur_ki, cur_order)
-        else
-            cur_ki = ki[cstrname]
+            di_relax[get_cstrname(cstrname, :ineqlo)] = max(cur_ki, cur_order)
+            di_relax[get_cstrname(cstrname, :ineqhi)] = max(cur_ki, cur_order)
+        else # :eq, :ineqlo, :ineqhi
+            cur_ki = ki[get_cstrname(cstrname, cstrtype)]
             (cur_ki <= cur_order) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value $cur_ki, hierarchy may be multiordered.")
-            di_relax[cstrname] = max(cur_ki, cur_order)
+            di_relax[get_cstrname(cstrname, cstrtype)] = max(cur_ki, cur_order)
         end
     end
 
-    println("-- di_relax")
-    for (key, val) in di_relax
-        println("$key \t $val")
+    if haskey(di, get_momentcstrname())
+        di_relax[get_momentcstrname()] = di[get_momentcstrname()]
+    elseif d!=-1
+        di_relax[get_momentcstrname()] = d
+    else
+        di_relax[get_momentcstrname()] = maximum(values(di_relax))
     end
 
-
-
-    # Check that all variables have a type fitting the hierarchy kind
-    for (varname, vartype) in pb.variables
-        (vartype<:Int) && error("set_relaxation() : variable $varname,$vartype is integer, unfit for SOS relaxation.\nConsider relaxing it and adding a complementarity constraint.")
-        (hierarchykind==:Complex) && !(vartype<:Complex) && error("set_relaxation() : variable $varname,$vartype should be complex for complex hierarchy.")
-        (hierarchykind==:Real) && !(vartype<:Real) && error("set_relaxation() : variable $varname,$vartype should be real for real hierarchy.")
-    end
-
-    relax_ctx = RelaxationContext(ismultiordered, issparse, SortedSet{DataType}(), hierarchykind, renamevars, di, ki)
+    relax_ctx = RelaxationContext(ismultiordered, issparse, SortedSet{DataType}(), hierarchykind, renamevars, di_relax, ki)
 
     # Check whether the problem has the suggested symmetries
     pbsymmetries = SortedSet{DataType}()
@@ -83,58 +84,28 @@ function set_relaxation(pb::Problem; ismultiordered=false,
         end
     end
 
-    @printf("-> Number of constraints s.t. di > ki:     %i / %i\n", nb_densecstrs, length(pb.constraints))
-    @printf("-> Max total degree on such constraints:   %.1f / %.1f (mean/std)\n", mean(maxdeg_densecstr), std(maxdeg_densecstr))
-    @printf("All variables appearing in such constraints will be linked in the sparsity pattern, which will largely densify it.\n")
-    return relax_ctx
-end
-
-
-"""
-    norm_pb = normalize_problem(problem)
-
-    Transform the problem so it contains only ineqs or eqs s.a. g_i(z) ≥ 0 or g_j(z) = 0, add the moment constraint g_0(z) = 1 ≥ 0.
-"""
-# NOTE: Care for integer variables will have to be taken at some point.
-function normalize_problem(problem)
-    println("\n=== normalize_problem(problem)")
-    println("Transform the problem so it contains only ineqs or eqs s.a. g_i(z) ≥ 0 or g_j(z) = 0, add the moment constraint g_0(z)=1≥0.")
-
-    normpb = Problem()
-    normpb.variables = copy(problem.variables)
-    normpb.objective = copy(problem.objective)
-
-    for (cstrname, cstr) in get_constraints(problem)
-        if cstr.lb != cstr.ub
-            if cstr.lb != -Inf-im*Inf
-                add_constraint!(normpb, get_cstrlowername(cstrname), 0 << (cstr.p - cstr.lb))
-            end
-            if cstr.ub != Inf+im*Inf
-                add_constraint!(normpb, get_cstruppername(cstrname), 0 << (cstr.ub - cstr.p))
-            end
-        else
-            add_constraint!(normpb, cstrname, (cstr.p - cstr.ub) == 0)
-        end
-    end
-
-    add_constraint!(normpb, get_momentcstrname(), 0 << Exponent())
 
     exposet = SortedSet()
     nb_expotot = 0
     degbycstr = Int64[]
-    for (cstrname, cstr) in get_constraints(normpb)
+    for (cstrname, cstr) in get_constraints(pb)
         push!(degbycstr, max(cstr.p.degree.explvar, cstr.p.degree.conjvar))
         for (expo, λ) in cstr.p
             push!(exposet, expo)
             nb_expotot += 1
         end
     end
-    println("-> Problem with:")
-    println("-> Nb of variables:                        $(length(normpb.variables))")
-    println("-> Nb of constraints:                      $(length(normpb.constraints))")
+    println("=> Problem with:")
+    println("-> Nb of variables:                        $(length(pb.variables))")
+    println("-> Nb of constraints:                      $(length(pb.constraints))")
     println("-> Nb of monomials:                        $nb_expotot ($(length(exposet)) different)")
-    println("-> Max total degree by constraint:         $(mean(degbycstr)) / $(std(degbycstr)) (mean/std)")
-    return normpb
+    @printf("-> Max total degree by constraint:         %.1f / %.1f (mean/std)\n", mean(degbycstr), std(degbycstr))
+
+    println("=> Relaxation characteristics:")
+    @printf("-> Number of constraints s.t. di > ki:     %i / %i\n", nb_densecstrs, length(pb.constraints))
+    @printf("-> Max total degree on such constraints:   %.1f / %.1f (mean/std)\n", mean(maxdeg_densecstr), std(maxdeg_densecstr))
+    @printf("All variables appearing in such constraints will be linked in the sparsity pattern, which will largely densify it.\n")
+    return relax_ctx
 end
 
 
@@ -146,6 +117,10 @@ function print(io::IO, relctx::RelaxationContext)
     print(io, "symmetries             : $(relctx.symmetries)\n")
     print(io, "hierarchykind          : $(relctx.hierarchykind)\n")
     print(io, "renamevars             : $(relctx.renamevars)\n")
-    print(io, "di                     : $(relctx.di)\n")
-    print(io, "ki                     : $(relctx.ki)")
+    for (cstrname, di) in relctx.di
+    print(io, "di                     : $cstrname  \t=> $di\n")
+    end
+    for (cstrname, ki) in relctx.ki
+    print(io, "ki                     : $cstrname  \t=> $ki\n")
+    end
 end

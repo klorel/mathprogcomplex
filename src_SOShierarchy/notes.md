@@ -6,10 +6,9 @@ So far, the ``src_SOShierarchy`` code is able to trnasform a ``Problem`` object 
 
 ```julia
     # Construction of the initial problem
-    rawproblem = buildPOP_WB2_expl()
+    problem = buildPOP_WB2_expl()
 
-    # Transform the problem to canonical form and set relaxation parameters
-    problem = normalize_problem(rawproblem)
+    # Set relaxation parameters
     relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 2, leveragesymmetries = true)
 
     # Build sparsity pattern, compute maximal cliques

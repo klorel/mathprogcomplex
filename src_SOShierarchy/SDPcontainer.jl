@@ -5,7 +5,7 @@ function build_SDP(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxationPb)
     for ((cstrname, blocname), mmt) in mmtrelax_pb.constraints
         
         for ((γ, δ), poly) in mmt.mm
-            for (expo, λ) in poly                
+            for (expo, λ) in poly
                 # Check the current monomial has correct degree
                 if (relaxctx.hierarchykind==:Complex) && ((expo.degree.explvar > relaxctx.di[cstrname]) || (expo.degree.conjvar > relaxctx.di[cstrname]))
                     warn("convertMMtobase(): Found exponent pair of degree $(expo.degree) > $(relaxctx.di[cstrname]) for Complex hierarchy.\n($((α, β)), at $((γ, δ)) of MM matrix)")
@@ -85,36 +85,12 @@ function print(io::IO, sdpbody::SDPBody)
             println(io, "$λ")
         end
     end
-
-    # for (cstrname, val0) in sdpbody
-    #     bloclen = get_maxlenkey(val0)
-    #     for (blocname, val1) in val0
-    #         expolen = get_maxlenkey(val1)
-
-    #         coordlen = 0
-    #         for ((α, β), Bi) in val1
-    #             for ((γ, δ), λ) in Bi
-    #                 coordlen = max(coordlen, get_maxlenkey(Bi))
-    #             end
-    #         end
-            
-    #         for ((α, β), Bi) in val1
-    #             for ((γ, δ), λ) in Bi
-    #                 print_string(io, cstrname, cstrlen)
-    #                 print_string(io, blocname, bloclen)
-    #                 print_string(io, "($α, $β)", expolen); print(io, ": ")
-    #                 print_string(io, "($γ, $δ)", coordlen, alignright=false)
-    #                 println(io, "$λ")
-    #             end
-    #         end
-    #     end
-    # end
 end
 
 function print(io::IO, sdprhs::SDPRhs)
     expolen = maximum(x->length("($(x[1]), $(x[2]))"), keys(sdprhs))
     for ((α, β), λ) in sdprhs
-        print_string(io, "($α, $β)", expolen)#; print(io, ": ")
+        print_string(io, "($α, $β)", expolen)
         println(io, "\t$λ")
     end
 end
