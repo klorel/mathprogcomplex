@@ -6,14 +6,14 @@ type MatpowerInput <: AbstractInput end
     read_input(input_type::T, instance_path::String) where T<:Type{MatpowerInput}
 
 Read instance in `instance_path` depending on `input_type`.\n
-Return a structure OPFProblems.    
+Return a structure OPFProblems.
 """
 function read_input(input_type::T, instance_path::String) where T<:Type{MatpowerInput}
   data = load_matpower(instance_path)
 
   # DataStructure and Gridstructure data:
   bus = SortedDict{String, SortedDict{String, Any}}()
-  link = SortedDict{Link, SortedDict{String, MatpowerLine_π}}()
+  link = SortedDict{Link, SortedDict{String, Any}}()
 
   bus_id_line=SortedDict{Int, Int}()
   bus_id_name=SortedDict{Int, String}()
@@ -29,7 +29,10 @@ function read_input(input_type::T, instance_path::String) where T<:Type{Matpower
     id = i-i_debut+1
     busname = bus_name(id)
     ## Adding MatpowerVolt structure (for each bus)
-    bus[busname] = SortedDict(volt_name() => MatpowerVolt(busname, id, data[i,13], data[i,12]))
+    if !haskey(bus, busname)
+        bus[busname] = SortedDict{String, Any}()
+    end
+    bus[busname][volt_name()] = MatpowerVolt(busname, id, data[i,13], data[i,12])
 
     ## Matpower Load
     load = data[i,3] + im*data[i,4]
@@ -89,7 +92,7 @@ function read_input(input_type::T, instance_path::String) where T<:Type{Matpower
       rs, xs, bc = data[i,3:5]
       τ, θ = data[i, 9:10]
       if !haskey(link, linkname)
-        link[linkname] = SortedDict{String, MatpowerLine_π}()
+        link[linkname] = SortedDict{String, Any}()
       end
 
       nb_elem = length(link[linkname])
@@ -146,8 +149,8 @@ function read_input(input_type::T, instance_path::String) where T<:Type{Matpower
   link_vars = SortedDict{Link, SortedDict{String, Variable}}()
   gs = GridStructure(basecase_scenario_name(), node_linksin, node_linksout)
 
-  node_formulations = SortedDict{String, SortedDict{Tuple{Type, String}, Symbol}}()
-  link_formulations = SortedDict{Link, SortedDict{Tuple{Type, String}, Symbol}}()
+  node_formulations = SortedDict{String, SortedDict{String, Symbol}}()
+  link_formulations = SortedDict{Link, SortedDict{String, Symbol}}()
   mp = MathematicalProgramming(node_formulations, link_formulations, node_vars, link_vars)
   return OPFProblems(basecase_scenario_name()=>Scenario(ds, gs, mp))
 end

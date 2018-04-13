@@ -5,7 +5,7 @@ include(joinpath(ROOT,"..","src_PowSysMod", "PowSysMod_body.jl"))
 
 typeofinput = MatpowerInput
 data_path = joinpath(ROOT,"..","..","data","data_Matpower","matpower")
-instance = "case30.m"
+instance = "case9.m"
 
 
 mysolver = KnitroSolver(KTR_PARAM_OUTLEV=3,
