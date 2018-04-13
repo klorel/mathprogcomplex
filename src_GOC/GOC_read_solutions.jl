@@ -26,6 +26,7 @@ function read_solution_point_GOC(instance_path::String, solution_path::String)
     # Add delta solution
     delta_point = create_delta_solution(solution2)
     binary_point = compute_binary_values(basecase_generator_solution, bus_solution, power_data)
+    println(binary_point)
     global_point = merge(global_point, delta_point,binary_point)
     return global_point
 end
