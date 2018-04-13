@@ -32,6 +32,20 @@ function set_relaxation(pb::Problem; ismultiordered=false,
         end
     end
 
+    # Store each SDP multiplier type
+    cstrtypes = SortedDict{String, Symbol}()
+    for (cstrname, cstr) in pb.constraints
+        cstrtype = get_cstrtype(cstr)
+        if cstrtype == :ineqdouble
+            cstrtypes[get_cstrname(cstrname, :ineqlo)] = :SDP
+            cstrtypes[get_cstrname(cstrname, :ineqhi)] = :SDP
+        elseif cstrtype == :eq
+            cstrtypes[get_cstrname(cstrname, cstrtype)] = :Sym
+        else
+            cstrtypes[get_cstrname(cstrname, cstrtype)] = :SDP
+        end
+    end
+    cstrtypes[get_momentcstrname()] = :SDP
 
     # Relaxation order management
     di_relax = SortedDict{String, Int}()
@@ -54,6 +68,7 @@ function set_relaxation(pb::Problem; ismultiordered=false,
         end
     end
 
+    # Moment constraint relaxation order
     if haskey(di, get_momentcstrname())
         di_relax[get_momentcstrname()] = di[get_momentcstrname()]
     elseif d!=-1
@@ -62,7 +77,7 @@ function set_relaxation(pb::Problem; ismultiordered=false,
         di_relax[get_momentcstrname()] = maximum(values(di_relax))
     end
 
-    relax_ctx = RelaxationContext(ismultiordered, issparse, SortedSet{DataType}(), hierarchykind, renamevars, di_relax, ki)
+    relax_ctx = RelaxationContext(ismultiordered, issparse, SortedSet{DataType}(), hierarchykind, renamevars, di_relax, ki, cstrtypes)
 
     # Check whether the problem has the suggested symmetries
     pbsymmetries = SortedSet{DataType}()
@@ -122,5 +137,8 @@ function print(io::IO, relctx::RelaxationContext)
     end
     for (cstrname, ki) in relctx.ki
     print(io, "ki                     : $cstrname  \t=> $ki\n")
+    end
+    for (cstrname, cstrtype) in relctx.cstrtypes
+    print(io, "ki                     : $cstrname  \t=> $(string(cstrtype))\n")
     end
 end

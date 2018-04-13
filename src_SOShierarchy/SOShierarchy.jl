@@ -15,6 +15,7 @@ mutable struct RelaxationContext
     renamevars                # Replace variables with by shorter named ones
     di
     ki
+    cstrtypes
 end
 
 
@@ -60,6 +61,7 @@ include("SDPcontainer.jl")
 
 include("example_problems.jl")
 include("utils.jl")
+include("export_sdp.jl")
 # include("compute_Bi.jl")
 # include("build_SDP_SOS.jl")
 # include("export_JuMP.jl")

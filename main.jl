@@ -17,7 +17,7 @@ function main()
     # Normalizing pb and setting relaxation order by constraint
     # relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
     
-    real_pb = false
+    real_pb = true
     if real_pb
         # Build the init problem and set relaxation parameters
         problem = buildPOPR_2v2cbis()
@@ -66,17 +66,18 @@ function main()
     # Compute partial moment hierarchy
     mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, moments_params, max_cliques)
     println("\n--------------------------------------------------------")
-    println("mmtrel_pb = $mmtrel_pb")
+    # println("mmtrel_pb = $mmtrel_pb")
     
     ########################################
     # Convert to a primal SDP problem
     SDP_body, SDP_rhs = build_SDP(relax_ctx, mmtrel_pb)
     println("\n--------------------------------------------------------")
-    println("SDP_body = \n$SDP_body")
+    # println("SDP_body = \n$SDP_body")
 
     println("\n--------------------------------------------------------")
-    println("SDP_rhs = \n$SDP_rhs")
+    # println("SDP_rhs = \n$SDP_rhs")
 
+    export_SDP(relax_ctx, SDP_body, SDP_rhs, pwd())
 
     ########################################
     # Calcul d'une solution par un solveur
