@@ -32,3 +32,10 @@ So far, the ``src_SOShierarchy`` code is able to trnasform a ``Problem`` object 
 - Can leverage symmetries in the initial problem to reduce the number of moments to be optimized over. Currently, one symmetry is implemented : $f(ze^{i\theta}) = f(z) \quad \forall z\in\mathbb C, \theta\in[0,2\pi[$. All moments associated with monomials $\bar z^\alpha z^\beta$ such that $|\alpha| \neq |\beta|$ are fixed to 0.
 
 ## Relevant features
+
+## To Be Done
+
+**13.04**:
+
+- Enforce triang storage everywhere
+- no symmetries for this current example ? (real)

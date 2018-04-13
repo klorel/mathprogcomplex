@@ -5,8 +5,8 @@ function export_SDP(relax_ctx, sdpbody, sdprhs, path)
 
     
     # Build body and rhs proper bodys
-    body = Dict{Tuple{String, String, String, String}, Float64}()
-    rhs = Dict{String, Float64}()
+    body = SortedDict{Tuple{String, String, String, String}, Float64}()
+    rhs = SortedDict{String, Float64}()
 
     for ((cstrname, blocname, α, β), Bi) in sdpbody
         cstrstr = format_string(α, β)
@@ -14,7 +14,7 @@ function export_SDP(relax_ctx, sdpbody, sdprhs, path)
         for ((γ, δ), λ) in Bi
             i = format_string(γ)
             j = format_string(δ)
-            if i <= j
+            if j <= i
                 body[(cstrstr, blocstr, i, j)] = λ
             end
         end

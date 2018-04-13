@@ -66,16 +66,16 @@ function main()
     # Compute partial moment hierarchy
     mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, moments_params, max_cliques)
     println("\n--------------------------------------------------------")
-    # println("mmtrel_pb = $mmtrel_pb")
+    println("mmtrel_pb = $mmtrel_pb")
     
     ########################################
     # Convert to a primal SDP problem
     SDP_body, SDP_rhs = build_SDP(relax_ctx, mmtrel_pb)
     println("\n--------------------------------------------------------")
-    # println("SDP_body = \n$SDP_body")
+    println("SDP_body = \n$SDP_body")
 
     println("\n--------------------------------------------------------")
-    # println("SDP_rhs = \n$SDP_rhs")
+    println("SDP_rhs = \n$SDP_rhs")
 
     export_SDP(relax_ctx, SDP_body, SDP_rhs, pwd())
 
