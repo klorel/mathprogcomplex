@@ -117,7 +117,7 @@ function write_solutions(OPFpbs, variables_jump2, outpath)
   end
 
 
-  function write_solutions(OPFpbs::OPFProblems, pt::Point(), outpath::String)
+  function write_solutions(OPFpbs::OPFProblems, pt::Point, outpath::String)
       open(joinpath(outpath,"solution1.txt"),"w") do f
         write(f, "--generation dispatch\nbus id,unit id,pg(MW),qg(MVar) \n");
         for (busname, elems) in OPFpbs[basecase_scenario_name()].ds.bus
@@ -148,7 +148,7 @@ function write_solutions(OPFpbs, variables_jump2, outpath)
                if typeof(element) == GOCVolt
                  bus = element.busid
                  V_re = pt[Variable(variable_name("VOLT", busname, "", scenario)*"_Re",Real)]
-                 V_im = pt[variable_name("VOLT", busname, "", scenario)*"_Im",Real)]
+                 V_im = pt[Variable(variable_name("VOLT", busname, "", scenario)*"_Im",Real)]
                  V_mod = abs(V_re + V_im * im)
                  V_theta = angle(V_re + V_im * im)*180/pi
                  volt_values[(scenario_id,bus)] = (V_mod, V_theta)
@@ -166,7 +166,7 @@ function write_solutions(OPFpbs, variables_jump2, outpath)
                  bus = element.busid
                  # bus = String(matchall(r"\d+", element.busname)[1])
                  V_re = pt[Variable(variable_name("VOLT", busname, "", scenario)*"_Re",Real)]
-                 V_im = pt[variable_name("VOLT", busname, "", scenario)*"_Im",Real)]
+                 V_im = pt[Variable(variable_name("VOLT", busname, "", scenario)*"_Im",Real)]
                  V_mod = abs(V_re + V_im * im)
                  V_theta = angle(V_re + V_im * im)*180/pi
                  volt_values[(scenario_id,bus)] = (V_mod, V_theta)
@@ -204,7 +204,7 @@ function write_solutions(OPFpbs, variables_jump2, outpath)
               dest_id = element.dest_id
               elem_formulation = link_elems_formulations[elemid]
               Sor = evaluate(Sorig(element, link, elemid, elem_formulation, link_vars),pt2)
-              Sde = evaluate(Sdest(element, link, elemid, elem_formulation, link_vars),pt)
+              Sde = evaluate(Sdest(element, link, elemid, elem_formulation, link_vars),pt2)
               Slink_values[(scenario_id, link_id, orig_id, dest_id, link_id)] = (real(Sor),imag(Sor),real(Sde),imag(Sde))
            end
          end
