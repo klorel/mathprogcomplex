@@ -73,6 +73,10 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	option knitro_options;
 	write gphase1;
 	solve;
+	
+	printf"%-40s;%s\n", "#Var name", "Knitro sol" > ("solution_phase_1.csv");
+	printf{var0 in REAL_VARIABLES} "%s;%.20e\n", var0, x[var0] > ("solution_phase_1.csv");
+	printf{var0 in BINARY_VARIABLES} "%s;%.20e\n", var0, y[var0] > ("solution_phase_1.csv");
 
 	close knitro_info.csv;
 	printf "%s;%f\n", "Time first resolution", time()-TIME_BEGIN > knitro_info.csv;
@@ -92,7 +96,7 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	display abs(min(0, min{i in 1.._ncons} _con[i].slack));
 	display abs(min(0, min{i in 1.._nvars} _var[i].slack));
 	option presolve 0;
-	exit;
+	#exit;
 	option knitro_options 'outlev=3 maxit=600 scale=0 feastol=1 opttol=1 feastolabs=1e-6 opttolabs=1e-3 bar_initpt=2 presolve=0 honorbnds=0';
 
 	printf"Binary variables max dist to 1, phase 1\n";

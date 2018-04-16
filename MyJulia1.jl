@@ -3,6 +3,7 @@ include(joinpath(pwd(),"src_PowSysMod", "PowSysMod_body.jl"))
 # using PowSysMod, JuMP, KNITRO
 
 function MyJulia1(rawFile, genFile, contFile)
+  println(rawFile, genFile, contFile)
   folder_path, scenario = splitdir(splitdir(rawFile)[1])
   folder = splitdir(folder_path)[2]
   outpath = joinpath("JuMP_runs","$(folder)_$(scenario)")
