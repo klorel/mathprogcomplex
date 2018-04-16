@@ -44,7 +44,7 @@ function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
         end
     end
     ctr_jump = SortedDict{String,JuMP.ConstraintRef}()
-    ctr_exp = SortedDict{String,JuMP.NonlinearExpression}()
+    ctr_exp = SortedDict{String,Any}()
     for (ctr, modeler_ctr) in pb_poly_real.constraints
         polynome = modeler_ctr.p
         lb = modeler_ctr.lb
@@ -55,40 +55,65 @@ function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
                 error("Polynom coefficients have to be real numbers")
             end
         end
-        my_timer = @elapsed s_ctr = poly_to_NLexpression(m, variables_jump,polynome)
+        my_timer = @elapsed s_ctr, ispolylinear = poly_to_NLexpression(m, variables_jump,polynome)
         ctr_exp[ctr] = s_ctr
         # @printf("%-35s%10.6f s\n", "poly_to_NLexpression for $ctr", my_timer)
-        if precond == :sqrt
-            if lb == -Inf && ub >0
-                ctr_jump[ctr] = @NLconstraint(m, -Inf <= s_ctr <= ub)
-            else
-                error("sqrt non applicable to $lb <= $s_ctr <= $ub")
-            end
+        if ispolylinear
+            @constraint(m, lb <= s_ctr <= ub)
         else
-            ctr_jump[ctr] = @NLconstraint(m, lb <= s_ctr <= ub)
+            if precond == :sqrt
+                if lb == -Inf && ub >0
+                    ##TODO: sqrt constraints for Smax
+                    ctr_jump[ctr] = @NLconstraint(m, -Inf <= s_ctr <= ub)
+                else
+                    error("sqrt non applicable to $lb <= $s_ctr <= $ub")
+                end
+            else
+                ctr_jump[ctr] = @NLconstraint(m, lb <= s_ctr <= ub)
+            end
         end
     end
     polynome_obj = pb_poly_real.objective
-    my_timer = @elapsed s_obj = poly_to_NLexpression(m, variables_jump,polynome_obj)
+    my_timer = @elapsed s_obj, ispolylinear = poly_to_NLexpression(m, variables_jump,polynome_obj)
     # @printf("%-35s%10.6f s\n", "poly_to_NLexpression for objective", my_timer)
-    @NLobjective(m,Min,s_obj)
+    if ispolylinear
+        @objective(m, Min, s_obj)
+    else
+        @NLobjective(m,Min,s_obj)
+    end
     return m, variables_jump, ctr_jump, ctr_exp
 end
 
 function poly_to_NLexpression(m::JuMP.Model, variables_jump::SortedDict{String, JuMP.Variable},polynome::Polynomial)
     s = 0
+    ispolylinear = true
+    d = polynome.degree
+    if d.explvar + d.conjvar > 1
+        ispolylinear = false
+    end
     for (monome,coeff) in polynome.poly
         prod = 1
         for (varname, degree) in monome.expo
-            if degree.explvar > 1
-            prod = @NLexpression(m, prod * variables_jump["$varname"]^degree.explvar)
-            elseif degree.explvar == 1
-            prod = @NLexpression(m, prod * variables_jump["$varname"])
+            if !ispolylinear
+                if degree.explvar > 1
+                prod = @NLexpression(m, prod * variables_jump["$varname"]^degree.explvar)
+                elseif degree.explvar == 1
+                prod = @NLexpression(m, prod * variables_jump["$varname"])
+                end
+            else
+                if degree.explvar != 1
+                    error("Exponent is supposed to be degree 1 since polynome is linear. ")
+                end
+                prod = @expression(m, variables_jump["$varname"])
             end
         end
-        s = @NLexpression(m, s + coeff * prod)
+        if ispolylinear
+            s = @expression(m, s + coeff * prod)
+        else
+            s = @NLexpression(m, s + coeff * prod)
+        end
     end
-    return s
+    return s, ispolylinear
 end
 
 

@@ -4,9 +4,7 @@ include(joinpath(pwd(),"src_PowSysMod", "PowSysMod_body.jl"))
 
 function MyJulia1(rawFile, genFile, contFile)
   folder_path, scenario = splitdir(splitdir(rawFile)[1])
-  println(scenario)
   folder = splitdir(folder_path)[2]
-  println(folder)
   outpath = joinpath("JuMP_runs","$(folder)_$(scenario)")
   ##read and load files
   OPFpbs = load_OPFproblems(rawFile, genFile, contFile)
@@ -84,7 +82,7 @@ Phase 2 : resolution with complementary constraints from the solution of continu
   end
   close(f)
 
-  f = open(joinpath(outpath,"JuMP_constraints_eval.csv"),"w")
+  f = open(joinpath(outpath,"KnitroJuMP_constraints_eval.csv"),"w")
   write(f, "Ctrname ; Value\n")
   for (ctrname, exp) in ctr_exp
     body_value = getvalue(exp)
