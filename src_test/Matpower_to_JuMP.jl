@@ -27,6 +27,6 @@ pb_global = build_globalpb!(OPFpbs)
 ## convert into real problem
 pb_global_real = pb_cplx2real(pb_global)
 
-m, variables_jump = get_JuMP_cartesian_model(pb_global_real, mysolver)
+m, variables_jump, ctr_jump, ctr_exp = get_JuMP_cartesian_model(pb_global_real, mysolver)
 
 solve(m)
