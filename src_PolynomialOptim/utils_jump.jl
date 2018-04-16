@@ -44,6 +44,7 @@ function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
         end
     end
     ctr_jump = SortedDict{String,JuMP.ConstraintRef}()
+    ctr_exp = SortedDict{String,JuMP.NonlinearExpression}()
     for (ctr, modeler_ctr) in pb_poly_real.constraints
         polynome = modeler_ctr.p
         lb = modeler_ctr.lb
@@ -55,6 +56,7 @@ function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
             end
         end
         my_timer = @elapsed s_ctr = poly_to_NLexpression(m, variables_jump,polynome)
+        ctr_exp[ctr] = s_ctr
         # @printf("%-35s%10.6f s\n", "poly_to_NLexpression for $ctr", my_timer)
         if precond == :sqrt
             if lb == -Inf && ub >0
@@ -70,7 +72,7 @@ function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
     my_timer = @elapsed s_obj = poly_to_NLexpression(m, variables_jump,polynome_obj)
     # @printf("%-35s%10.6f s\n", "poly_to_NLexpression for objective", my_timer)
     @NLobjective(m,Min,s_obj)
-    return m, variables_jump
+    return m, variables_jump, ctr_jump, ctr_exp
 end
 
 function poly_to_NLexpression(m::JuMP.Model, variables_jump::SortedDict{String, JuMP.Variable},polynome::Polynomial)

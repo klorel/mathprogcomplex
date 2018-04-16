@@ -1,5 +1,5 @@
-function write_solutions(OPFpbs, variables_jump2)
-    open("solution1.txt","w") do f
+function write_solutions(OPFpbs, variables_jump2, outpath)
+    open(joinpath(outpath,"solution1.txt"),"w") do f
       write(f, "--generation dispatch\nbus id,unit id,pg(MW),qg(MVar) \n");
       for (busname, elems) in OPFpbs[basecase_scenario_name()].ds.bus
         for (elemname,element) in elems
@@ -92,7 +92,7 @@ function write_solutions(OPFpbs, variables_jump2)
 
      end
 
-    open("solution2.txt","w") do f
+    open(joinpath(outpath,"solution2.txt"),"w") do f
       write(f, "--contingency generator\nconID,genID,busID,unitID,q(MW) \n");
       for ((sc, genID, busID, unitID),q) in Qgen_scen_values
         write(f,"$sc, $genID, $busID, $unitID, $q\n")

@@ -185,16 +185,16 @@ function compute_binary_values(basecase_generator_solution, bus_solution, power_
         for num_bus in generators
             if abs(dict_modules[num_bus]^2 - module_v_basecase[num_bus]^2) < get_GOC_Volt_ϵ()
                 add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 1.0)
-                add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 1e-16)
-                add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 1e-16)
+                add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 0.0)
+                add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 0.0)
             elseif dict_modules[num_bus]^2 - module_v_basecase[num_bus]^2 > get_GOC_Volt_ϵ()
                 add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 1.0)
-                add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 1e-16)
-                add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 1e-16)
+                add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 0.0)
+                add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 0.0)
             else
                 add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 1.0)
-                add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 1e-16)
-                add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 1e-16)
+                add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 0.0)
+                add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 0.0)
             end
         end
     end

@@ -3,6 +3,11 @@ include(joinpath(pwd(),"src_PowSysMod", "PowSysMod_body.jl"))
 # using PowSysMod, JuMP, KNITRO
 
 function MyJulia1(rawFile, genFile, contFile)
+  folder_path, scenario = splitdir(splitdir(rawFile)[1])
+  println(scenario)
+  folder = splitdir(folder_path)[2]
+  println(folder)
+  outpath = joinpath("JuMP_runs","$(folder)_$(scenario)")
   ##read and load files
   OPFpbs = load_OPFproblems(rawFile, genFile, contFile)
   introduce_Sgenvariables!(OPFpbs)
@@ -31,7 +36,7 @@ Phase 1 : resolution  of continuous relaxation\n
                           KTR_PARAM_HONORBNDS=0,
                           KTR_PARAM_MIP_INTVAR_STRATEGY=1)
   tic()
-  my_timer = @elapsed m, variables_jump = get_JuMP_cartesian_model(pb_global_real, mysolver)
+  my_timer = @elapsed m, variables_jump, ctr_jump, ctr_exp = get_JuMP_cartesian_model(pb_global_real, mysolver)
   @printf("%-35s%10.6f s\n", "get_JuMP_cartesian_model", my_timer)
   toc()
   #resolution
@@ -71,19 +76,28 @@ Phase 2 : resolution with complementary constraints from the solution of continu
   println("Objective value : ", getobjectivevalue(m),"\n")
 
   println("----Solution csv writing")
-  f = open("JuMP_solution.csv","w")
+  f = open(joinpath(outpath,"JuMP_solution.csv"),"w")
   write(f, "Varname ; Value\n")
   for (varname, var) in variables_jump
     value = getvalue(var)
     write(f, "$varname; $value\n")
   end
   close(f)
+
+  f = open(joinpath(outpath,"JuMP_constraints_eval.csv"),"w")
+  write(f, "Ctrname ; Value\n")
+  for (ctrname, exp) in ctr_exp
+    body_value = getvalue(exp)
+    write(f, "$ctrname; $body_value\n")
+  end
+  close(f)
   println("----End solution csv writing\n")
 
   ##create solution1.txt and solution2.txt
   println("--Solution txt writing")
-  write_solutions(OPFpbs, variables_jump)
+  write_solutions(OPFpbs, variables_jump, outpath)
   println("--End solution txt writing\n")
-   return pb_global_real
+
+  return pb_global_real
 
 end
