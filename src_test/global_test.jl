@@ -95,6 +95,8 @@ function build_and_solve_instance(typeofinput, instance_path)
 
     _, t_knitro, _ = @timed run_knitro(amplexportpath, joinpath(pwd(),"..","src_ampl"))
     pt_knitro, pt_GOC = read_Knitro_output(amplexportpath, pb_global_real)
+
+    write_solutions(OPFpbs, pt_knitro, amplexportpath)
     feas,ctr = get_minslack(pb_global_real, pt_knitro)
     obj = get_objective(pb_global_real, pt_knitro)
 

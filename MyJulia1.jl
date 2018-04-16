@@ -76,13 +76,13 @@ Phase 2 : resolution with complementary constraints from the solution of continu
   # tic()
   # my_timer = @elapsed m2, variables_jump2 = get_JuMP_cartesian_model(pb_global_real, mysolver)
   # @printf("%-35s%10.6f s\n", "get_JuMP_cartesian_model", my_timer)
-  f = open(joinpath(outpath,"JuMP_solution_phase1.csv"),"w")
-  write(f, "Varname ; Value\n")
-  for (varname, varjump) in variables_jump
-    write(f, "$varname; $(getvalue(varjump))\n")
-    setvalue(variables_jump[varname], getvalue(varjump))
-  end
-  close(f)
+  # f = open(joinpath(outpath,"JuMP_solution_phase1.csv"),"w")
+  # write(f, "Varname ; Value\n")
+  # for (varname, varjump) in variables_jump
+  #   write(f, "$varname; $(getvalue(varjump))\n")
+  #   setvalue(variables_jump[varname], getvalue(varjump))
+  # end
+  # close(f)
   # toc()
   #resolution
   solve(m)
@@ -90,19 +90,19 @@ Phase 2 : resolution with complementary constraints from the solution of continu
   ##get values
   println("Objective value : ", getobjectivevalue(m),"\n")
 
-  println("----Solution csv writing")
-  f = open(joinpath(outpath,"JuMP_solution.csv"),"w")
-  write(f, "Varname ; Value\n")
-  for (varname, var) in variables_jump
-    value = getvalue(var)
-    write(f, "$varname; $value\n")
-  end
-  close(f)
+  # println("----Solution csv writing")
+  # f = open(joinpath(outpath,"JuMP_solution.csv"),"w")
+  # write(f, "Varname ; Value\n")
+  # for (varname, var) in variables_jump
+  #   value = getvalue(var)
+  #   write(f, "$varname; $value\n")
+  # end
+  # close(f)
 
   minslack = +Inf
   ctr_minslack = ""
-  f = open(joinpath(outpath,"KnitroJuMP_constraints_eval.csv"),"w")
-  write(f, "Ctrname ; Value ; LB ; UB\n")
+  # f = open(joinpath(outpath,"KnitroJuMP_constraints_eval.csv"),"w")
+  # write(f, "Ctrname ; Value ; LB ; UB\n")
   for (ctrname, (exp,lb,ub)) in ctr_exp
     body_value = getvalue(exp)
     slack = min(body_value-lb, ub-body_value)
@@ -110,10 +110,10 @@ Phase 2 : resolution with complementary constraints from the solution of continu
       minslack = slack
       ctr_minslack = ctrname
     end
-    write(f, "$ctrname; $body_value ; $lb ; $ub ; $slack\n")
+    # write(f, "$ctrname; $body_value ; $lb ; $ub ; $slack\n")
   end
-  close(f)
-  println("----End solution csv writing\n")
+  # close(f)
+  # println("----End solution csv writing\n")
   println("min slack for constraints in problem JuMP Phase 2 : ($minslack,$ctr_minslack)")
 
   ##create solution1.txt and solution2.txt
