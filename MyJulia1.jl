@@ -40,6 +40,18 @@ Phase 1 : resolution  of continuous relaxation\n
   #resolution
   solve(m)
 
+  minslack = +Inf
+  ctr_minslack = ""
+  for (ctrname, (exp,lb,ub)) in ctr_exp
+    body_value = getvalue(exp)
+    slack = min(body_value-lb, ub-body_value)
+    if slack <= minslack
+      minslack = slack
+      ctr_minslack = ctrname
+    end
+  end
+  println("min slack for constraints in problem JuMP Phase 1 : ($minslack,$ctr_minslack)")
+
   ##phase 2 : resolution with complementary constraints + initial point = solution continuous relaxation
   println("
 ##############################################################################################\n
@@ -63,9 +75,13 @@ Phase 2 : resolution with complementary constraints from the solution of continu
   # tic()
   # my_timer = @elapsed m2, variables_jump2 = get_JuMP_cartesian_model(pb_global_real, mysolver)
   # @printf("%-35s%10.6f s\n", "get_JuMP_cartesian_model", my_timer)
+  f = open(joinpath(outpath,"JuMP_solution_phase1.csv"),"w")
+  write(f, "Varname ; Value\n")
   for (varname, varjump) in variables_jump
+    write(f, "$varname; $(getvalue(varjump))\n")
     setvalue(variables_jump[varname], getvalue(varjump))
   end
+  close(f)
   # toc()
   #resolution
   solve(m)
@@ -82,14 +98,22 @@ Phase 2 : resolution with complementary constraints from the solution of continu
   end
   close(f)
 
+  minslack = +Inf
+  ctr_minslack = ""
   f = open(joinpath(outpath,"KnitroJuMP_constraints_eval.csv"),"w")
-  write(f, "Ctrname ; Value\n")
-  for (ctrname, exp) in ctr_exp
+  write(f, "Ctrname ; Value ; LB ; UB\n")
+  for (ctrname, (exp,lb,ub)) in ctr_exp
     body_value = getvalue(exp)
-    write(f, "$ctrname; $body_value\n")
+    slack = min(body_value-lb, ub-body_value)
+    if slack <= minslack
+      minslack = slack
+      ctr_minslack = ctrname
+    end
+    write(f, "$ctrname; $body_value ; $lb ; $ub ; $slack\n")
   end
   close(f)
   println("----End solution csv writing\n")
+  println("min slack for constraints in problem JuMP Phase 2 : ($minslack,$ctr_minslack)")
 
   ##create solution1.txt and solution2.txt
   println("--Solution txt writing")

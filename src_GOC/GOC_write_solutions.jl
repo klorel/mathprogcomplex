@@ -54,9 +54,9 @@ function write_solutions(OPFpbs, variables_jump2, outpath)
              elseif typeof(element) == GOCGenerator
                bus =  element.busid
                gen = element.id
-               Pgen = getvalue(variables_jump2[variable_name("Sgen", busname, elemid, scenario)*"_Re"])
+               # Pgen = getvalue(variables_jump2[variable_name("Sgen", busname, elemid, scenario)*"_Re"])
                Qgen = getvalue(variables_jump2[variable_name("Sgen", busname, elemid, scenario)*"_Im"])
-               println("bus ",bus, " : ", element.power_min," << ", Pgen + im * Qgen," << ", element.power_max)
+               # println("bus ",bus, " : ", element.power_min," << ", Pgen + im * Qgen," << ", element.power_max)
                Qgen_scen_values[(scenario_id,gen,bus, gen)] = Qgen
              end
            end

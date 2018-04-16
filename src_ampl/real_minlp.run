@@ -70,7 +70,7 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	# first phase relaxation binary constraints
 	let{varname in BINARY_VARIABLES} y[varname].intvarstrategy := 1;
 
-
+	option knitro_options;
 	write gphase1;
 	solve;
 
@@ -79,7 +79,7 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	close knitro_info.csv;
 
 	if card({i in 1.._ncons: _con[i].slack<-1e-6})>1 then{
-		printf "---\nListing the constraints violated by initial point\n---\n";
+		printf "---\nListing the constraints violated by relaxation solution point\n---\n";
 		printf "%60s%15s%15s%15s%15s\n", "NAME", "LB", "BODY", "UB", "SLACK";
 		printf{i in 1.._ncons: _con[i].slack<-1e-6}"%60s%15.6E%15.6E%15.6E%15.6E\n",
 			_conname[i],
@@ -89,8 +89,10 @@ if OPTIMIZATION_CHOICE == MPEC then {
 			_con[i].slack;
 		printf "---\n";
 	}
+	display abs(min(0, min{i in 1.._ncons} _con[i].slack));
+	display abs(min(0, min{i in 1.._nvars} _var[i].slack));
 	option presolve 0;
-
+	exit;
 	option knitro_options 'outlev=3 maxit=600 scale=0 feastol=1 opttol=1 feastolabs=1e-6 opttolabs=1e-3 bar_initpt=2 presolve=0 honorbnds=0';
 
 	printf"Binary variables max dist to 1, phase 1\n";
