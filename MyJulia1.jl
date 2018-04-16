@@ -118,7 +118,8 @@ Phase 2 : resolution with complementary constraints from the solution of continu
 
   ##create solution1.txt and solution2.txt
   println("--Solution txt writing")
-  write_solutions(OPFpbs, variables_jump, outpath)
+  write_solutions(OPFpbs, variables_jump, pwd())
+  # write_solutions(OPFpbs, variables_jump, outpath)
   println("--End solution txt writing\n")
 
   return pb_global_real
