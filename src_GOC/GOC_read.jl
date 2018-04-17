@@ -279,7 +279,8 @@ function add_generator_data!(power_data,generator_data_dict,bus,index)
         power_max = Pmax + im*Qmax
         # cost_degrees = generator_data["RealPowerCostExponent"][gen,:]
         # cost_coeffs = generator_data["RealPowerCostCoefficient"][gen,:]
-        gen_id2 = remove_simple_quotes_if_present(gen_id)
+        gen_id2 = gen_id
+        gen_id2 = remove_simple_quotes_if_present(gen_id2)
         if typeof(gen_id2)==Float64
             gen_id2 = Int(gen_id2)
         end
@@ -336,7 +337,9 @@ function read_branch_data(power_data, index)
         origin = Int(get_branch_data(branch_data, ["Origin"], branch)[1])
         destination = Int(get_branch_data(branch_data, ["Destination"], branch)[1])
         linkname = Link(bus_name(index[origin]),bus_name(index[destination]))
-        branch_id = remove_simple_quotes_if_present(lines_data[branch])
+        br_id = lines_data[branch]
+        br_id2 = br_id
+        branch_id = remove_simple_quotes_if_present(br_id2)
         if typeof(branch_id)==Float64
             branch_id = Int(branch_id)
         end
@@ -347,10 +350,10 @@ function read_branch_data(power_data, index)
         if resistance == reactance == 0
             println(linkname, " nullimpedance line without transformer")
             name_line = nullimpedance_notransformer_name(branch_id)
-            link[linkname][name_line] = GOCNullImpedance_notransformer(origin,destination,name_line,susceptance, power_magnitude_max)
+            link[linkname][name_line] = GOCNullImpedance_notransformer(origin,destination,br_id,susceptance, power_magnitude_max)
         else
             name_line = linepi_notransformer_name(branch_id)
-            link[linkname][name_line] = GOCLineπ_notransformer(origin,destination,name_line,resistance,reactance,susceptance, power_magnitude_max)
+            link[linkname][name_line] = GOCLineπ_notransformer(origin,destination,br_id,resistance,reactance,susceptance, power_magnitude_max)
         end
     end
 
@@ -362,7 +365,9 @@ function read_branch_data(power_data, index)
         origin = Int(get_branch_data(branch_data, ["Origin"], branch)[1])
         destination = Int(get_branch_data(branch_data, ["Destination"], branch)[1])
         linkname = Link(bus_name(index[origin]),bus_name(index[destination]))
-        branch_id = remove_simple_quotes_if_present(transformername_data[branch-nb_lines])
+        br_id = transformername_data[branch-nb_lines]
+        br_id2 = br_id
+        branch_id = remove_simple_quotes_if_present(br_id2)
         if typeof(branch_id)==Float64
             branch_id = Int(branch_id)
         end
@@ -374,10 +379,10 @@ function read_branch_data(power_data, index)
         if resistance == reactance == 0
             println(linkname, " nullimpedance line with transformer")
             name_line = nullimpedance_withtransformer_name(branch_id)
-            link[linkname][name_line] = GOCNullImpedance_withtransformer(origin,destination,name_line,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
+            link[linkname][name_line] = GOCNullImpedance_withtransformer(origin,destination,br_id,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
         else
             name_line = linepi_withtransformer_name(branch_id)
-            link[linkname][name_line] = GOCLineπ_withtransformer(origin,destination,name_line,resistance,reactance,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
+            link[linkname][name_line] = GOCLineπ_withtransformer(origin,destination,br_id,resistance,reactance,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
         end
     end
 
