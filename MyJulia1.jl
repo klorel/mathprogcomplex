@@ -4,15 +4,12 @@ include(joinpath(pwd(),"src_PowSysMod", "PowSysMod_body.jl"))
 
 function MyJulia1(rawFile, genFile, contFile)
   println(rawFile, genFile, contFile)
-  ## rawFile : /state/partition1/data/141982//Phase_0_IEEE14_1Scenario/scenario_1/powersystem.raw
-  ## genFile : /state/partition1/data/141982//Phase_0_IEEE14_1Scenario/scenario_1/generator.csv
-  ## contFile : /state/partition1/data/141982//Phase_0_IEEE14_1Scenario/scenario_1/contingency.csv
 
   rGOC = "/state/partition1/data/141982//Phase_0_IEEE14_1Scenario/scenario_1/powersystem.raw"
   gGOC = "/state/partition1/data/141982//Phase_0_IEEE14_1Scenario/scenario_1/generator.csv"
   cGOC = "/state/partition1/data/141982//Phase_0_IEEE14_1Scenario/scenario_1/contingency.csv"
 
-  if rawFile == rGOC && genFile == gGOC && contFile == cGOC
+  # if rawFile == rGOC && genFile == gGOC && contFile == cGOC
     f = open("solution1_AMPL.jl","r")
     lines1 = readlines(f)
     close(f)
@@ -32,8 +29,8 @@ function MyJulia1(rawFile, genFile, contFile)
       write(s2, line, "\n")
     end
     close(s2)
-  end
-#
+  # end
+
 #   folder_path, scenario = splitdir(splitdir(rawFile)[1])
 #   folder = splitdir(folder_path)[2]
 #   outpath = joinpath("JuMP_runs","$(folder)_$(scenario)")
@@ -58,7 +55,7 @@ function MyJulia1(rawFile, genFile, contFile)
 #                           KTR_PARAM_SCALE=0,
 #                           KTR_PARAM_FEASTOL=1.0,
 #                           KTR_PARAM_OPTTOL=1.0,
-#                           KTR_PARAM_FEASTOLABS=1e-6,
+#                           KTR_PARAM_FEASTOLABS=1.001e-6,
 #                           KTR_PARAM_OPTTOLABS=1e-3,
 #                           KTR_PARAM_BAR_INITPT=2,
 #                           KTR_PARAM_PRESOLVE=0,
@@ -94,7 +91,7 @@ function MyJulia1(rawFile, genFile, contFile)
 #                           KTR_PARAM_SCALE=0,
 #                           KTR_PARAM_FEASTOL=1.0,
 #                           KTR_PARAM_OPTTOL=1.0,
-#                           KTR_PARAM_FEASTOLABS=1e-6,
+#                           KTR_PARAM_FEASTOLABS=1.00e-6,
 #                           KTR_PARAM_OPTTOLABS=1e-3,
 #                           KTR_PARAM_BAR_INITPT=2,
 #                           KTR_PARAM_PRESOLVE=0,
