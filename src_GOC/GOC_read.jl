@@ -432,12 +432,12 @@ function scenarios_data(ds,gs,mp,contingency_data,index)
                 if bus==busname
                     for (buslabel,data) in dict
                         if buslabel != generator_name(gen_ID)
-                            ds_scenario.bus[bus][buslabel] = ds.bus[bus][buslabel]
+                            ds_scenario.bus[bus][buslabel] = data
                         end
                     end
                 else
                     for (buslabel,data) in dict
-                        ds_scenario.bus[bus][buslabel] = ds.bus[bus][buslabel]
+                        ds_scenario.bus[bus][buslabel] = data
                     end
                 end
             end
@@ -451,6 +451,7 @@ function scenarios_data(ds,gs,mp,contingency_data,index)
             origin = Int(contingency_data[ct,3])
             destination = Int(contingency_data[ct,4])
             link_to_remove = Link(bus_name(index[origin]),bus_name(index[destination]))
+            println("link_to_remove : ", link_to_remove)
             CID = contingency_data[ct,5]
             if typeof(CID)==SubString{String}
                 id_line = CID[2:(end-1)]
@@ -459,15 +460,15 @@ function scenarios_data(ds,gs,mp,contingency_data,index)
             end
             for (busname,dict) in ds.bus
                 for (buslabel,data) in dict
-                    ds_scenario.bus[busname][buslabel] = ds.bus[busname][buslabel]
+                    ds_scenario.bus[busname][buslabel] = data
                 end
             end
             for (linkname,dict) in ds_scenario.link
                 if linkname.orig == link_to_remove.orig && linkname.dest == link_to_remove.dest
-                    #println("link to remove : ", link_to_remove)
+                    println("link to remove : ", link_to_remove)
                     for (linklabel,data) in ds.link[linkname]
                         if !contains(linklabel,id_line)
-                            ds_scenario.link[linkname][linklabel] = ds.link[linkname][linklabel]
+                            ds_scenario.link[linkname][linklabel] = data
                         end
                     end
                     if isempty(ds_scenario.link[linkname])
@@ -475,7 +476,7 @@ function scenarios_data(ds,gs,mp,contingency_data,index)
                     end
                 else
                     for (linklabel,data) in ds.link[linkname]
-                    ds_scenario.link[linkname][linklabel] = ds.link[linkname][linklabel]
+                    ds_scenario.link[linkname][linklabel] = data
                     end
                 end
             end
