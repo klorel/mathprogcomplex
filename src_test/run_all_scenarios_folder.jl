@@ -35,7 +35,7 @@ function solve_GOC_via_AMPL(data_path, folder, scenario)
     isdir(outpath) || mkpath(outpath)
     write_solutions(OPFpbs, pt_knitro, outpath)
 
-    sol_txt = read_solution_point_GOC(instance_path, amplexportpath)
+    sol_txt = read_solution_point_GOC(instance_path, outpath)
     pt_txt = cplx2real(sol_txt)
     println("get_minslack point from txt files:", get_minslack(pb_global_real, pt_txt))
 
