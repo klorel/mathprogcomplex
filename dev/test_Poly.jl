@@ -58,7 +58,7 @@ pt2 = Point(SortedDict(x=>3, y=>-1+2im, b=>-1))
 p = x + y
 println("p: $p")
 
-p1 = copy(p)
+p1 = deepcopy(p)
 println("p1: $p1")
 
 add!(p1, y*z)
