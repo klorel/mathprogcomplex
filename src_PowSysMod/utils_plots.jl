@@ -64,7 +64,7 @@ function plot_Sgen_vars(pt_global, scenarios)
     end
 
     # One color per bus/generator
-    init_scen = sort(collect(keys(Sgens)))[1]
+    init_scen = fisrt(Sgens).first
     i=1
     cols = SortedDict()
     for (varsc, valsc) in Sgens[init_scen]

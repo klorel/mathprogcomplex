@@ -13,9 +13,8 @@ function Base.show(io::IO, exp::Exponent)
     print(io, "1")
   else
     expo = exp.expo
-    sortedCollec = sort(collect(expo), by=(x)->x[1].name)
-    i=length(sortedCollec)
-    for (var, deg) in sortedCollec
+    i=length(expo)
+    for (var, deg) in expo
       if var.kind <: Complex && deg.conjvar>0
         print(io, "conj(", var, ")")
         if deg.conjvar > 1
@@ -43,9 +42,8 @@ function Base.print(io::IO, exp::Exponent)
     print(io, "1")
   else
     expo = exp.expo
-    sortedCollec = sort(collect(expo), by=(x)->x[1].name)
-    i=length(sortedCollec)
-    for (var, deg) in sortedCollec
+    i=length(expo)
+    for (var, deg) in expo
       if var.kind <: Complex && deg.conjvar>0
         print(io, "conj(", var, ")")
         if deg.conjvar > 1
@@ -71,10 +69,8 @@ end
 function Base.print(io::IO, P::Polynomial)
   poly = P.poly
   i = length(poly)
-  sorted_keys = sort(collect(keys(poly)))
   un = Exponent()
-  for expo in sorted_keys
-    λ = poly[expo]
+  for (expo, λ) in poly
 
     if expo == un
       print(io, "$λ")
@@ -93,7 +89,7 @@ end
 
 
 function Base.print(io::IO, pt::Point)
-  for (var, val) in sort(collect(pt), by=x->x[1].name)
+  for (var, val) in pt
     println(io, var, " ", val)
   end
 end

@@ -55,12 +55,12 @@ Problem() = Problem(Polynomial(), SortedDict{String, Constraint}(), SortedDict{S
 
 function Base.print(io::IO, pb::Problem)
   print(io, "▶ variables: ")
-  for (varName, typ) in sort(collect(pb.variables), by=x->x[1])
+  for (varName, typ) in pb.variables
     print(io, Variable(varName, typ), " ")
   end
   println(io, "\n▶ objective: ", pb.objective)
   println(io, "▶ constraints: ")
-  for (cstrName, cstr) in sort(collect(pb.constraints), by=x->x[1])
+  for (cstrName, cstr) in pb.constraints
     @printf(io, "%10s: ", cstrName)
     println(io, cstr)
   end

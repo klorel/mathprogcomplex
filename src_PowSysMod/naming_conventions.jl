@@ -23,7 +23,7 @@ end
 
 function cstrname_nodal_balance(cstrnames::SortedSet{String}, scenario::String, bus::String)
     cstr = ""
-    for cstrname in sort(collect(cstrnames))
+    for cstrname in cstrnames
         cstr = "$(cstr)_$cstrname"
     end
 
