@@ -26,12 +26,19 @@ function export_SDP(relax_ctx, sdpbody, sdprhs, path)
     end
 
     # Export body
-    fbody = open(joinpath(path, "body.sdpbody"), "w")
+    fbody = open(joinpath(path, "body.sdp"), "w")
 
     cstrlen = maximum(x->length(x[1]), keys(body))
     bloclen = maximum(x->length(x[2]), keys(body))
     expo1len = maximum(x->length(x[3]), keys(body))
     expo2len = maximum(x->length(x[3]), keys(body))
+
+    print(fbody, "#")
+    print_string(fbody, "cstrname", cstrlen-1)
+    print_string(fbody, "blocname", bloclen)
+    print_string(fbody, "row", expo1len)
+    print_string(fbody, "col", expo2len)
+    println(fbody, " val")
 
     for ((cstrname, blocname, i, j), val) in body
         print_string(fbody, cstrname, cstrlen)
@@ -43,8 +50,13 @@ function export_SDP(relax_ctx, sdpbody, sdprhs, path)
     close(fbody)
 
     # Export rhs
-    frhs = open("rhs.sdprhs", "w")
+    frhs = open("rhs.sdp", "w")
     cstrlen = maximum(x->length(x), keys(rhs))
+
+    cstrlen = max(cstrlen, length("cstrname")+1)
+    print(frhs, "#")
+    print_string(frhs, "cstrname", cstrlen-1)
+    println(frhs, " rhs_val")
     for (cstrname, val) in rhs
         print_string(frhs, cstrname, cstrlen)
         println(frhs, " $val")
@@ -52,8 +64,11 @@ function export_SDP(relax_ctx, sdpbody, sdprhs, path)
     close(frhs)
 
     # Export bloc types
-    ftypes = open("types.sdptyp", "w")
+    ftypes = open("types.sdp", "w")
     cstrlen = maximum(x->length(x), keys(relax_ctx.cstrtypes))
+    print(ftypes, "#")
+    print_string(ftypes, "cstrname", cstrlen-1)
+    println(ftypes, " var_type")
     for (cstrname, cstrtype) in relax_ctx.cstrtypes
         print_string(ftypes, cstrname, cstrlen)
         println(ftypes, " $(string(cstrtype))")
