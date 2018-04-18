@@ -6,10 +6,10 @@ Compute the set of all exponents in `variables` variables, of degree up to
 """
 function compute_exponents(variables::SortedSet{Variable}, dmax::Int; compute_conj=false)
     cur_order = SortedSet{Exponent}([Exponent()])
-    result = copy(cur_order)
+    result = deepcopy(cur_order)
     prev_order = SortedSet{Exponent}()
     for i=1:dmax
-        prev_order = copy(cur_order)
+        prev_order = deepcopy(cur_order)
         cur_order = SortedSet{Exponent}()
         for var in variables
             if compute_conj
