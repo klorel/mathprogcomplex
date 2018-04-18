@@ -53,10 +53,10 @@ function MyJulia1(rawfile,genfile,contfile)
      write(f,"--end of generation dispatch \n");
    end
 
-   Qgen_scen_values = Dict{Tuple{String,String,String,String}, Float64}()
-   volt_values = Dict{Tuple{String,String}, Tuple{Float64, Float64}}()
-   delta_values = Dict{String,Float64}()
-   Slink_values = Dict{Tuple{String,String,String,String,String}, Tuple{Float64, Float64, Float64, Float64}}()
+   Qgen_scen_values = SortedDict{Tuple{String,String,String,String}, Float64}()
+   volt_values = SortedDict{Tuple{String,String}, Tuple{Float64, Float64}}()
+   delta_values = SortedDict{String,Float64}()
+   Slink_values = SortedDict{Tuple{String,String,String,String,String}, Tuple{Float64, Float64, Float64, Float64}}()
 
    for (scenario, OPFpb) in OPFpbs
      if scenario==basecase_scenario_name()

@@ -13,7 +13,7 @@ function read_input(intput_type::T, filenames::Array{String}) where T<:Type{IIDM
   data_loads = readdlm(filenames[5])
   data_substations = readdlm(filenames[6])
 
-  bus = Dict{String, Dict{String, Any}}()
+  bus = SortedDict{String, SortedDict{String, Any}}()
 
   for i=1:size(data_buses, 1)
       busid = Int(data_buses[i, 1])
@@ -28,7 +28,7 @@ function read_input(intput_type::T, filenames::Array{String}) where T<:Type{IIDM
       data_buses[i, 8] == 0 || warn("Buses - $busname : parameter fault!=0 ($(data_buses[i, 8])), not handled")
       data_buses[i, 9] == 0 || warn("Buses - $busname : parameter curative!=0 ($(data_buses[i, 9])), not handled")
 
-      bus[busname] = Dict{String, Any}()
+      bus[busname] = SortedDict{String, Any}()
       bus_elems = bus[busname]
       bus_elems["Volt"] = IIDMVolt(busname, busid, string(substationid), basekV, minV, maxV)
       bus_elems["VoltMeasure"] = IIDMVoltMeasure(V*exp(im*θ), P+im*Q)
@@ -65,7 +65,7 @@ function read_input(intput_type::T, filenames::Array{String}) where T<:Type{IIDM
   end
 
 
-  link = Dict{Link, Dict{String, Any}}()
+  link = SortedDict{Link, SortedDict{String, Any}}()
   for i=1:size(data_branches, 1)
       busid1, busid2 = data_branches[i, 2:3]
       r, x, g1, g2, b1, b2 = data_branches[i, 7:12] # pu
@@ -74,7 +74,7 @@ function read_input(intput_type::T, filenames::Array{String}) where T<:Type{IIDM
 
       linkname = Link("BUS_$busid1", "BUS_$busid2")
       if !haskey(link, linkname)
-          link[linkname] = Dict{String, Any}()
+          link[linkname] = SortedDict{String, Any}()
       end
       link_elems = link[linkname]
 
@@ -88,13 +88,13 @@ function read_input(intput_type::T, filenames::Array{String}) where T<:Type{IIDM
   ds = DataSource(bus, link)
 
   ## Building GridStructure
-  node_linksin = node_linksout = Dict{String, Set{Link}}()
-  node_vars = Dict{String, Dict{String, Variable}}()
-  link_vars = Dict{Link, Dict{Type, Variable}}()
+  node_linksin = node_linksout = SortedDict{String, SortedSet{Link}}()
+  node_vars = SortedDict{String, SortedDict{String, Variable}}()
+  link_vars = SortedDict{Link, SortedDict{Type, Variable}}()
   gs = GridStructure("BaseCase", node_linksin, node_linksout)
 
-  node_formulations = Dict{String, Dict{Tuple{Type, String}, Symbol}}()
-  link_formulations = Dict{Link, Dict{Tuple{Type, String}, Symbol}}()
+  node_formulations = SortedDict{String, SortedDict{Tuple{Type, String}, Symbol}}()
+  link_formulations = SortedDict{Link, SortedDict{Tuple{Type, String}, Symbol}}()
   mp = MathematicalProgramming(node_formulations, link_formulations, node_vars, link_vars)
   return OPFProblems("BaseCase"=>Scenario(ds, gs, mp))
 end

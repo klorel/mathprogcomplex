@@ -1,4 +1,5 @@
 # module Poly
+using DataStructures
 
 import Base: ==, !=, <<, >>, isless, isconst, isreal, isnull, isequal
 import Base: +, -, *, /, ^, conj, conj!, abs2, norm, real, imag
@@ -47,9 +48,41 @@ mutable struct Variable <: AbstractPolynomial
     end
 end
 
+# function isless(t1::Type, t2::Type)
+#     if t1 == t2
+#         return false
+#     end
+#     if t1 == Real
+#         if t2 == Bool
+#             return false
+#         elseif t2 == Complex
+#             return true
+#         end
+#     elseif t1 == Bool
+#         if t2 == Real
+#             return true
+#         elseif t2 == Complex
+#             return true
+#         else
+#             println(t1, t2)
+#         end
+#     elseif t1 == Complex
+#         if t2 == Bool
+#             return false
+#         elseif t2 == Real
+#             return false
+#         else
+#             println(t1, t2)
+#         end
+#     else
+#         println(t1, t2)
+#     end
+# end
+
+
 
 """
-    Exponent(expo::Dict{Variable, Degree})
+    Exponent(expo::SortedDict{Variable, Degree})
 
 Define a mathematical exponent, that is a product of `Variable` and conjugated
 `Variable`.
@@ -64,19 +97,19 @@ degrees.
 ### Exemple
 ```julia
 julia > a, b = Variable("a", Complex), Variable("b", Complex)
-julia > Exponent(Dict(a=>Degree(1,0), b=>Degree(1,1))) == a*b*conj(b)
+julia > Exponent(SortedDict(a=>Degree(1,0), b=>Degree(1,1))) == a*b*conj(b)
 ```
 """
 struct Exponent <: AbstractPolynomial
-    expo::Dict{Variable, Degree}
+    expo::SortedDict{Variable, Degree}
     degree::Degree
 
-    function Exponent(expo::Dict{Variable, Degree})
+    function Exponent(expo::SortedDict{Variable, Degree})
         degexpl, degconj = 0,0
         for (var, degree) in expo
             ((degree.explvar < 0) || (degree.conjvar < 0)) && error("Exponent(): Expected non negative exponent for variable $var (got $degree)")
             (isreal(var) && degree.conjvar != 0) && error("Exponent(): Expected nul conj exponent for real variable $var (got $degree)")
-            (isbool(var) && degree.explvar ∉ Set([0,1])) && error("Exponent(): Expected boolean exponent for bool $var (got $degree)")
+            (isbool(var) && degree.explvar ∉ SortedSet([0,1])) && error("Exponent(): Expected boolean exponent for bool $var (got $degree)")
             if degree != Degree(0,0)
                 degexpl += degree.explvar
                 degconj += degree.conjvar
@@ -90,7 +123,7 @@ end
 
 
 """
-    Polynomial(poly::Dict{Exponent, Number}, degree::Degree)
+    Polynomial(poly::SortedDict{Exponent, Number}, degree::Degree)
 
 Define a mathematical polynomial, that is a linear combinaison of product of
 `Variable` and conjugated `Variable`.
@@ -105,15 +138,15 @@ degrees.
 ```julia
 julia > a, b = Variable("a", Complex), Variable("b", Complex)
 julia > p = a*b*conj(b) + (2+3im) * b^3
-julia > p.poly = Dict(a*b*conj(b)=>1, b^3=>2+3im)
+julia > p.poly = SortedDict(a*b*conj(b)=>1, b^3=>2+3im)
 julia > p.degree = (3,1)
 ```
 """
 struct Polynomial <: AbstractPolynomial
-    poly::Dict{Exponent, Number}
+    poly::SortedDict{Exponent, Number}
     degree::Degree
 
-    function Polynomial(poly::Dict{Exponent, Number})
+    function Polynomial(poly::SortedDict{Exponent, Number})
         degexpl, degconj = 0, 0
         for (expo, λ) in poly
             if λ!=0
@@ -128,7 +161,7 @@ struct Polynomial <: AbstractPolynomial
 end
 
 """
-    Point(coords::Dict{Variable, Number})
+    Point(coords::SortedDict{Variable, Number})
 
 Define a mathematical point, that is a pairing of variables and numbers.
 
@@ -138,14 +171,14 @@ Define a mathematical point, that is a pairing of variables and numbers.
 ### Exemple
 ```julia
 julia > a, b = Variable("a", Complex), Variable("b", Complex)
-julia > pt = Point(Dict(a=>π, b=>e+7im))
+julia > pt = Point(SortedDict(a=>π, b=>e+7im))
 ```
 """
 struct Point
-    coords::Dict{Variable, Number}
+    coords::SortedDict{Variable, Number}
 
-    function Point(dict::Dict)
-        dict_pt = Dict{Variable, Number}()
+    function Point(dict::SortedDict)
+        dict_pt = SortedDict{Variable, Number}()
         for (var, val) in dict
             if !isa(var, Variable) || !isa(val, Number)
                 error("Point(): Expected pair of (Variable, Number), got ($var, $val) of type ($typeof(var), $typeof(val)) instead.")
@@ -210,9 +243,9 @@ used variables `variables`.
 
 ### Attributes
 - `objective::Polynomial` : polynomial criterion.
-- `constraints::Dict{String, Constraint}` : dictionnary of constraint name to
+- `constraints::SortedDict{String, Constraint}` : dictionnary of constraint name to
 constraint.
-- `variables::Dict{String, Type}` : dictionnary of variable name to type.
+- `variables::SortedDict{String, Type}` : dictionnary of variable name to type.
 
 ### Exemple
 ```julia
@@ -226,8 +259,8 @@ julia > add_constraint!(pb, 0-1im << z << 1+0im)
 """
 mutable struct Problem
   objective::Polynomial
-  constraints::Dict{String, Constraint}
-  variables::Dict{String, Type}
+  constraints::SortedDict{String, Constraint}
+  variables::SortedDict{String, Type}
 end
 
 

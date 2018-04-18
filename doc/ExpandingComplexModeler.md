@@ -3,10 +3,10 @@
 ### Reading the new files(s)
 In `/src/ComplexModeler/read_functions/`, a function `read_input(intput_type::T, filenames::Array{String})` allowing to build the datastructure holding all relevant numerical values has to be implemented. It must return :
 - baseMVA::Float64: a float value allowing to convert the power quantities from p.u. (per unit) to MVA (MegaVolt Ampere),
-- bus::Dict{String, MyType1}(): a dictionnary associating a bus name to the corresponding numerical values (load, generator, ...), stored in a custom datatype MyType1,
-- link::Dict{Link, MyType2}(): a dictionnary associating a link to the corresponding numerical values (resistance, reactance, ...), stored in a custom data type,
-- node_elems::Dict{String, Set{Any}}(): a dictionnary associating each bus to a set of "labels" that describes it. Each "label" is a custom julia type, corresponding to a nodal element such as generator, load, shunt, ...
-- link_elems::Dict{Link, Set{Any}}(): a dictionnary associating each link to a set of "labels" that describes it. Each "label" is a custom julia type, corresponding to a nodal element such as Line_π, NullImpedance, ...
+- bus::SortedDict{String, MyType1}(): a dictionnary associating a bus name to the corresponding numerical values (load, generator, ...), stored in a custom datatype MyType1,
+- link::SortedDict{Link, MyType2}(): a dictionnary associating a link to the corresponding numerical values (resistance, reactance, ...), stored in a custom data type,
+- node_elems::SortedDict{String, SortedSet{Any}}(): a dictionnary associating each bus to a set of "labels" that describes it. Each "label" is a custom julia type, corresponding to a nodal element such as generator, load, shunt, ...
+- link_elems::SortedDict{Link, SortedSet{Any}}(): a dictionnary associating each link to a set of "labels" that describes it. Each "label" is a custom julia type, corresponding to a nodal element such as Line_π, NullImpedance, ...
 
 A template including the function prototype, return arguments, and location of custom data storage type is provided.
 

@@ -27,7 +27,7 @@ function get_Sgen_GOC(instance_path)
     obj_GOC = get_objective(pb_global_real, pt_GOC)
     obj_knitro = get_objective(pb_global_real, pt_knitro)
     diff_rel_obj = (obj_GOC-obj_knitro)/obj_GOC
-    Sgens = Dict()
+    Sgens = SortedDict()
     scenario = basecase_scenario_name()
     scenario = "Scen1"
     _, _, bc_prod_vars_knitro = get_splitted_Cpt(pt_knitro, scenario)
@@ -48,7 +48,7 @@ get_Sgen_GOC(instance_path)
 function treat_sol(csv_file, output)
     tab = readdlm(csv_file, ';')
     nb_lines = size(tab,1)
-    vars = Dict{String, Tuple{Float64,Float64}}()
+    vars = SortedDict{String, Tuple{Float64,Float64}}()
     for i in 1:nb_lines
         varname = tab[i,1]
         if ismatch(r"Sgen", varname) || ismatch(r"Delta", varname)
@@ -61,21 +61,21 @@ end
 
 
 function gendiff_output(instance,vars,output)
-    dict_scenario_var_real = Dict{String,Set{String}}()
-    dict_scenario_var_im = Dict{String,Set{String}}()
-    dict_scenario_var_delta = Dict{String,String}()
+    dict_scenario_var_real = SortedDict{String,SortedSet{String}}()
+    dict_scenario_var_im = SortedDict{String,SortedSet{String}}()
+    dict_scenario_var_delta = SortedDict{String,String}()
 
     for (var,values) in vars
         if ismatch(r"Re",var)
             scenario = String(split(var,"_")[1])
             if !haskey(dict_scenario_var_real,scenario)
-                dict_scenario_var_real[scenario] = Set{String}()
+                dict_scenario_var_real[scenario] = SortedSet{String}()
             end
             push!(dict_scenario_var_real[scenario],var)
         elseif ismatch(r"Im",var)
             scenario = String(split(var,"_")[1])
             if !haskey(dict_scenario_var_im,scenario)
-                dict_scenario_var_im[scenario] = Set{String}()
+                dict_scenario_var_im[scenario] = SortedSet{String}()
             end
             push!(dict_scenario_var_im[scenario],var)
         else
@@ -87,21 +87,21 @@ function gendiff_output(instance,vars,output)
     scenario_diffs_active, ~ = create_dict_diffs(dict_scenario_var_real, vars)
     scenario_diffs_reactive, nb_generator_per_scenario = create_dict_diffs(dict_scenario_var_im, vars)
 
-    scenario_diffs_delta = Dict{String,Float64}()
+    scenario_diffs_delta = SortedDict{String,Float64}()
     for (scenario,varname) in dict_scenario_var_delta
         knitro_val, GOC_val = vars[varname]
         diff_rel = abs((knitro_val-GOC_val)/GOC_val)
         scenario_diffs_delta[scenario] = diff_rel
     end
 
-    return Dict(scenario => (nb_generator_per_scenario[scenario],prop,scenario_diffs_reactive[scenario]) for (scenario,prop) in scenario_diffs_active)
+    return SortedDict(scenario => (nb_generator_per_scenario[scenario],prop,scenario_diffs_reactive[scenario]) for (scenario,prop) in scenario_diffs_active)
 end
 
 
 
 function create_dict_diffs(dict_scenario_var, vars)
-    scenario_diffs = Dict{String,Float64}()
-    nb_generator_per_scenario = Dict{String,Int64}()
+    scenario_diffs = SortedDict{String,Float64}()
+    nb_generator_per_scenario = SortedDict{String,Int64}()
     for (scenario, varnames) in dict_scenario_var
         nb_generator = length(varnames)
         nb_generator_per_scenario[scenario] = nb_generator
@@ -126,7 +126,7 @@ folder = "Phase_0_OriginalDataset_IEEE14"
 scenario = "scenario_1"
 
 
-results = Dict{String,Dict{String, Tuple{Int64, Float64, Float64}}}()
+results = SortedDict{String,SortedDict{String, Tuple{Int64, Float64, Float64}}}()
 for i in 1:75
     scenario = "scenario_$i"
     instance_path = joinpath(ROOT, "..", instances_folder,folder, scenario)
