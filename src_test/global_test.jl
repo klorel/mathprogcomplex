@@ -64,18 +64,19 @@ function build_and_solve_instance(typeofinput, instance_path)
 
     tic()
 
-    if typeofinput == GOCInput
-        raw = "powersystem.raw"
-        gen = "generator.csv"
-        con = "contingency.csv"
-        rawfile = joinpath(instance_path,raw)
-        genfile = joinpath(instance_path, gen)
-        contfile = joinpath(instance_path, con)
-        OPFpbs = load_OPFproblems(rawfile, genfile, contfile)
-
-    else
-        OPFpbs = load_OPFproblems(typeofinput, instance_path)
-    end
+    # if typeofinput == GOCInput
+    #     raw = "powersystem.raw"
+    #     gen = "generator.csv"
+    #     con = "contingency.csv"
+    #     rawfile = joinpath(instance_path,raw)
+    #     genfile = joinpath(instance_path, gen)
+    #     contfile = joinpath(instance_path, con)
+    #     OPFpbs = load_OPFproblems(rawfile, genfile, contfile)
+    #
+    # else
+    #     OPFpbs = load_OPFproblems(typeofinput, instance_path)
+    # end
+    OPFpbs = load_OPFproblems(typeofinput, instance_path)
 
     ## Introducing coupling constraints on generator output
     (typeofinput != GOCInput) || introduce_Sgenvariables!(OPFpbs)

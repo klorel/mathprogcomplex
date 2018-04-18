@@ -55,7 +55,7 @@ function gen_solution_basecase(basecase_generator_solution,index)
         num_bus = index[basecase_generator_solution[i,1]]
         gen_id = basecase_generator_solution[i,2]
         if typeof(gen_id)!=Int64
-            gen_id = matchall(r"\d+" ,gen_id)[1]
+            gen_id = matchall(r"\d+" , String(gen_id))[1]
         else
             gen_id = Int(gen_id)
         end

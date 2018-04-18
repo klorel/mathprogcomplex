@@ -1,4 +1,9 @@
 reset;
+
+suffix xscalefactor IN;
+suffix cscalefactor IN;
+
+
 suffix xfeastol IN;
 suffix cfeastol IN;
 suffix feaserror IN,>=0, <=1e6;
@@ -33,7 +38,7 @@ model;
 
 
 option solver knitroampl;
-option knitro_options 'outlev=3 maxit=600 scale=0 feastol=1 opttol=1 feastolabs=1.001e-6 opttolabs=1e-3 bar_initpt=2 presolve=0 honorbnds=0';
+option knitro_options 'outlev=3 maxit=600 scale=2 feastol=1 opttol=1 feastolabs=1.001e-6 opttolabs=1e-3 bar_initpt=2 presolve=0 honorbnds=0';
 
 
 ###
@@ -47,6 +52,8 @@ if STRATEGY_INITPOINT == GOC_POINT then{
 	let{(VAR_TYPE, REAL, name, NONE) in KEYS} x[name] := 1.1;
 	let{(VAR_TYPE, BOOL, name, NONE) in KEYS} y[name] := 0.0;
 };
+let{(VAR_TYPE, REAL, name, NONE) in KEYS} x[name].xscalefactor := 1e-4;
+let{(VAR_TYPE, BOOL, name, NONE) in KEYS} y[name].xscalefactor := 1e+0;
 
 option presolve 0;
 if STRATEGY_INITPOINT == GOC_POINT and card({i in 1.._ncons: _con[i].slack<-1e-5})>1 then{
@@ -100,7 +107,7 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	display abs(min(0, min{i in 1.._nvars} _var[i].slack));
 	option presolve 0;
 	#exit;
-	option knitro_options 'outlev=3 maxit=600 scale=0 feastol=1 opttol=1 feastolabs=1.001e-6 opttolabs=1e-3 bar_initpt=2 presolve=0 honorbnds=0';
+	option knitro_options 'outlev=3 maxit=600 scale=2 feastol=1 opttol=1 feastolabs=1.001e-6 opttolabs=1e-3 bar_initpt=2 presolve=0 honorbnds=0';
 
 	printf"Binary variables max dist to 1, phase 1\n";
 	display max{varname in BINARY_VARIABLES}min(

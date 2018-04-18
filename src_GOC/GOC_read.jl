@@ -121,8 +121,8 @@ function get_bus_index(power_data)
     end
     index = SortedDict{Int64,Int64}()
     for line in 1:nb_lines
-        id_bus = Int(raw_bus_data[line,1])
-        index[id_bus] = line
+        id_bus = Int64(raw_bus_data[line,1])
+        index[id_bus] = id_bus
     end
     return index
 end
@@ -416,6 +416,19 @@ function scenarios_data(ds,gs,mp,contingency_data,index)
         for linkname in keys(ds.link)
             ds_scenario_link[linkname] = SortedDict{String,Any}()
         end
+        orig = "BUS_118"
+        dest = "BUS_121"
+        linkpb = Link(orig, dest)
+        for (l,dict) in ds.link
+            # println(l)
+            # if l.orig == orig && l.dest == dest
+            #     println(dict)
+            #     exit()
+            # end
+            if !haskey(ds_scenario_link,l)
+                println(l)
+            end
+        end
         ds_scenario = DataSource(ds_scenario_bus,ds_scenario_link)
         if type_contingency == "G"
             println(type_contingency)
@@ -463,10 +476,10 @@ function scenarios_data(ds,gs,mp,contingency_data,index)
                     ds_scenario.bus[busname][buslabel] = data
                 end
             end
-            for (linkname,dict) in ds_scenario.link
+            for (linkname,dict) in ds.link
                 if linkname.orig == link_to_remove.orig && linkname.dest == link_to_remove.dest
-                    # println("link to remove : ", link_to_remove)
-                    for (linklabel,data) in ds.link[linkname]
+                    println("link to remove : ", link_to_remove)
+                    for (linklabel,data) in dict
                         if !contains(linklabel,id_line)
                             ds_scenario.link[linkname][linklabel] = data
                         end
@@ -475,7 +488,7 @@ function scenarios_data(ds,gs,mp,contingency_data,index)
                         delete!(ds_scenario.link,linkname)
                     end
                 else
-                    for (linklabel,data) in ds.link[linkname]
+                    for (linklabel,data) in dict
                     ds_scenario.link[linkname][linklabel] = data
                     end
                 end

@@ -22,6 +22,8 @@ function isless(l1::Link, l2::Link)
     return isless((l1.orig, l1.dest), (l2.orig, l2.dest))
 end
 
+==(l1::Link, l2::Link) = (l1.orig==l2.orig) && (l1.dest==l2.dest)
+
 """
     Abstract type AbstractNodeLabel
 
