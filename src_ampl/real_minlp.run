@@ -74,12 +74,15 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	write gphase1;
 	solve;
 
-	printf"%-40s;%s\n", "#Var name", "Knitro sol" > ("solution_phase_1.csv");
+	display solve_result_num;
+
+	/* printf"%-40s;%s\n", "#Var name", "Knitro sol" > ("solution_phase_1.csv");
 	printf{var0 in REAL_VARIABLES} "%s;%.20e\n", var0, x[var0] > ("solution_phase_1.csv");
-	printf{var0 in BINARY_VARIABLES} "%s;%.20e\n", var0, y[var0] > ("solution_phase_1.csv");
+	printf{var0 in BINARY_VARIABLES} "%s;%.20e\n", var0, y[var0] > ("solution_phase_1.csv"); */
 
 	close knitro_info.csv;
-	printf "%s;%f\n", "Time first resolution", time()-TIME_BEGIN > knitro_info.csv;
+	printf "%s;%f\n", "Time resolution Phase 1 ", time()-TIME_BEGIN > knitro_info.csv;
+	printf "%s;%f\n", "solve_result_num Phase 1", solve_result_num >> knitro_info.csv;
 	close knitro_info.csv;
 
 	if card({i in 1.._ncons: _con[i].slack<-1e-6})>1 then{
@@ -115,8 +118,11 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	write gphase2;
 	solve;
 
+	display solve_result_num;
 
-	printf "%s;%f\n", "Time second resolution", time()-TIME_BEGIN >> knitro_info.csv;
+
+	printf "%s;%f\n", "Time resolution Phase 2", time()-TIME_BEGIN >> knitro_info.csv;
+	printf "%s;%f\n", "solve_result_num Phase 2", solve_result_num >> knitro_info.csv;
 	close knitro_info.csv;
 
 	display time()-TIME_BEGIN;
