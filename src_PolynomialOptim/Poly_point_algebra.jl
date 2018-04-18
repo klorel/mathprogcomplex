@@ -31,7 +31,7 @@ function add!(pt1::Point, pt2::Point)
 end
 
 function add(pt1::Point, pt2::Point)
-  pt_coord = copy(pt1.coords)
+  pt_coord = deepcopy(pt1.coords)
   pt = Point(pt_coord)
   add!(pt, pt2)
   return pt
