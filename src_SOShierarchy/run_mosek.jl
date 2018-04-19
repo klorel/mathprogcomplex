@@ -129,19 +129,27 @@ function solve_mosek(problem::SDP_Problem, primal::Dict{Tuple{String,String,Stri
   # Create a task object and attach log stream printer
   maketask() do task
       putstreamfunc(task,MSK_STREAM_LOG,printstream)
+      
       # Append matrix variables of sizes in 'BARVARDIM'.
       # The variables will initially be fixed at zero.
       appendbarvars(task,barvardim)
+      apppendvars(vardim)
       # Append 'numcon' empty constraints.
       # The constraints will initially have no bounds.
       appendcons(task,numcon)
       # Set the bounds on constraints.
       putconboundslice(task,1,numcon+1, bkc,blc,buc)
+      
       # Minimize
       putobjsense(task,MSK_OBJECTIVE_SENSE_MINIMIZE)
-      #
+      
+      # Set constraints matrices
       putbarablocktriplet(task, length(barai), barai, baraj, barak, baral, baraijkl)
 
+      # Set contraints linear part
+      putaijlist(task, ai, aj, aij)
+
+      # Objective matrices
       putbarcblocktriplet(task, length(barcj), barcj, barck, barcl, barcjkl)
 
       # putintparam(task, MSK_IPAR_INTPNT_SCALING, MSK_SCALING_NONE)
