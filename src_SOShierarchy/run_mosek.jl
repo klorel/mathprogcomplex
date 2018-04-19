@@ -1,22 +1,18 @@
 using Mosek
+
 printstream(msg::String) = print(msg)
+
 function get_triplets(problem::SDP_Problem)
 
   nzc = 0
   nza = 0
-  for objctr_block_var1_var2_coeff in problem.matrix
-    objctr = objctr_block_var1_var2_coeff[1]
-    for block_var1_var2_coeff in objctr_block_var1_var2_coeff[2]
-      var1 = block_var1_var2_coeff[1][2]
-      var2 = block_var1_var2_coeff[1][3]
+  for ((objctr, block, var1, var2), coeff) in problem.matrices
 
-      @assert(var1!="NONE" && var2!="NONE")
       if objctr == "OBJ"
         nzc += 1
       else
         nza += 1
       end
-    end
   end
   println("nza : ", nza)
   println("nzc : ", nzc)
@@ -33,32 +29,23 @@ function get_triplets(problem::SDP_Problem)
 
   nzc=0
   nza=0
-  for objctr_block_var1_var2_coeff in problem.matrix
-    objctr = objctr_block_var1_var2_coeff[1]
-    for block_var1_var2_coeff in objctr_block_var1_var2_coeff[2]
-
-      block = block_var1_var2_coeff[1][1]
-      var1 = block_var1_var2_coeff[1][2]
-      var2 = block_var1_var2_coeff[1][3]
-      coeff = block_var1_var2_coeff[2]
-
-      sdp_block = problem.name_to_block[block]
-      lower = min(sdp_block.var_to_id[var1], sdp_block.var_to_id[var2])
-      upper = max(sdp_block.var_to_id[var1], sdp_block.var_to_id[var2])
-      if objctr == "OBJ"
-        nzc+=1
-        barcj[nzc] = sdp_block.id
-        barck[nzc] = upper
-        barcl[nzc] = lower
-        barcjkl[nzc] = coeff * (lower==upper? 1: 0.5)
-      else
-        nza+=1
-        barai[nza] = problem.name_to_ctr[objctr][1]
-        baraj[nza] = sdp_block.id
-        barak[nza] = upper
-        baral[nza] = lower
-        baraijkl[nza] = coeff * (lower==upper? 1: 0.5)
-      end
+  for ((objctr, block, var1, var2), coeff) in problem.matrices
+    sdp_block = problem.name_to_block[block]
+    lower = min(sdp_block.var_to_id[var1], sdp_block.var_to_id[var2])
+    upper = max(sdp_block.var_to_id[var1], sdp_block.var_to_id[var2])
+    if objctr == "OBJ"
+      nzc+=1
+      barcj[nzc] = sdp_block.id
+      barck[nzc] = upper
+      barcl[nzc] = lower
+      barcjkl[nzc] = coeff * (lower==upper? 1: 0.5)
+    else
+      nza+=1
+      barai[nza] = problem.name_to_ctr[objctr][1]
+      baraj[nza] = sdp_block.id
+      barak[nza] = upper
+      baral[nza] = lower
+      baraijkl[nza] = coeff * (lower==upper? 1: 0.5)
     end
   end
   # println( "barcj : ", barcj)
@@ -75,18 +62,21 @@ function get_triplets(problem::SDP_Problem)
   return barcj, barck, barcl, barcjkl, barai, baraj, barak, baral, baraijkl
 end
 function get_bounds(problem::SDP_Problem)
-  numcon=length(sdp.name_to_ctr)
+  numcon=length(problem.name_to_ctr)
   MOSEK_KIND = Dict(["EQ"=>MSK_BK_FX, "GEQ"=>MSK_BK_LO, "LEQ"=>MSK_BK_UP, "RNG"=>MSK_BK_RA])
-  bkc = Int32[ -1  for kv in sdp.name_to_ctr]
+  bkc = Boundkey[ Mosek.Boundkey(1)  for kv in problem.name_to_ctr]
   # constraint
   buc = Float64[0 for i in 1:numcon]
   blc = Float64[0 for i in 1:numcon]
-  for kv in sdp.name_to_ctr
+  for kv in problem.name_to_ctr
     # @printf("%10d%20s%10d%20s\n", kv[2][1], kv[1], MOSEK_KIND[kv[2][2]], kv[2][2])
     id_ctr=kv[2][1]
     lb = kv[2][3]
     ub = kv[2][4]
-    cst = sdp.cst_ctr[kv[1]]
+    cst = 0
+    if haskey(problem.cst_ctr, kv[1])
+      cst = problem.cst_ctr[kv[1]]
+    end    
     bkc[id_ctr] = MOSEK_KIND[kv[2][2]]
     if bkc[id_ctr] == MSK_BK_UP
       buc[id_ctr] = ub - cst
@@ -99,8 +89,7 @@ function get_bounds(problem::SDP_Problem)
       blc[id_ctr] = lb - cst
       buc[id_ctr] = ub - cst
     else
-      @printf("unknow constraint kind\n")
-      exit(0)
+      error("get_bounds() : Unknown constraint kind $(kv[2][2]) $(bkc[id_ctr]) $(MSK_BK_FX[1])")
     end
     # if bkc[id_ctr]!= MSK_BK_UP
     #   blc[id_ctr] = rhs
@@ -117,6 +106,7 @@ function solve_mosek(problem::SDP_Problem, primal::Dict{Tuple{String,String,Stri
   num_block = length(problem.id_to_block)
   # println("num_block : ", num_block)
   barvardim = [ length(problem.id_to_block[block].var_to_id) for block in 1:num_block ]
+  vardim = 0
   # println(barvardim)
   println("num_block = ",   num_block)
   numcon, bkc, blc, buc = get_bounds(problem)
@@ -129,11 +119,13 @@ function solve_mosek(problem::SDP_Problem, primal::Dict{Tuple{String,String,Stri
   # Create a task object and attach log stream printer
   maketask() do task
       putstreamfunc(task,MSK_STREAM_LOG,printstream)
-      
+  
+      println("EE")
+
       # Append matrix variables of sizes in 'BARVARDIM'.
       # The variables will initially be fixed at zero.
       appendbarvars(task,barvardim)
-      apppendvars(vardim)
+      appendvars(task, vardim)
       # Append 'numcon' empty constraints.
       # The constraints will initially have no bounds.
       appendcons(task,numcon)
@@ -147,7 +139,7 @@ function solve_mosek(problem::SDP_Problem, primal::Dict{Tuple{String,String,Stri
       putbarablocktriplet(task, length(barai), barai, baraj, barak, baral, baraijkl)
 
       # Set contraints linear part
-      putaijlist(task, ai, aj, aij)
+      # putaijlist(task, ai, aj, aij)
 
       # Objective matrices
       putbarcblocktriplet(task, length(barcj), barcj, barck, barcl, barcjkl)
@@ -183,7 +175,7 @@ function solve_mosek(problem::SDP_Problem, primal::Dict{Tuple{String,String,Stri
           end
           # @printf("Optimal solution: \n  xx = %s\n  barx = %s\n", xx',barx')
           activities = Dict{String, Float64}()
-          for objctr_block_var1_var2_coeff in problem.matrix
+          for objctr_block_var1_var2_coeff in problem.matrices
             objctr = objctr_block_var1_var2_coeff[1]
             if !haskey(activities, objctr)
               activities[objctr] = 0
