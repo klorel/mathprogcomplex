@@ -22,7 +22,7 @@ function main()
         # Build the init problem and set relaxation parameters
         problem = buildPOPR_2v2cbis()
         relax_ctx = set_relaxation(problem; hierarchykind=:Real, 
-                                            d = 2,
+                                            d = 1,
                                             symmetries = [PhaseInvariance])
     else
         # Build the init problem and set relaxation parameters
