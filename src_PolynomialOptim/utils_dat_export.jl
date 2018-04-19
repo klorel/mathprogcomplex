@@ -102,8 +102,8 @@ end
   Write a .dat description of `variables` variables to `io`.
 """
 function print_variables(io::IO, variables, pt::Point, maxvarlen, maxcstrlen)
-  for varname in sort(collect(keys(variables)))
-    var = Variable(varname, variables[varname])
+  for (varname, varkind) in variables
+    var = Variable(varname, varkind)
     if iscomplex(var)
       var_type = "CPLX"
     elseif isbool(var)
@@ -135,8 +135,7 @@ with the coefficient (which essentially is a linear term).
 function print_poly!(io::IO, p::AbstractPolynomial, cat::String, maxvarlen, maxcstrlen, expos::SortedDict{Exponent, String})
   constval = 0
 
-  for expo in sort(collect(keys(p)))
-    coeff = p[expo]
+  for (expo, coeff) in p
     explsum, conjsum = get_sumdegs(expo)
 
     vars_deg = collect(expo.expo)
@@ -207,7 +206,7 @@ function export_to_dat(pb_optim::Problem, outpath::String, pt::Point = Point())
   print_poly!(outfile, pb_optim.objective, "OBJ", maxvarlen, maxcstrlen, expos)
 
   ## Print constraints
-  for cstrname in sort(collect(keys(pb_optim.constraints)))
+  for (cstrname, cstr) in pb_optim.constraints
     cstr = pb_optim.constraints[cstrname]
     print_constraint(outfile, cstrname, cstr, maxvarlen, maxcstrlen, expos)
 
@@ -231,7 +230,7 @@ function export_to_dat(pb_optim::Problem, outpath::String, pt::Point = Point())
 
   print_string(outfile, "#cstrname", maxcstrlen)
   @printf(outfile, "%10s\n", "Precondtype")
-  for cstrname in sort(collect(precond_cstrs))
+  for cstrname in precond_cstrs
     if get_constraint(pb_optim, cstrname).precond == :sqrt
       print_string(outfile, cstrname, maxcstrlen)
       @printf(outfile, "%10s\n", "SQRT")
@@ -257,8 +256,6 @@ function export_matpower_to_dat(QCQP::Problem, filename::String, pt::Point = Poi
   end
 
   ## Sort constraints by type (voltm, unit and rest), and build dat constraint name
-  cstrs_keys = sort(collect(keys(QCQP.constraints)))
-
   cstr_keys = SortedSet(keys(QCQP.constraints))
   voltm_keys = filter(x->ismatch(r"VOLTM", x), cstr_keys)
   unit_keys = filter(x->ismatch(r"UNIT", x), cstr_keys)
@@ -286,12 +283,9 @@ function export_matpower_to_dat(QCQP::Problem, filename::String, pt::Point = Poi
   print_variables(outfile, variables, pt, maxvarlen, maxcstrlen)
 
   ## Print objective
-  obj_keys = sort(collect(keys(QCQP.objective)))
   const_printed = false
   const_val = 0
-  for expo in obj_keys
-      coeff = QCQP.objective[expo]
-
+  for (expo, coeff) in QCQP.objective
       if length(expo) != 0
         print_quad_expo(outfile, expo, "OBJ", coeff, maxvarlen, maxcstrlen)
       else
@@ -300,17 +294,17 @@ function export_matpower_to_dat(QCQP::Problem, filename::String, pt::Point = Poi
   end
   print_dat_line(outfile, "CONST", "OBJ", "NONE", "NONE", real(const_val), imag(const_val), maxvarlen, maxcstrlen)
 
-  for i in sort(collect(keys(id_to_loadkey)))
-    cstr = QCQP.constraints[id_to_loadkey[i][1]]
-    print_constraint(outfile, id_to_loadkey[i][2], cstr, maxvarlen, maxcstrlen, expos)
+  for (i, loadkey) in id_to_loadkey
+    cstr = QCQP.constraints[loadkey[1]]
+    print_constraint(outfile, loadkey[2], cstr, maxvarlen, maxcstrlen, expos)
   end
-  for i in sort(collect(keys(id_to_voltmkey)))
-    cstr = QCQP.constraints[id_to_voltmkey[i][1]]
-    print_constraint(outfile, id_to_voltmkey[i][2], cstr, maxvarlen, maxcstrlen, expos)
+  for (i, voltmkey) in id_to_voltmkey
+    cstr = QCQP.constraints[voltmkey[1]]
+    print_constraint(outfile, voltmkey[2], cstr, maxvarlen, maxcstrlen, expos)
   end
-  for i in sort(collect(keys(id_to_unitkey)))
-    cstr = QCQP.constraints[id_to_unitkey[i][1]]
-    print_constraint(outfile, id_to_unitkey[i][2], cstr, maxvarlen, maxcstrlen, expos)
+  for (i, unitkey) in id_to_unitkey
+    cstr = QCQP.constraints[unitkey[1]]
+    print_constraint(outfile, unitkey[2], cstr, maxvarlen, maxcstrlen, expos)
   end
   close(outfile)
 end

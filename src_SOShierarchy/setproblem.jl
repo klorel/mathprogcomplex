@@ -69,8 +69,8 @@ function normalize_problem(problem)
     println("Transform the problem so it contains only ineqs or eqs s.a. g_i(z) ≥ 0 or g_j(z) = 0, add the moment constraint g_0(z)=1≥0.")
 
     normpb = Problem()
-    normpb.variables = copy(problem.variables)
-    normpb.objective = copy(problem.objective)
+    normpb.variables = deepcopy(problem.variables)
+    normpb.objective = deepcopy(problem.objective)
 
     for (cstrname, cstr) in get_constraints(problem)
         if cstr.lb != cstr.ub
