@@ -97,5 +97,5 @@ close(f)
 if nb_scenarios_with_pb > 0
     println("\nNB OF SCENARIOS NOT FEASIBLE : $nb_scenarios_with_pb/$nb_scenarios. \nSee results_$folder.csv in knito_runs for more details")
 else
-    println("ALL SCENARIOS ($nb_scnarios scenarios) FEASIBLE.\nSee results_$folder.csv in knito_runs for more details.")
+    println("ALL SCENARIOS ($nb_scenarios scenarios) FEASIBLE.\nSee results_$folder.csv in knito_runs for more details.")
 end

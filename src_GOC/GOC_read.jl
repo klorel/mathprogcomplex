@@ -416,19 +416,6 @@ function scenarios_data(ds,gs,mp,contingency_data,index)
         for linkname in keys(ds.link)
             ds_scenario_link[linkname] = SortedDict{String,Any}()
         end
-        orig = "BUS_118"
-        dest = "BUS_121"
-        linkpb = Link(orig, dest)
-        for (l,dict) in ds.link
-            # println(l)
-            # if l.orig == orig && l.dest == dest
-            #     println(dict)
-            #     exit()
-            # end
-            if !haskey(ds_scenario_link,l)
-                println(l)
-            end
-        end
         ds_scenario = DataSource(ds_scenario_bus,ds_scenario_link)
         if type_contingency == "G"
             println(type_contingency)
@@ -478,7 +465,7 @@ function scenarios_data(ds,gs,mp,contingency_data,index)
             end
             for (linkname,dict) in ds.link
                 if linkname.orig == link_to_remove.orig && linkname.dest == link_to_remove.dest
-                    println("link to remove : ", link_to_remove)
+                    # println("link to remove : ", link_to_remove)
                     for (linklabel,data) in dict
                         if !contains(linklabel,id_line)
                             ds_scenario.link[linkname][linklabel] = data
