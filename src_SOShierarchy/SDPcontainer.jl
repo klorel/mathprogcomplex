@@ -4,7 +4,7 @@ function build_SDP(relaxctx::RelaxationContext, moment_matrices::Dict{Tuple{Stri
     sdprhs = SDPRhs()
 
     for ((cstrname, cliquename), mm) in moment_matrices
-        
+
         for ((γ, δ), poly) in mm
             for (expo, λ) in poly
                 # Determine which moment to affect the current coefficient.
@@ -27,7 +27,7 @@ function build_SDP(relaxctx::RelaxationContext, moment_matrices::Dict{Tuple{Stri
         # NOTE: could symmetry properties be exploited here ? Is this the same thing ?
         α, β = split_expo(relaxctx, expo)
         add_to_dict!(sdprhs, (α, β), λ)
-        
+
     end
 
     return sdpbody, sdprhs
@@ -36,7 +36,6 @@ end
 
 """
     α, β = split_expo(expo::Exponent)
-
     Split the exponent into two exponents of conjugated and explicit variables in the complex case.
     Real case is not supported yet.
 """
@@ -52,6 +51,6 @@ function split_expo(relaxctx::RelaxationContext, expo::Exponent)
         ## TODO: C'est ici que ça se joue en réel...
         error("build_SDP(): Real hierarchy not yet handled.")
     end
-    
+
     return α, β
 end

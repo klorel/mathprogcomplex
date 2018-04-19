@@ -9,36 +9,36 @@ struct IIDMGenerator <: AbstractNodeLabel
 end
 
 ## 1. Variables creation
-function create_vars!(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::Dict{String, Variable}, scenario::String) where T <: IIDMGenerator
+function create_vars!(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_vars::SortedDict{String, Variable}, scenario::String) where T <: IIDMGenerator
   bus_vars[elemid] = Variable(variable_name("Sgen", bus, elemid, scenario), Complex)
   return
 end
 
-# function create_vars!(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T <: MyType
+# function create_vars!(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}) where T <: MyType
 #   return
 # end
 
 ## 2. Power balance
-function Snodal(element::T, busid::String, elemid::String, elem_formulation::Symbol, bus_vars::Dict{String, Variable}) where T <: IIDMGenerator
+function Snodal(element::T, busid::String, elemid::String, elem_formulation::Symbol, bus_vars::SortedDict{String, Variable}) where T <: IIDMGenerator
   cstrname = "UNIT"
   return [cstrname, Polynomial(bus_vars[elemid]), 0, 0]
 end
 
-# function Sorig(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T<:MyType
+# function Sorig(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}) where T<:MyType
 #   return Polynomial()
 # end
 
-# function Sdest(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T<:MyType
+# function Sdest(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}) where T<:MyType
 #   return Polynomial()
 # end
 
 ## 3. Constraints creation
-function constraint(element::T, busid::String, elemid::String, elem_formulation::Symbol, bus_vars::Dict{String, Variable}) where T <: IIDMGenerator
+function constraint(element::T, busid::String, elemid::String, elem_formulation::Symbol, bus_vars::SortedDict{String, Variable}) where T <: IIDMGenerator
   bounds = sort(element.S_bounds, by=x->real(x[1]))
   length(bounds) == 2 || warn("$(length(bounds))x2 ≠ 4 points for power domain of $elemid, $busid")
 
   Sgen = bus_vars[elemid]
-  constraints = Dict{String, Constraint}()
+  constraints = SortedDict{String, Constraint}()
 
   constraints["Cstr_$(busid)_$(elemid)_real"] = real(bounds[1][1]) << Sgen << real(bounds[2][1])
 
@@ -53,13 +53,13 @@ function constraint(element::T, busid::String, elemid::String, elem_formulation:
   return constraints
 end
 
-# function constraint(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T <: MyType
-#   return Dict{String, Constraint}()
+# function constraint(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}) where T <: MyType
+#   return SortedDict{String, Constraint}()
 # end
 
 
 ## 4. Generator cost
-function cost(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_elems_var::Dict{String, Variable}, Snode::Polynomial, lb, ub) where T <: IIDMGenerator
+function cost(element::T, bus::String, elemid::String, elem_formulation::Symbol, bus_elems_var::SortedDict{String, Variable}, Snode::Polynomial, lb, ub) where T <: IIDMGenerator
   Sgen = gencost = Polynomial()
   if elem_formulation == :NbMinVar
     _, S, lb_gen, ub_gen = Snodal(element, bus, elemid, elem_formulation, bus_elems_var)

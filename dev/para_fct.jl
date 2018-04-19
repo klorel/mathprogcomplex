@@ -26,7 +26,7 @@ function build_and_solve_GOC(instance::String, scenario::String, save_folder::St
     pt_strat1, pt_strat2 = get_knitro_solutions(amplexportpath)
 
     ## Results:
-    Data = Dict()
+    Data = SortedDict()
     Data["minslack_GOC"] = get_minslack(pb_global, global_point)
     Data["minslack_strat1"] = get_minslack(pb_global_real, pt_strat1)[1]
     Data["minslack_strat2"] = get_minslack(pb_global_real, pt_strat1)[2]

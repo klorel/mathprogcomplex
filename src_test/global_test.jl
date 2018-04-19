@@ -1,4 +1,4 @@
-using ArgParse
+using ArgParse, MAT
 """Test
 Test to launch in complex-modeler/src_test folder for example D:\repo\complex-modeler\src_test>julia global_test.jl
 
@@ -63,6 +63,19 @@ function build_and_solve_instance(typeofinput, instance_path)
     obj = feas = 0.0
 
     tic()
+
+    # if typeofinput == GOCInput
+    #     raw = "powersystem.raw"
+    #     gen = "generator.csv"
+    #     con = "contingency.csv"
+    #     rawfile = joinpath(instance_path,raw)
+    #     genfile = joinpath(instance_path, gen)
+    #     contfile = joinpath(instance_path, con)
+    #     OPFpbs = load_OPFproblems(rawfile, genfile, contfile)
+    #
+    # else
+    #     OPFpbs = load_OPFproblems(typeofinput, instance_path)
+    # end
     OPFpbs = load_OPFproblems(typeofinput, instance_path)
 
     ## Introducing coupling constraints on generator output
@@ -79,12 +92,13 @@ function build_and_solve_instance(typeofinput, instance_path)
 
     ## Exporting real problem
     if typeofinput != GOCInput
-        instance_name  = String(split(instance_path,'\\')[end])
+        # instance_name  = String(split(instance_path,'\\')[end])
+        instance_name = splitdir(instance_path)[end]
         amplexportpath = joinpath("..","knitro_runs", "$(instance_name[1:end-2])")
     else
-        folder,scenario = split(instance_path, '\\')[end-1:end]
-        folder = String(folder)
-        scenario = String(scenario)
+        # folder,scenario = split(instance_path, '\\')[end-1:end]
+        spath, scenario = splitdir(instance_path)
+        folder = splitdir(spath)[end]
         amplexportpath = joinpath("..","knitro_runs", "$(folder[9:end])_$(scenario)")
     end
     my_timer = @elapsed export_to_dat(pb_global_real, amplexportpath, init_point_real)
@@ -94,13 +108,20 @@ function build_and_solve_instance(typeofinput, instance_path)
 
     _, t_knitro, _ = @timed run_knitro(amplexportpath, joinpath(pwd(),"..","src_ampl"))
     pt_knitro, pt_GOC = read_Knitro_output(amplexportpath, pb_global_real)
+
+    write_solutions(OPFpbs, pt_knitro, amplexportpath)
+
+    sol_txt = read_solution_point_GOC(instance_path, amplexportpath)
+    pt_txt = cplx2real(sol_txt)
+    println("get_minslack point from txt files:", get_minslack(pb_global_real, pt_txt))
+
     feas,ctr = get_minslack(pb_global_real, pt_knitro)
     obj = get_objective(pb_global_real, pt_knitro)
 
     nb_variables = length(pb_global_real.variables)
     nb_constraints = length(pb_global_real.constraints)
 
-    return String(split(instance_path,'\\')[end]) => (nb_variables, nb_constraints, obj, feas, t_buildexport, t_knitro)
+    return String(splitdir(instance_path)[end]) => (nb_variables, nb_constraints, obj, feas, t_buildexport, t_knitro)
 end
 
 function main(ARGS)

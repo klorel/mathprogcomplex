@@ -1,7 +1,7 @@
 """
     check_feasibility(elem::T, bus::String, elemid::String, elem_formulation::Symbol, scenario::String, point::Point) where T<:AbstractNodeLabel
 
-Evaluate the constraints defined by `elemid` of type `elem` at `bus` for `scenario` (depending on `elem_formulation`) on `point` and return a dictionary of infeasible constraints Dict(ctrname => message with information)
+Evaluate the constraints defined by `elemid` of type `elem` at `bus` for `scenario` (depending on `elem_formulation`) on `point` and return a dictionary of infeasible constraints SortedDict(ctrname => message with information)
 Return nothing if there is not violated constraints.
 
 """
@@ -31,7 +31,7 @@ function check_feasibility(element::T, bus::String, elemid::String, elem_formula
           elseif imag(slack_left) < - epsilon
               message = message*" Qgen > Qmax"
           end
-          return Dict(cstrname => message)
+          return SortedDict(cstrname => message)
       end
     end
 end
@@ -69,10 +69,10 @@ function check_feasibility(element::T, bus::String, elemid::String, elem_formula
             ##feasibility at epsilon OK
             return
         else
-            return Dict(cstrname => "Voltage magnitude above Vmax")
+            return SortedDict(cstrname => "Voltage magnitude above Vmax")
         end
     else
-        return Dict( cstrname => "Voltage magnitude under Vmin")
+        return SortedDict( cstrname => "Voltage magnitude under Vmin")
     end
 end
 
@@ -88,20 +88,20 @@ end
 # check_feasibility(elem, bus, elemid, elem_formulation, scenario, point, 1e-6)
 
 
-# function check_feasibility(elem::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}, scenario::String, point::Point) where T<:AbstractLinkLabel
+# function check_feasibility(elem::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}, scenario::String, point::Point) where T<:AbstractLinkLabel
 #     return
 # end
 #
 """
-    check_feasibility(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}, scenario::String, point::Point, epsilon::Float64) where T<:AbstractLinkLabel
+    check_feasibility(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}, scenario::String, point::Point, epsilon::Float64) where T<:AbstractLinkLabel
 
-Evaluate the constraints defined by `elemid` of type `elem` at `link` for `scenario` (depending on `elem_formulation`) on `point` and return a dictionary of infeasible constraints Dict(ctrname => message with information)
+Evaluate the constraints defined by `elemid` of type `elem` at `link` for `scenario` (depending on `elem_formulation`) on `point` and return a dictionary of infeasible constraints SortedDict(ctrname => message with information)
 Return nothing if there is not violated constraints.
 
 """
 
 ##Smax constraints TODO: define for all types of abstract link ???
-function check_feasibility(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}, scenario::String, point::Point, epsilon::Float64) where T<:GOCLineπ_notransformer
+function check_feasibility(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}, scenario::String, point::Point, epsilon::Float64) where T<:GOCLineπ_notransformer
     origid, destid = link.orig, link.dest
     ctr_name_orig = get_cstrname(scenario, link, elemid, "Smaxorig")
     ctr_name_dest = get_cstrname(scenario, link, elemid, "Smaxdest")
@@ -113,24 +113,24 @@ function check_feasibility(element::T, link::Link, elemid::String, elem_formulat
     if abs(imag(slack_Sorig)) > 1e-15 || abs(imag(slack_Sdest)) > 1e-15
         warn("Imaginary part of Sorig or Sdest module is not zero")
     end
-    ctr_slacks = Dict(ctr_name_orig => real(slack_Sorig), ctr_name_dest => real(slack_Sdest))
+    ctr_slacks = SortedDict(ctr_name_orig => real(slack_Sorig), ctr_name_dest => real(slack_Sdest))
     min_violation_ctr = minimum(ctr_slacks)
     if min_violation_ctr[2] > - epsilon
         return
     else
         if real(slack_Sorig) < - epsilon
             if real(slack_Sdest) < - epsilon
-                return Dict(ctr_name_orig => "Power magnitude at origin above Smax", ctr_name_dest => "Power magnitude at destination")
+                return SortedDict(ctr_name_orig => "Power magnitude at origin above Smax", ctr_name_dest => "Power magnitude at destination")
             else
-                return Dict(ctr_name_orig => "Power magnitude at origin is above Smax")
+                return SortedDict(ctr_name_orig => "Power magnitude at origin is above Smax")
             end
         else
-            return Dict(ctr_name_dest => "Power magnitude at destination Smax")
+            return SortedDict(ctr_name_dest => "Power magnitude at destination Smax")
         end
     end
 end
 
-function check_feasibility(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}, scenario::String, point::Point, epsilon::Float64) where T<:GOCLineπ_withtransformer
+function check_feasibility(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}, scenario::String, point::Point, epsilon::Float64) where T<:GOCLineπ_withtransformer
     origid, destid = link.orig, link.dest
     ctr_name_orig = get_cstrname(scenario, link, elemid, "Smaxorig")
     ctr_name_dest = get_cstrname(scenario, link, elemid, "Smaxdest")
@@ -142,19 +142,19 @@ function check_feasibility(element::T, link::Link, elemid::String, elem_formulat
     if abs(imag(slack_Sorig)) > 1e-15 || abs(imag(slack_Sdest)) > 1e-15
         warn("Imaginary part of Sorig or Sdest module is not zero")
     end
-    ctr_slacks = Dict(ctr_name_orig => real(slack_Sorig), ctr_name_dest => real(slack_Sdest))
+    ctr_slacks = SortedDict(ctr_name_orig => real(slack_Sorig), ctr_name_dest => real(slack_Sdest))
     min_violation_ctr = minimum(ctr_slacks)
     if min_violation_ctr[2] > - epsilon
         return
     else
         if real(slack_Sorig) < - epsilon
             if real(slack_Sdest) < - epsilon
-                return Dict(ctr_name_orig => "Power magnitude at origin above Smax", ctr_name_dest => "Power magnitude at destination")
+                return SortedDict(ctr_name_orig => "Power magnitude at origin above Smax", ctr_name_dest => "Power magnitude at destination")
             else
-                return Dict(ctr_name_orig => "Power magnitude at origin is above Smax")
+                return SortedDict(ctr_name_orig => "Power magnitude at origin is above Smax")
             end
         else
-            return Dict(ctr_name_dest => "Power magnitude at destination Smax")
+            return SortedDict(ctr_name_dest => "Power magnitude at destination Smax")
         end
     end
 end
@@ -173,7 +173,7 @@ end
 """
     check_feasibility_cc_active_power(elem::T, bus::String, elemid::String, elem_formulation::Symbol, scenario::String, point::Point,epsilon::Float64) where T<:AbstractNodeLabel
 
-Evaluate the coupling constraints about active power defined by `elemid` of type `elem` at `bus` for `scenario` (depending on `elem_formulation`) on `point` and return a dictionary of infeasible constraints Dict(ctrname => message with information)
+Evaluate the coupling constraints about active power defined by `elemid` of type `elem` at `bus` for `scenario` (depending on `elem_formulation`) on `point` and return a dictionary of infeasible constraints SortedDict(ctrname => message with information)
 Return nothing if the elem is not a generator or if there is not violated constraints.
 
 """
@@ -196,7 +196,7 @@ function check_feasibility_cc_active_power(elem::T, bus::String, elemid::String,
             #feasibility
             return
         else
-            return Dict(cc_name => "Active power generated in contingency not equal to the one in Basecase plus delta * participation factor")
+            return SortedDict(cc_name => "Active power generated in contingency not equal to the one in Basecase plus delta * participation factor")
         end
     else
         #warn("No active power coupling constraints for BaseCase scenario")
@@ -209,7 +209,7 @@ end
 """
     check_feasibility_cc_reactive_power(element::T, bus::String, elemid::String, elem_formulation::Symbol, scenario::String, point::Point,epsilon::Float64) where T<:AbstractNodeLabel
 
-Evaluate the coupling constraints about reactive power defined by `elemid` of type `element` at `bus` for `scenario` (depending on `elem_formulation`) on `point` and return a dictionary of infeasible constraints Dict(ctrname => message with information)
+Evaluate the coupling constraints about reactive power defined by `elemid` of type `element` at `bus` for `scenario` (depending on `elem_formulation`) on `point` and return a dictionary of infeasible constraints SortedDict(ctrname => message with information)
 Return nothing if the elem is not a generator or if there is not violated constraints.
 
 """
@@ -241,7 +241,7 @@ function check_feasibility_cc_reactive_power(element::T, bus::String, elemid::St
             println(Qmax, imag(Sgen_scenario))
             println(slack)
             if abs(slack) > epsilon
-                return Dict(cc_name => "Vscenario < Vbasecase, reactive power generated should be equal to Qmax")
+                return SortedDict(cc_name => "Vscenario < Vbasecase, reactive power generated should be equal to Qmax")
             end
 
         elseif abs(V_scenario) - abs(V_basecase) > epsilon
@@ -251,7 +251,7 @@ function check_feasibility_cc_reactive_power(element::T, bus::String, elemid::St
             println(Qmin, imag(Sgen_scenario))
             println(slack)
             if abs(slack) > epsilon
-                return Dict(cc_name => "Vscenario > Vbasecase, reactive power generated should be equal to Qmin")
+                return SortedDict(cc_name => "Vscenario > Vbasecase, reactive power generated should be equal to Qmin")
             end
         end
 
@@ -294,7 +294,7 @@ function test_feasibility_GOC(instance_path, epsilon::Float64)
     introduce_Sgenvariables!(OPFpbs)
     pb_global = build_globalpb(OPFpbs)
     global_point = solution_point(instance_path)
-    dict_scenario_infeasible_ctr = Dict{String, Dict{String,String}}()
+    dict_scenario_infeasible_ctr = SortedDict{String, SortedDict{String,String}}()
     for (scenario, OPFpb) in OPFpbs
         dict_scenario_infeasible_ctr[scenario] = check_feasibility(scenario, OPFpb, global_point,epsilon)
     end
@@ -305,13 +305,13 @@ end
     check_feasibility(scenario::String, OPFpb::Scenario, point::Point, epsilon::Float64)
 
 Checks feasibility at `epsilon` for each constraint generated for in the scenario `scenario` constructed from `OPFpb` evaluated at `point`.
-Returns a dictionary of constraints violated Dict: ctrname => message of error
+Returns a dictionary of constraints violated SortedDict: ctrname => message of error
 """
 function check_feasibility(scenario::String, OPFpb::Scenario, point::Point, epsilon::Float64)
     ds = OPFpb.ds
     mp = OPFpb.mp
 
-    dict_infeasible_ctr = Dict{String, String}()
+    dict_infeasible_ctr = SortedDict{String, String}()
         for (bus, elems) in ds.bus
             bus_elems_formulations = mp.node_formulations[bus]
             for (elemid, elem) in elems

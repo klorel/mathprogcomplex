@@ -1,10 +1,10 @@
 """
-    mm = MomentMatrix(vars::Set{Variable}, d)
+    mm = MomentMatrix(vars::SortedSet{Variable}, d)
 
     Build the moment matrix corresponding to the moment of degree up to `d` of the `vars` polynomial algebra.
 """
-function MomentMatrix(vars::Set{Variable}, d::Int)
-    mm = Dict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
+function MomentMatrix(vars::SortedSet{Variable}, d::Int)
+    mm = SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
     realexpos = compute_exponents(vars, d)
     conjexpos = compute_exponents(vars, d, compute_conj=true)
     for cexp in conjexpos
@@ -54,7 +54,7 @@ end
 *(mm::MomentMatrix, λ::Number) = λ*mm
 
 function evaluate(mm::MomentMatrix, pt::Point)
-    mm_eval = Dict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
+    mm_eval = SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
     for (key, p) in mm.mm
         res = evaluate(p, pt)
         if res == Polynomial()
@@ -63,7 +63,7 @@ function evaluate(mm::MomentMatrix, pt::Point)
             mm_eval[key] = res
         end
     end
-    return MomentMatrix(mm_eval, setdiff(mm.vars, Set(keys(pt))), mm.order)
+    return MomentMatrix(mm_eval, setdiff(mm.vars, SortedSet(keys(pt))), mm.order)
 end
 
 
@@ -72,22 +72,27 @@ end
 
     Compute the moment and localizing matrices associated with the problem constraints and clique decomposition.
 """
-function compute_momentmat(relax_ctx, problem, moment_param::Dict{String, Tuple{Set{String}, Int}}, max_cliques::Dict{String, Set{Variable}})
+function compute_momentmat(relax_ctx, problem, moment_param::SortedDict{String, Tuple{SortedSet{String}, Int}}, max_cliques::SortedDict{String, SortedSet{Variable}})
     println("\n=== compute_momentmat(relax_ctx, problem, moment_param, max_cliques)")
-    println("Compute the moment and localizing matrices associated with the problem constraints and vlique decomposition.")
+    println("Compute the moment and localizing matrices associated with the problem constraints and clique decomposition.")
 
     # NOTE: Things will have to be slightly extended to support the several SDP sparse moment constraint (cstr key will not suffise)
-    momentmatrices = Dict{Tuple{String, String}, MomentMatrix}()
+    momentmatrices = SortedDict{Tuple{String, String}, MomentMatrix}()
 
     for (cstrname, (clique_keys, order)) in moment_param
         # Collect variables involved in constraint
-        vars = Set{Variable}()
+        vars = SortedSet{Variable}()
         blocname = ""
         for clique_key in clique_keys
             union!(vars, max_cliques[clique_key])
             blocname = blocname*clique_key*"_"
         end
         momentmatrices[(cstrname, blocname[1:end-1])] = MomentMatrix(vars, order) * problem.constraints[cstrname].p
+        println("****************************************************************************************")
+        println(MomentMatrix(vars, order))
+        println(problem.constraints[cstrname].p)
+        println(momentmatrices[(cstrname, blocname[1:end-1])])
+        println("****************************************************************************************")
     end
 
     println("xxxxx which indicators ? xxxxx")
@@ -96,11 +101,11 @@ function compute_momentmat(relax_ctx, problem, moment_param::Dict{String, Tuple{
 end
 
 
-function MomentRelaxationPb(relax_ctx, problem, moment_param::Dict{String, Tuple{Set{String}, Int}}, max_cliques::Dict{String, Set{Variable}})
+function MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{SortedSet{String}, Int}}, max_cliques::SortedDict{String, SortedSet{Variable}})
     momentmatrices = compute_momentmat(relax_ctx, problem, moment_param, max_cliques)
 
     if relax_ctx.leveragesymmetries && has_phasesymmetry(relax_ctx, problem)
-        warn("MomentRelaxationPb(): Problem is phase-shift invariant. Leveraging to reduce the number of moments.")
+        println("MomentRelaxationPb(): Problem is phase-shift invariant. Leveraging to reduce the number of moments.")
         enforce_phaseinvariance!(relax_ctx, momentmatrices)
     end
 

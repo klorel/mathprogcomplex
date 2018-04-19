@@ -18,7 +18,7 @@ end
 
     Remove all the non homogeneous oments from the moment-matrices.
 """
-function enforce_phaseinvariance!(relax_ctx::RelaxationContext, momentmatrices::Dict{Tuple{String, String}, MomentMatrix})
+function enforce_phaseinvariance!(relax_ctx::RelaxationContext, momentmatrices::SortedDict{Tuple{String, String}, MomentMatrix})
     # Remove all the non-homogeneous moments
 
     for (key, mmt) in momentmatrices

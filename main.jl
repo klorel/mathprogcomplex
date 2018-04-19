@@ -32,7 +32,7 @@ function main()
 
     println("\n--------------------------------------------------------")
     println("relax_ctx = $relax_ctx")
-    
+
     println("\n--------------------------------------------------------")
     println("problem = $problem")
 
@@ -50,7 +50,7 @@ function main()
     for (key, (val1, val2)) in moments_params
         println("$key \t -> $val1, di-ki=$val2")
     end
-    
+
     ########################################
     # Calcul des matrices de moment
 
@@ -60,9 +60,9 @@ function main()
 
 
     # B_i = compute_Bibycstr(problem, momentmatrices, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
-    
+
     # SDP_SOS = build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbyclique, relax_ctx)
-    
+
     ########################################
     # Calcul d'une solution par un solveur
     # m, Zi, yα_re, yα_im, expo2int, int2expo = make_JuMPproblem(SDP_SOS, SCSSolver(max_iters=5000000, eps=1e-3, verbose=true), relax_ctx)

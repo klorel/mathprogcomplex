@@ -14,7 +14,6 @@ end
 
 """
     MomentMatrix(mm, vars, order)
-
     Store a moment or localizing matrix of size `order`, corresponding to the `vars` variables in the `mm` dictionnary.
     **Note** that the matrix is indexed by a tuple of exponents, *the first of which contains only conjugated variables*, et second only real ones.
 """
@@ -26,7 +25,6 @@ end
 
 """
     momentrel = MomentRelaxationPb(obj, cstrs)
-
     Store a Moment Relaxation problem.
 """
 struct MomentRelaxationPb
@@ -58,7 +56,6 @@ const SDPRhs = Dict{Tuple{Exponent, Exponent}, Complex128}
 
 """
     SparsityPattern
-
     Type for storing and working on sparsitty patterns.
 """
 type SparsityPattern end

@@ -1,4 +1,3 @@
-type GOCInput <: AbstractInput end
 #
 # include(joinpath(pwd(),"src_PowSysMod", "PowSysMod_body.jl"))
 #
@@ -80,8 +79,11 @@ end
 ###read bus data
 function read_data_bus_fromraw(bus_data, load_data, shunt_data, baseMVA)
     nb_bus = size(bus_data,1)
-    index = Dict(bus_data[i,1] => i for i in 1:nb_bus)
-    bus = Dict(bus_name(i) => Dict{String,Any}() for i in 1:nb_bus)
+    index = SortedDict(bus_data[i,1] => i for i in 1:nb_bus)
+    bus = SortedDict{String, SortedDict{String,Any}}()
+    for i in 1:nb_bus
+        bus[bus_name(i)] = SortedDict{String,Any}()
+    end
     for i in 1:nb_bus
         id_bus = bus_data[i,1]
         busname = bus_name(i)
@@ -89,7 +91,7 @@ function read_data_bus_fromraw(bus_data, load_data, shunt_data, baseMVA)
         baseMVA = baseMVA
         voltage_magnitude_min = bus_data[i,11]
         voltage_magnitude_max  = bus_data[i,10]
-        bus[busname][volt_name()] = GOCVolt(busname, baseKV, baseMVA, voltage_magnitude_min, voltage_magnitude_max)
+        bus[busname][volt_name()] = GOCVolt(id_bus, baseKV, baseMVA, voltage_magnitude_min, voltage_magnitude_max)
     end
     ### LOAD DATA
     nb_load = size(load_data,1)
@@ -103,7 +105,7 @@ function read_data_bus_fromraw(bus_data, load_data, shunt_data, baseMVA)
             id_load = load_data[i,2]
             id_load = remove_simple_quotes_and_spaces_if_present(id_load)
             loadname = load_name(id_load)
-            bus[busname][loadname] = GOCLoad(busname,loadname,load)
+            bus[busname][loadname] = GOCLoad(id_bus,loadname,load)
         end
     end
     ### SHUNT DATA
@@ -118,7 +120,7 @@ function read_data_bus_fromraw(bus_data, load_data, shunt_data, baseMVA)
             id_shunt = shunt_data[i,2]
             id_shunt = remove_simple_quotes_and_spaces_if_present(id_shunt)
             shuntname = shunt_name(id_shunt)
-            bus[busname][shuntname] = GOCShunt(busname,shuntname,shunt)
+            bus[busname][shuntname] = GOCShunt(id_bus,shuntname,shunt)
         end
     end
     return bus,index
@@ -140,7 +142,7 @@ end
 
 function convert_gen_data_csv_into_dict(gen_data_csv, index)
     nb_lines = size(gen_data_csv, 1)
-    gen_data_csv_dict = Dict{String, Dict{String,Dict{Int64,Float64}}}()
+    gen_data_csv_dict = SortedDict{String, SortedDict{String,SortedDict{Int64,Float64}}}()
     for i in 1:nb_lines
         id_bus = Int64(gen_data_csv[i,1])
         busname = bus_name(index[id_bus])
@@ -153,10 +155,10 @@ function convert_gen_data_csv_into_dict(gen_data_csv, index)
         term_id = Int64(gen_data_csv[i,3])
         coeff = gen_data_csv[i,4]
         if !haskey(gen_data_csv_dict, busname)
-            gen_data_csv_dict[busname] = Dict{String,Dict{Int64,Float64}}()
+            gen_data_csv_dict[busname] = SortedDict{String,SortedDict{Int64,Float64}}()
         end
         if !haskey(gen_data_csv_dict[busname], generatorname)
-            gen_data_csv_dict[busname][generatorname] = Dict{Int64,Float64}()
+            gen_data_csv_dict[busname][generatorname] = SortedDict{Int64,Float64}()
         end
         gen_data_csv_dict[busname][generatorname][term_id] = coeff
     end
@@ -171,11 +173,11 @@ function add_generator_data_fromraw!(generator_data, gen_data_csv_dict, bus, ind
         id_bus = generator_data[i,1]
         busname = bus_name(index[id_bus])
         gen_id = generator_data[i,2]
-        gen_id = remove_simple_quotes_and_spaces_if_present(gen_id)
-        if typeof(gen_id)==Float64
-            gen_id = Int64(gen_id)
+        gen_id2 = remove_simple_quotes_and_spaces_if_present(gen_id)
+        if typeof(gen_id2)==Float64
+            gen_id2 = Int64(gen_id)
         end
-        generatorname = generator_name(gen_id)
+        generatorname = generator_name(gen_id2)
         Pmin = generator_data[i,18]
         Qmin = generator_data[i,6]
         Pmax = generator_data[i,17]
@@ -183,7 +185,7 @@ function add_generator_data_fromraw!(generator_data, gen_data_csv_dict, bus, ind
         participation_factor = gen_data_csv_dict[busname][generatorname][9]
         power_min = Pmin + im*Qmin
         power_max = Pmax + im*Qmax
-        dict_obj_coeffs = Dict{Int64,Float64}()
+        dict_obj_coeffs = SortedDict{Int64,Float64}()
         for (degree, value) in gen_data_csv_dict[busname][generatorname]
             if (degree ∈ [0,1,2])
                 dict_obj_coeffs[degree] = value
@@ -195,7 +197,7 @@ function add_generator_data_fromraw!(generator_data, gen_data_csv_dict, bus, ind
             if !haskey(dict_obj_coeffs,1) dict_obj_coeffs[1] = 0 end
             if !haskey(dict_obj_coeffs,2) dict_obj_coeffs[2] = 0 end
        end
-        bus[busname][generatorname] = GOCGenerator(busname,generatorname,power_min,power_max,participation_factor,dict_obj_coeffs)
+        bus[busname][generatorname] = GOCGenerator(id_bus,gen_id,power_min,power_max,participation_factor,dict_obj_coeffs)
     end
     return bus
 end
@@ -223,11 +225,12 @@ end
 
 function read_data_branch_fromraw(branch_data, transfo_data, index)
     nb_branch = size(branch_data,1)
-    link = Dict{Link, Dict{String,Any}}()
+    link = SortedDict{Link, SortedDict{String,Any}}()
     for i in 1:nb_branch
         orig = Int64(branch_data[i,1])
         dest = Int64(branch_data[i,2])
         linkname = Link(bus_name(index[orig]),bus_name(index[dest]))
+        br_id = branch_data[i,3]
         branch_id = remove_simple_quotes_and_spaces_if_present(branch_data[i,3])
         if typeof(branch_id)==Float64
             branch_id = Int64(branch_id)
@@ -238,15 +241,15 @@ function read_data_branch_fromraw(branch_data, transfo_data, index)
         power_magnitude_max = branch_data[i,7]
 
         if !haskey(link, linkname)
-            link[linkname] = Dict{String,Any}()
+            link[linkname] = SortedDict{String,Any}()
         end
         if resistance == reactance == 0
             println(linkname, " nullimpedance line without transformer")
             name_line = nullimpedance_notransformer_name(branch_id)
-            link[linkname][name_line] = GOCNullImpedance_notransformer(linkname,name_line,susceptance, power_magnitude_max)
+            link[linkname][name_line] = GOCNullImpedance_notransformer(orig,dest,br_id,susceptance, power_magnitude_max)
         else
             name_line = linepi_notransformer_name(branch_id)
-            link[linkname][name_line] = GOCLineπ_notransformer(linkname,name_line,resistance,reactance,susceptance, power_magnitude_max)
+            link[linkname][name_line] = GOCLineπ_notransformer(orig,dest,br_id,resistance,reactance,susceptance, power_magnitude_max)
         end
     end
 
@@ -256,6 +259,7 @@ function read_data_branch_fromraw(branch_data, transfo_data, index)
         orig = Int64(transfo_data[i,1])
         dest = Int64(transfo_data[i,2])
         linkname = Link(bus_name(index[orig]),bus_name(index[dest]))
+        br_id = transfo_data[i,4]
         branch_id = remove_simple_quotes_and_spaces_if_present(transfo_data[i,4])
         if typeof(branch_id)==Float64
             branch_id = Int(branch_id)
@@ -267,15 +271,15 @@ function read_data_branch_fromraw(branch_data, transfo_data, index)
         transfo_ratio = transfo_data[i,(2*nb_col+1)]
         transfo_phase = transfo_data[i,(2*nb_col+3)]
         if !haskey(link, linkname)
-            link[linkname] = Dict{String,Any}()
+            link[linkname] = SortedDict{String,Any}()
         end
         if resistance == reactance == 0
             println(linkname, " nullimpedance line with transformer")
             name_line = nullimpedance_withtransformer_name(branch_id)
-            link[linkname][name_line] = GOCNullImpedance_withtransformer(linkname,name_line,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
+            link[linkname][name_line] = GOCNullImpedance_withtransformer(orig,dest,br_id,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
         else
             name_line = linepi_withtransformer_name(branch_id)
-            link[linkname][name_line] = GOCLineπ_withtransformer(linkname,name_line,resistance,reactance,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
+            link[linkname][name_line] = GOCLineπ_withtransformer(orig,dest,br_id,resistance,reactance,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
         end
     end
 
@@ -294,12 +298,12 @@ function read_GOCfiles(rawfile, genfile,confile)
     link = read_data_branch_fromraw(branch_data, transfo_data, index)
 
     ds = DataSource(bus,link)
-    node_linksin, node_linksout = Dict{String, Set{Link}}(), Dict{String, Set{Link}}()
-    node_vars = Dict{String, Dict{String, Variable}}()
-    link_vars = Dict{Link, Dict{String, Variable}}()
+    node_linksin, node_linksout = SortedDict{String, SortedSet{Link}}(), SortedDict{String, SortedSet{Link}}()
+    node_vars = SortedDict{String, SortedDict{String, Variable}}()
+    link_vars = SortedDict{Link, SortedDict{String, Variable}}()
     gs = GridStructure("BaseCase", node_linksin, node_linksout)
-    node_formulations = Dict{String, Dict{Tuple{Type, String}, Symbol}}()
-    link_formulations = Dict{Link, Dict{Tuple{Type, String}, Symbol}}()
+    node_formulations = SortedDict{String, SortedDict{String, Symbol}}()
+    link_formulations = SortedDict{Link, SortedDict{String, Symbol}}()
     mp = MathematicalProgramming(node_formulations, link_formulations, node_vars,link_vars)
     ##read scenarios
     OPFproblems = scenarios_data(ds, gs, mp, con_data_csv,index)

@@ -33,50 +33,87 @@ print(m)
 function get_JuMP_cartesian_model(problem_poly::Problem, mysolver)
     pb_poly_real = problem_poly
     m = Model(solver = mysolver)
-    variables_jump = Dict{String, JuMP.Variable}()
+    variables_jump = SortedDict{String, JuMP.Variable}()
     for (varname, vartype) in pb_poly_real.variables
-        if vartype<:Real
+        if vartype==Real
             variables_jump["$varname"] = @variable(m, basename="$varname", start=1.1)
-        elseif vartype<:Bool
+        elseif vartype==Bool
             variables_jump["$varname"] = @variable(m, category=:Bin, basename="$varname", start=0)
+        else
+            error("$varname must be of type Real or Bool, here type is $vartype")
         end
     end
-    ctr_jump = Dict{String,JuMP.ConstraintRef}()
+    ctr_jump = SortedDict{String,JuMP.ConstraintRef}()
+    ctr_exp = SortedDict{String,Tuple{Any,Float64,Float64}}()
     for (ctr, modeler_ctr) in pb_poly_real.constraints
         polynome = modeler_ctr.p
         lb = modeler_ctr.lb
         ub = modeler_ctr.ub
-
+        precond = modeler_ctr.precond
         for value in values(polynome)
             if imag(value)!=0
                 error("Polynom coefficients have to be real numbers")
             end
         end
-        my_timer = @elapsed s_ctr = poly_to_NLexpression(m, variables_jump,polynome)
+        my_timer = @elapsed s_ctr, ispolylinear = poly_to_NLexpression(m, variables_jump,polynome)
+        ctr_exp[ctr] = (s_ctr, lb,ub)
         # @printf("%-35s%10.6f s\n", "poly_to_NLexpression for $ctr", my_timer)
-        ctr_jump[ctr] = @NLconstraint(m, lb <= s_ctr <= ub)
+        if ispolylinear
+            @constraint(m, lb <= s_ctr <= ub)
+        else
+            if precond == :sqrt
+                if lb == -Inf && ub >0
+                    ##TODO: sqrt constraints for Smax
+                    ctr_jump[ctr] = @NLconstraint(m, -Inf <= s_ctr <= ub)
+                else
+                    error("sqrt non applicable to $lb <= $s_ctr <= $ub")
+                end
+            else
+                ctr_jump[ctr] = @NLconstraint(m, lb <= s_ctr <= ub)
+            end
+        end
     end
     polynome_obj = pb_poly_real.objective
-    my_timer = @elapsed s_obj = poly_to_NLexpression(m, variables_jump,polynome_obj)
+    my_timer = @elapsed s_obj, ispolylinear = poly_to_NLexpression(m, variables_jump,polynome_obj)
     # @printf("%-35s%10.6f s\n", "poly_to_NLexpression for objective", my_timer)
-    @NLobjective(m,Min,s_obj)
-    return m, variables_jump
+    if ispolylinear
+        @objective(m, Min, s_obj)
+    else
+        @NLobjective(m,Min,s_obj)
+    end
+    return m, variables_jump, ctr_jump, ctr_exp
 end
 
-function poly_to_NLexpression(m::JuMP.Model, variables_jump::Dict{String, JuMP.Variable},polynome::Polynomial)
+function poly_to_NLexpression(m::JuMP.Model, variables_jump::SortedDict{String, JuMP.Variable},polynome::Polynomial)
     s = 0
+    ispolylinear = true
+    d = polynome.degree
+    if d.explvar + d.conjvar > 1
+        ispolylinear = false
+    end
     for (monome,coeff) in polynome.poly
         prod = 1
         for (varname, degree) in monome.expo
-            if degree.explvar > 1
-            prod = @NLexpression(m, prod * variables_jump["$varname"]^degree.explvar)
-            elseif degree.explvar == 1
-            prod = @NLexpression(m, prod * variables_jump["$varname"])
+            if !ispolylinear
+                if degree.explvar > 1
+                prod = @NLexpression(m, prod * variables_jump["$varname"]^degree.explvar)
+                elseif degree.explvar == 1
+                prod = @NLexpression(m, prod * variables_jump["$varname"])
+                end
+            else
+                if degree.explvar != 1
+                    error("Exponent is supposed to be degree 1 since polynome is linear. ")
+                end
+                prod = @expression(m, variables_jump["$varname"])
             end
         end
-        s = @NLexpression(m, s + coeff * prod)
+        if ispolylinear
+            s = @expression(m, s + coeff * prod)
+        else
+            s = @NLexpression(m, s + coeff * prod)
+        end
     end
-    return s
+    return s, ispolylinear
 end
 
 
@@ -164,18 +201,18 @@ print(m)
 """
 function get_JuMP_polar_model(pb::Problem, mysolver)
     m = Model(solver = mysolver)
-    jump_vars = Dict{String, JuMP.Variable}()
+    jump_vars = SortedDict{String, JuMP.Variable}()
     for (varname, vartype) in pb.variables
         mod = "ρ_$varname"
         jump_vars["ρ_$varname"] = @variable(m, basename="ρ_$varname")
         jump_vars["θ_$varname"] = @variable(m, basename="θ_$varname")
     end
-    ctr_jump = Dict{String,JuMP.ConstraintRef}()
+    ctr_jump = SortedDict{String,JuMP.ConstraintRef}()
     for (ctr, modeler_ctr) in pb.constraints
         p = modeler_ctr.p
         lb = modeler_ctr.lb
         ub = modeler_ctr.ub
-        ps = Dict{Exponent, Tuple{Real, Real}}(exp=>(real(coeff), imag(coeff)) for (exp, coeff) in p)
+        ps = SortedDict{Exponent, Tuple{Real, Real}}(exp=>(real(coeff), imag(coeff)) for (exp, coeff) in p)
         ## Real part of constraint
         @NLconstraint(m, real(lb) <= sum( coeff[1] * prod(jump_vars["ρ_$var"]^(exp[1]+exp[2]) for (var,exp) in mon) * cos(sum( (exp[1]-exp[2])*jump_vars["θ_$var"] for (var,exp) in mon))
                                         - coeff[2] * prod(jump_vars["ρ_$var"]^(exp[1]+exp[2]) for (var,exp) in mon) * sin(sum( (exp[1]-exp[2])*jump_vars["θ_$var"] for (var,exp) in mon))
@@ -187,7 +224,7 @@ function get_JuMP_polar_model(pb::Problem, mysolver)
                                         for (mon, coeff) in ps) <= imag(ub))
 
     polynome_obj = pb.objective
-    ps = Dict{Exponent, Tuple{Real, Real}}(exp=>(real(coeff), imag(coeff)) for (exp, coeff) in polynome_obj)
+    ps = SortedDict{Exponent, Tuple{Real, Real}}(exp=>(real(coeff), imag(coeff)) for (exp, coeff) in polynome_obj)
     lb_real, ub_real = real(lb), real(ub)
     @NLobjective(m, :Min, lb_real <= sum( coeff[1] * prod(jump_vars["ρ_$var"]^(exp[1]+exp[2]) for (var,exp) in mon) * cos(sum( (exp[1]-exp[2])*jump_vars["θ_$var"] for (var,exp) in mon))
                                         - coeff[2] * prod(jump_vars["ρ_$var"]^(exp[1]+exp[2]) for (var,exp) in mon) * sin(sum( (exp[1]-exp[2])*jump_vars["θ_$var"] for (var,exp) in mon))

@@ -21,7 +21,7 @@ function variable_name(varname::String, link::Link, elemid::String, scenario::St
     end
 end
 
-function cstrname_nodal_balance(cstrnames::Set{String}, scenario::String, bus::String)
+function cstrname_nodal_balance(cstrnames::SortedSet{String}, scenario::String, bus::String)
     cstr = ""
     for cstrname in sort(collect(cstrnames))
         cstr = "$(cstr)_$cstrname"
@@ -62,6 +62,7 @@ shunt_name(id_shunt) = "Shunt$id_shunt"
 
 get_delta_varname(scenario::String) = "$(scenario)_Delta"
 get_binInf_varname(scenario1::String, scenario2::String, bus::String) = "BinVolt_$(get_busid(bus))_$(scenario1)_inf_$(scenario2)"
+get_binEq_varname(scenario1::String, scenario2::String, bus::String) = "BinVolt_$(get_busid(bus))_$(scenario1)_eq_$(scenario2)"
 
 # constraint names
 get_VoltM_cstrname() = "VOLTM"
@@ -83,7 +84,7 @@ get_Smax_orig_cstrname() = "Smax_orig"
 get_Smax_dest_cstrname() = "Smax_dest"
 
 
-get_GOC_Volt_ϵ() = 1e-3
+get_GOC_Volt_ϵ() = 1e-6
 get_GOC_BigM() = 1e1
 
 ##node elems

@@ -25,9 +25,9 @@ println("----------> para jobs done")
 println("length scenarios : $(length(r))")
 
 
-# r = Dict(r)
+# r = SortedDict(r)
 #
-# tasks_th = Dict()
+# tasks_th = SortedDict()
 # for (key, val) in r
 #     if !haskey(tasks_th, val["thread_id"])
 #         tasks_th[val["thread_id"]] = 0
