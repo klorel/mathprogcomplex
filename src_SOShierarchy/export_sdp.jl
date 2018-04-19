@@ -25,7 +25,7 @@ function export_SDP(relax_ctx, sdpbody, sdprhs, path)
         rhs[cstrstr] = fαβ
     end
 
-    # Export body
+    # Export blocks of constraints
     fbody = open(joinpath(path, "body.sdp"), "w")
 
     cstrlen = maximum(x->length(x[1]), keys(body))
@@ -51,6 +51,9 @@ function export_SDP(relax_ctx, sdpbody, sdprhs, path)
         println(fbody, " $val")
     end
     close(fbody)
+
+    # TODO: Export linear terms of constraints
+    # cstr -> var -> val
 
     # Export rhs
     frhs = open("rhs.sdp", "w")
