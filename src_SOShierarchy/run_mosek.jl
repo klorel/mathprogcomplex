@@ -99,7 +99,7 @@ function get_bounds(problem::SDP_Problem)
       blc[id_ctr] = lb - cst
       buc[id_ctr] = ub - cst
     else
-      @printf("unknow constranit kind\n")
+      @printf("unknow constraint kind\n")
       exit(0)
     end
     # if bkc[id_ctr]!= MSK_BK_UP

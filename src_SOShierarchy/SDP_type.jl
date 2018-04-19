@@ -49,14 +49,14 @@ type SDP_Problem
   id_to_block::Dict{Int64, SDP_Block}
 
   name_to_kind::Dict{String, String}
-  name_to_ctr::Dict{String, Tuple{Int64, String, Float64, Float64}}
+  name_to_ctr::Dict{String, Tuple{Int64, String, Float64, Float64}} # Id, type et bornes des contraintes
   id_to_ctr::Dict{Int64, String}
 
   term_to_block::Dict{Tuple{String, String}, SDP_Block}
   term_to_all_block::Dict{Tuple{String, String}, Set{String}}
-  matrix::Dict{String, Dict{Tuple{String,String,String}, Float64}}
+  matrix::Dict{String, Dict{Tuple{String,String,String}, Float64}} # Matrice du corps des contraintes / objectif
 
-  cst_ctr::Dict{String, Float64}
+  cst_ctr::Dict{String, Float64} # Constante du corp des contraintes
 
   SDP_Problem() =
     new(
