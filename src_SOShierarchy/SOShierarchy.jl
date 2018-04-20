@@ -42,8 +42,46 @@ struct MomentRelaxationPb
 end
 
 
-const SDPBody = SortedDict{Tuple{String, String, Exponent, Exponent}, SortedDict{Tuple{Exponent, Exponent}, Number}}
-const SDPRhs = SortedDict{Tuple{Exponent, Exponent}, Number}
+# mutable struct SDPInstance
+#     name
+#     sense::Symbol       # :min or :max
+#     kind::Symbol        # :Real or :Complex
+
+#     objective::SDPForm
+#     constraints::SortedDict{String, SDPForm}
+
+#     isexportready::Bool
+#     isconsistent::Bool
+
+#     SDPInstance() = new("", :Undef, :Undef, 
+#                         SDPForm(), SortedDict{String, SDPForm}(),
+#                         false, false)
+# end
+
+# mutable struct SDPForm
+#     name::String,
+#     blocks::SortedDict{String, SDPBlock}
+#     lin::Polynomial
+#     cnst::Number
+#     ub::Number
+#     lb::Number
+
+#     SDPForm() = new("", SortedDict{String, SDPBlock}(), Polynomial(), NaN, NaN, NaN)
+# end
+
+const SDPBlock = SortedDict{Tuple{Exponent, Exponent}, Number}
+
+const SDPBlocks = SortedDict{Tuple{String, String, Exponent, Exponent}, SDPBlock}
+const SDPLin = SortedDict{Tuple{Exponent, Exponent, Exponent}, Number}
+const SDPCnst = SortedDict{Tuple{Exponent, Exponent}, Number}
+
+mutable struct SDPInstance
+    blocks::SDPBlocks
+    lin::SDPLin
+    cnst::SDPCnst
+end
+
+
 
 """
     SparsityPattern

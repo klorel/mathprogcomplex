@@ -70,14 +70,11 @@ function main()
     
     ########################################
     # Convert to a primal SDP problem
-    SDP_body, SDP_rhs = build_SDP(relax_ctx, mmtrel_pb)
+    sdp = build_SDP(relax_ctx, mmtrel_pb)
     println("\n--------------------------------------------------------")
-    println("SDP_body = \n$SDP_body")
+    println("sdp = \n$sdp")
 
-    println("\n--------------------------------------------------------")
-    println("SDP_rhs = \n$SDP_rhs")
-
-    export_SDP(relax_ctx, SDP_body, SDP_rhs, pwd())
+    export_SDP(relax_ctx, sdp, pwd())
 
     ########################################
     # Calcul d'une solution par un solveur

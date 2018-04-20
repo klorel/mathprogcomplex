@@ -1,73 +1,103 @@
-function export_SDP(relax_ctx, sdpbody, sdprhs, path)
+function export_SDP(relax_ctx, sdp::SDPInstance, path)
     if relax_ctx.hierarchykind != :Real
         error("export_SDP(): Only real hierarchy for now... C -> R conversion still to be done")
     end
 
     
-    # Build body and rhs proper bodys
-    body = SortedDict{Tuple{String, String, String, String}, Float64}()
-    rhs = SortedDict{String, Float64}()
-
-    for ((cstrname, blocname, α, β), Bi) in sdpbody
+    # Build blocks and rhs proper
+    blocks = SortedDict{Tuple{String, String, String, String}, Float64}()
+    
+    for ((cstrname, blocname, α, β), Bi) in sdp.blocks
         cstrstr = format_string(α, β)
         blocstr = format_string(cstrname, blocname)
         for ((γ, δ), λ) in Bi
             i = format_string(γ)
             j = format_string(δ)
-            if j <= i
-                body[(cstrstr, blocstr, i, j)] = λ
-            end
+            # if j <= i
+            @assert typeof(λ) == Float64
+            @assert !haskey(blocks, (cstrstr, blocstr, i, j))
+            blocks[(cstrstr, blocstr, i, j)] = λ
         end
     end
 
-    for ((α, β), fαβ) in sdprhs
+    lin = SortedDict{Tuple{String, String}, Float64}()
+    for ((α, β, α), λ) in sdp.lin
         cstrstr = format_string(α, β)
-        rhs[cstrstr] = fαβ
+        i = format_string(α)
+        @assert typeof(λ) == Float64
+        @assert !haskey(lin, (cstrstr, i))
+        lin[(cstrstr, i)] = λ
+    end
+
+    cnst = SortedDict{String, Float64}()
+    for ((α, β), fαβ) in sdp.cnst
+        cstrstr = format_string(α, β)
+        cnst[cstrstr] = fαβ
     end
 
     # Export blocks of constraints
-    fbody = open(joinpath(path, "body.sdp"), "w")
+    fblocks = open(joinpath(path, "blocks.sdp"), "w")
 
-    cstrlen = maximum(x->length(x[1]), keys(body))
+    cstrlen = maximum(x->length(x[1]), keys(blocks))
     cstrlen = max(cstrlen, length("# cstrname"))
-    bloclen = maximum(x->length(x[2]), keys(body))
+    bloclen = maximum(x->length(x[2]), keys(blocks))
     bloclen = max(bloclen, length("blocname"))
-    expo1len = maximum(x->length(x[3]), keys(body))
+    expo1len = maximum(x->length(x[3]), keys(blocks))
     expo1len = max(expo1len, length("row"))
-    expo2len = maximum(x->length(x[3]), keys(body))
+    expo2len = maximum(x->length(x[3]), keys(blocks))
     expo2len = max(expo2len, length("col"))
 
-    print_string(fbody, "# cstrname", cstrlen)
-    print_string(fbody, "blocname", bloclen)
-    print_string(fbody, "row", expo1len)
-    print_string(fbody, "col", expo2len)
-    println(fbody, " val")
+    print_string(fblocks, "# cstrname", cstrlen)
+    print_string(fblocks, "blocname", bloclen)
+    print_string(fblocks, "row", expo1len)
+    print_string(fblocks, "col", expo2len)
+    println(fblocks, " val")
 
-    for ((cstrname, blocname, i, j), val) in body
-        print_string(fbody, cstrname, cstrlen)
-        print_string(fbody, blocname, bloclen)
-        print_string(fbody, i, expo1len)
-        print_string(fbody, j, expo2len)
-        println(fbody, " $val")
+    for ((cstrname, blocname, i, j), val) in blocks
+        print_string(fblocks, cstrname, cstrlen)
+        print_string(fblocks, blocname, bloclen)
+        print_string(fblocks, i, expo1len)
+        print_string(fblocks, j, expo2len)
+        println(fblocks, " $val")
     end
-    close(fbody)
+    close(fblocks)
 
-    # TODO: Export linear terms of constraints
-    # cstr -> var -> val
+    # Export linear
+    if length(lin) > 0
+        flin = open("lin.sdp", "w")
 
-    # Export rhs
-    frhs = open("rhs.sdp", "w")
-    cstrlen = maximum(x->length(x), keys(rhs))
+        cstrlen = maximum(x->length(x[1]), keys(lin))
+        cstrlen = max(cstrlen, length("cstrname")+1)
+        varlen = maximum(x->length(x[2]), keys(lin))
+        varlen = max(varlen, length("varname"))
 
-    cstrlen = max(cstrlen, length("cstrname")+1)
-    print(frhs, "#")
-    print_string(frhs, "cstrname", cstrlen-1)
-    println(frhs, " rhs_val")
-    for (cstrname, val) in rhs
-        print_string(frhs, cstrname, cstrlen)
-        println(frhs, " $val")
+        print_string(flin, "# cstrname", cstrlen)
+        print_string(flin, "varlen", varlen)
+        println(flin, " val")
+        
+        for ((cstrname, varname), val) in lin
+            print_string(flin, cstrname, cstrlen)
+            print_string(flin, varname, varlen)
+            println(flin, " $val")
+        end
+        close(flin)
+    else
+        touch("lin.sdp")
     end
-    close(frhs)
+
+    # Export const
+    fconst = open("const.sdp", "w")
+    
+    cstrlen = maximum(x->length(x), keys(cnst))
+    cstrlen = max(cstrlen, length("# cstrname"))
+
+    print_string(fconst, "# cstrname", cstrlen)
+    println(fconst, " const_val")
+    for (cstrname, val) in cnst
+        print_string(fconst, cstrname, cstrlen)
+        println(fconst, " $val")
+    end
+    close(fconst)
 
     # Export bloc types
     ftypes = open("types.sdp", "w")

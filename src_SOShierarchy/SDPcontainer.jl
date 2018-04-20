@@ -1,7 +1,10 @@
 function build_SDP(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxationPb)
-    sdpbody = SDPBody()
-    sdprhs = SDPRhs()
+    sdpbody = SDPBlocks()
+    sdplin = SDPLin()
+    sdpcnst = SDPCnst()
 
+
+    ## Build blocks dict
     for ((cstrname, blocname), mmt) in mmtrelax_pb.constraints
         
         for ((γ, δ), poly) in mmt.mm
@@ -15,13 +18,12 @@ function build_SDP(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxationPb)
                 !isnan(λ) || warn("convertMMtobase(): isNaN ! constraint $cstrname - clique $blocname - mm entry $((γ, δ)) - moment $((α, β))")
 
                 # Determine which moment to affect the current coefficient.
-                # NOTE: Hankel property could be exploited here, in real variables.
                 α, β = split_expo(relaxctx, expo)
 
                 # Add the current coeff to the SDP problem
                 key = (cstrname, blocname, α, β)
                 if !haskey(sdpbody, key)
-                    sdpbody[key] = SortedDict{Tuple{Exponent, Exponent}, Number}()
+                    sdpbody[key] = SDPBlock()
                 end
                 Bi = sdpbody[key]
 
@@ -33,19 +35,23 @@ function build_SDP(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxationPb)
         end
     end
 
+    # Build linear dict
+    ## TODO : - enforce free symmetric matrices
+    ##        - enforce clique coupling constraints
+
+    ## Build constants dict
     for (expo, λ) in mmtrelax_pb.objective
         # Determine which moment to affect the current coefficient.
-        # NOTE: Hankel property could be exploited here, in real variables.
         α, β = split_expo(relaxctx, expo)
 
-        if !haskey(sdprhs, (α, β))
-            sdprhs[(α, β)] = 0.0
+        if !haskey(sdpcnst, (α, β))
+            sdpcnst[(α, β)] = 0.0
         end
 
-        sdprhs[(α, β)] += λ
+        sdpcnst[(α, β)] -= λ #Considered as the constant of the constraint body
     end
 
-    return sdpbody, sdprhs
+    return SDPInstance(sdpbody, sdplin, sdpcnst)
 end
 
 
@@ -70,16 +76,25 @@ function split_expo(relaxctx::RelaxationContext, expo::Exponent)
 end
 
 
-function print(io::IO, sdpbody::SDPBody)
-    cstrlen = maximum(x->length(x[1]), keys(sdpbody))
-    bloclen = maximum(x->length(x[2]), keys(sdpbody))
-    expolen = maximum(x->length("($(x[3]), $(x[4]))"), keys(sdpbody))
+function print(io::IO, sdpinst::SDPInstance)
+    println(io, " -- SDP Blocks:")
+    print(io, sdpinst.blocks)
+    println(io, " -- linear part:")
+    length(sdpinst.lin) == 0 ? println("") : print(io, sdpinst.lin)
+    println(io, " -- const part:")
+    print(io, sdpinst.cnst)
+end
 
-    for ((cstrname, blocname, α, β), Bi) in sdpbody
+function print(io::IO, sdpblocks::SDPBlocks)
+    cstrlen = maximum(x->length(x[1]), keys(sdpblocks))
+    blocklen = maximum(x->length(x[2]), keys(sdpblocks))
+    expolen = maximum(x->length("($(x[3]), $(x[4]))"), keys(sdpblocks))
+
+    for ((cstrname, blockname, α, β), Bi) in sdpblocks
         coordlen = maximum(x->length("($(x[1]), $(x[2]))"), keys(Bi))
         for ((γ, δ), λ) in Bi
             print_string(io, cstrname, cstrlen)
-            print_string(io, blocname, bloclen)
+            print_string(io, blockname, blocklen)
             print_string(io, "($α, $β)", expolen); print(io, ": ")
             print_string(io, "($γ, $δ)", coordlen, alignright=false)
             println(io, "$λ")
@@ -87,7 +102,7 @@ function print(io::IO, sdpbody::SDPBody)
     end
 end
 
-function print(io::IO, sdprhs::SDPRhs)
+function print(io::IO, sdprhs::SDPCnst)
     expolen = maximum(x->length("($(x[1]), $(x[2]))"), keys(sdprhs))
     for ((α, β), λ) in sdprhs
         print_string(io, "($α, $β)", expolen)
