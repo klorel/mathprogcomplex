@@ -91,7 +91,7 @@ function print(io::IO, sdpblocks::SDPBlocks)
         print_string(io, blockname, blocklen)
         print_string(io, format_string(γ), rowlen)
         print_string(io, format_string(δ), collen)
-        @printf(io, "% .16e\n", λ)
+        @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
     end
 end
 

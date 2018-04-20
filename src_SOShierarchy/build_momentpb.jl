@@ -89,43 +89,45 @@ function MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String,
     ## Build moment matrix
     # NOTE: sparsity work tbd here : several moment matrices ?
     clique_keys, order = moment_param[get_momentcstrname()]
-    vars, blocname = collect_cliquesvars(clique_keys, max_cliques)
+    vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
     
-    momentmatrices[(get_momentcstrname(), blocname)] = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries)
+    momentmatrices[(get_momentcstrname(), cliquename)] = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries)
 
     ## Build localizing matrices
     for (cstrname, cstr) in problem.constraints
 
         cstrtype = get_cstrtype(cstr)
         if cstrtype == :ineqdouble
+            cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
+            
             # Deal with lower inequality
-            clique_keys, order = moment_param[get_cstrname(cstrname, :ineqlo)]
-            vars, blocname = collect_cliquesvars(clique_keys, max_cliques)
+            clique_keys, order = moment_param[cstrname_lo]
+            vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
             
             mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries)
-            momentmatrices[(get_cstrname(cstrname, :ineqlo), blocname)] = mmt * (cstr.p - cstr.lb)
+            momentmatrices[(cstrname_lo, cliquename)] = mmt * (cstr.p - cstr.lb)
 
             # Deal with upper inequality, no recomputing of variables or moment matrix if possible
-            clique_keys_upp, order_upp = moment_param[get_cstrname(cstrname, :ineqhi)]
-            if collect(clique_keys) != collect(clique_keys_upp)
+            clique_keys_up, order_up = moment_param[cstrname_up]
+            if collect(clique_keys) != collect(clique_keys_up)
                 warn("clique keys different from lower and upper side of double constraint")
-                vars, blocname = collect_cliquesvars(clique_keys_upp, max_cliques)
+                vars, cliquename = collect_cliquesvars(clique_keys_up, max_cliques)
 
-                mmt = MomentMatrix(relax_ctx, vars, order_upp, relax_ctx.symmetries)
-            elseif order_upp != order
+                mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries)
+            elseif order_up != order
                 warn("order different from lower and upper side of double constraint")
-                mmt = MomentMatrix(relax_ctx, vars, order_upp, relax_ctx.symmetries)
+                mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries)
             end
             
-            momentmatrices[(get_cstrname(cstrname, :ineqhi), blocname)] = mmt * (cstr.ub - cstr.p)
+            momentmatrices[(cstrname_up, cliquename)] = mmt * (cstr.ub - cstr.p)
 
         else
             # either cstrtype == :ineqlo, :ineqhi, :eq
             clique_keys, order = moment_param[get_cstrname(cstrname, cstrtype)]
-            vars, blocname = collect_cliquesvars(clique_keys, max_cliques)
+            vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
             
             mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries)
-            momentmatrices[(get_cstrname(cstrname, cstrtype), blocname)] = mmt * get_normalizedpoly(cstr, cstrtype)
+            momentmatrices[(get_cstrname(cstrname, cstrtype), cliquename)] = mmt * get_normalizedpoly(cstr, cstrtype)
         end
     end
 

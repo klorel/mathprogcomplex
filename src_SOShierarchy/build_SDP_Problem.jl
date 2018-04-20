@@ -90,8 +90,6 @@ function set_matrices!(sdp::SDP_Problem, instance::SDP_Instance)
 
     # Sort variables for triangular matrix storage
     var1, var2 = min(var1, var2), max(var1, var2)
-    println(ctr_name, " ", block_name, " ", var1, " ", var2, " ", coeff)
-    println(typeof(ctr_name), " ", typeof(block_name), " ", typeof(var1), " ", typeof(var2), " ", typeof(coeff))
     sdp.matrices[(ctr_name, block_name, var1, var2)] = parse(coeff)
   end
 end

@@ -62,9 +62,11 @@ function buildPOPR_2v2cbis()
     x2 = Variable("x2", Real)
     problem = Problem()
     add_variable!(problem, x1); add_variable!(problem, x2)
-    set_objective!(problem, -x1^2)
-    add_constraint!(problem, "ineq1", (2*x1 + 1) << 0)
-    add_constraint!(problem, "ineq2", (x1^2 + x2^2) << 4)
+    set_objective!(problem, -x2)
+    add_constraint!(problem, "eq", (x1-0.5*x2) == 0)
+    add_constraint!(problem, "ineq1", (x1 + 1) >> 0)
+    add_constraint!(problem, "ineq2", (x1 + x2) << 0)
+    add_constraint!(problem, "ineq_bnd", (x1^2 + x2^2) << 1)
     return problem
 end
 
@@ -73,11 +75,10 @@ function buildPOPR_2v2c()
     x2 = Variable("x2", Real)
     problem = Problem()
     add_variable!(problem, x1); add_variable!(problem, x2)
-    set_objective!(problem, -x1-x2)
+    set_objective!(problem, 1*x1 + x2)
     add_constraint!(problem, "ineq1", -1 << x1 << 1)
     add_constraint!(problem, "ineq2", -1 << x2 << 1)
-
-    di = SortedDict([cstr=>2 for cstr in keys(problem.constraints)])
-    relax_ctx = set_relaxation(problem, di=di, hierarchykind=:Real)
-    return problem, relax_ctx
+    add_constraint!(problem, "eq", (x1-2*x2) << 0.1)
+    add_constraint!(problem, "eq", (x1-2*x2) >> -0.1)
+    return problem
 end

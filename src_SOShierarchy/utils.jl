@@ -15,12 +15,16 @@ function get_blockname(cstrname, cliquename, mmtrelax_pb)
 end
 
 function get_cstrname(cstrname::String, cstrtype::Symbol)
-    if cstrtype == :eq
+    if cstrtype == :ineqdouble
+        return get_cstrname_lower(cstrname), get_cstrname_upper(cstrname)
+    elseif cstrtype == :eq
         return get_cstrname_eq(cstrname)
     elseif cstrtype == :ineqlo
-        return get_cstrname_lower(cstrname)
+        return cstrname
+        # return get_cstrname_lower(cstrname)
     elseif cstrtype == :ineqhi
-        return get_cstrname_upper(cstrname)
+        return cstrname
+        # return get_cstrname_upper(cstrname)
     else
         error("get_cstrname(): Unknown type $cstrtype.")
     end

@@ -13,9 +13,11 @@ function build_sparsity(relax_ctx, problem, max_cliques::SortedDict{String, Sort
         for (cstrname, cstr) in problem.constraints
             cstrtype = get_cstrtype(cstr)
             if cstrtype == :ineqdouble
-                di, ki = relax_ctx.di[get_cstrname(cstrname, :ineqlo)], relax_ctx.ki[get_cstrname(cstrname, :ineqlo)]
-                moments_param[get_cstrname(cstrname, :ineqlo)] = (SortedSet(["clique1"]), di-ki)
-                moments_param[get_cstrname(cstrname, :ineqhi)] = (SortedSet(["clique1"]), di-ki)
+                cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
+                di_lo, ki_lo = relax_ctx.di[cstrname_lo], relax_ctx.ki[cstrname_lo]
+                di_up, ki_up = relax_ctx.di[cstrname_up], relax_ctx.ki[cstrname_up]
+                moments_param[cstrname_lo] = (SortedSet(["clique1"]), di_lo-ki_lo)
+                moments_param[cstrname_up] = (SortedSet(["clique1"]), di_up-ki_up)
             else
                 di, ki = relax_ctx.di[get_cstrname(cstrname, cstrtype)], relax_ctx.ki[get_cstrname(cstrname, cstrtype)]
                 moments_param[get_cstrname(cstrname, cstrtype)] = (SortedSet(["clique1"]), di-ki)

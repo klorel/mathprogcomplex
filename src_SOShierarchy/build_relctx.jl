@@ -25,8 +25,9 @@ function set_relaxation(pb::Problem; ismultiordered=false,
     for (cstrname, cstr) in pb.constraints
         cstrtype = get_cstrtype(cstr)
         if cstrtype == :ineqdouble
-            ki[get_cstrname(cstrname, :ineqlo)] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
-            ki[get_cstrname(cstrname, :ineqhi)] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
+            cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
+            ki[cstrname_lo] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
+            ki[cstrname_up] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
         else
             ki[get_cstrname(cstrname, cstrtype)] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
         end
@@ -37,8 +38,9 @@ function set_relaxation(pb::Problem; ismultiordered=false,
     for (cstrname, cstr) in pb.constraints
         cstrtype = get_cstrtype(cstr)
         if cstrtype == :ineqdouble
-            cstrtypes[get_cstrname(cstrname, :ineqlo)] = :SDP
-            cstrtypes[get_cstrname(cstrname, :ineqhi)] = :SDP
+            cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
+            cstrtypes[cstrname_lo] = :SDP
+            cstrtypes[cstrname_up] = :SDP
         elseif cstrtype == :eq
             cstrtypes[get_cstrname(cstrname, cstrtype)] = :Sym
         else
@@ -57,10 +59,11 @@ function set_relaxation(pb::Problem; ismultiordered=false,
         # Check provided di is suitable wrt constraint degree, add
         cstrtype = get_cstrtype(cstr)
         if cstrtype == :ineqdouble
-            cur_ki = ki[get_cstrname(cstrname, :ineqlo)]
+            cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
+            cur_ki = ki[cstrname_lo]
             (cur_ki <= cur_order) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value $cur_ki, hierarchy may be multiordered.")
-            di_relax[get_cstrname(cstrname, :ineqlo)] = max(cur_ki, cur_order)
-            di_relax[get_cstrname(cstrname, :ineqhi)] = max(cur_ki, cur_order)
+            di_relax[cstrname_lo] = max(cur_ki, cur_order)
+            di_relax[cstrname_up] = max(cur_ki, cur_order)
         else # :eq, :ineqlo, :ineqhi
             cur_ki = ki[get_cstrname(cstrname, cstrtype)]
             (cur_ki <= cur_order) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value $cur_ki, hierarchy may be multiordered.")
