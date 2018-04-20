@@ -54,8 +54,8 @@ function gen_solution_basecase(basecase_generator_solution,index)
     for i in 1:size(basecase_generator_solution,1)
         num_bus = index[basecase_generator_solution[i,1]]
         gen_id = basecase_generator_solution[i,2]
-        if typeof(gen_id)!=Int64
-            gen_id = matchall(r"\d+" , String(gen_id))[1]
+        if typeof(gen_id) == String || typeof(gen_id) == SubString{String}
+            gen_id = matchall(r"\d+" , gen_id)[1]
         else
             gen_id = Int(gen_id)
         end
@@ -75,7 +75,7 @@ function gen_solution_contingencies(basecase_generator_solution,contingency_gene
         scenario_name = scenarioname(id_contingency)
         gen_id = contingency_generator_solution[i,4]
         num_bus = index[Int(contingency_generator_solution[i,3])]
-        if typeof(gen_id)!=Int64
+        if typeof(gen_id) == String || typeof(gen_id) == SubString{String}
             gen_id = matchall(r"\d+" ,gen_id)[1]
         else
             gen_id = Int(gen_id)
@@ -92,7 +92,7 @@ function gen_solution_contingencies(basecase_generator_solution,contingency_gene
         for i in 1:size(basecase_generator_solution,1)
             num_bus = index[Int(basecase_generator_solution[i,1])]
             gen_id = basecase_generator_solution[i,2]
-            if typeof(gen_id)!=Int64
+            if typeof(gen_id) == String || typeof(gen_id) == SubString{String}
                 gen_id = matchall(r"\d+" ,gen_id)[1]
             else
                 gen_id = Int(gen_id)
@@ -162,7 +162,7 @@ end
 
 function compute_binary_values(basecase_generator_solution, bus_solution, power_data)
     index = get_bus_index(power_data)
-    generators = collect(basecase_generator_solution[:,1])
+    generators = SortedSet(basecase_generator_solution[:,1])
     generators = [ index[gen] for gen in generators]
     module_v_basecase = Dict{Int64, Float64}()
     module_v_scenarios = Dict{String,Dict{Int64, Float64}}()
@@ -184,16 +184,16 @@ function compute_binary_values(basecase_generator_solution, bus_solution, power_
         for num_bus in generators
             if abs(dict_modules[num_bus]^2 - module_v_basecase[num_bus]^2) < get_GOC_Volt_ϵ()
                 add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 1.0)
-                add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 1e-16)
-                add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 1e-16)
+                # add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 1e-16)
+                # add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 1e-16)
             elseif dict_modules[num_bus]^2 - module_v_basecase[num_bus]^2 > get_GOC_Volt_ϵ()
                 add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 1.0)
-                add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 1e-16)
-                add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 1e-16)
+                # add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 1e-16)
+                # add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 1e-16)
             else
                 add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 1.0)
-                add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 1e-16)
-                add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 1e-16)
+                # add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 1e-16)
+                # add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 1e-16)
             end
         end
     end

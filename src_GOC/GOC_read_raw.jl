@@ -79,14 +79,15 @@ end
 ###read bus data
 function read_data_bus_fromraw(bus_data, load_data, shunt_data, baseMVA)
     nb_bus = size(bus_data,1)
-    index = SortedDict(bus_data[i,1] => i for i in 1:nb_bus)
+    # index = SortedDict(bus_data[i,1] => i for i in 1:nb_bus)
+    index = SortedDict(bus_data[i,1] => bus_data[i,1] for i in 1:nb_bus)
     bus = SortedDict{String, SortedDict{String,Any}}()
     for i in 1:nb_bus
-        bus[bus_name(i)] = SortedDict{String,Any}()
+        bus[bus_name(index[bus_data[i,1]])] = SortedDict{String,Any}()
     end
     for i in 1:nb_bus
         id_bus = bus_data[i,1]
-        busname = bus_name(i)
+        busname = bus_name(index[id_bus])
         baseKV = bus_data[i,3]
         baseMVA = baseMVA
         voltage_magnitude_min = bus_data[i,11]

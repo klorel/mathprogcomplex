@@ -183,7 +183,8 @@ function evaluate(expo::Exponent, pt::Point)
         if haskey(pt, var)
             res *= (evaluate(var, pt)^deg.explvar) * (conj(evaluate(var, pt))^deg.conjvar)
         else
-            res *= var^deg.explvar * conj(var)^deg.conjvar
+            # res *= var^deg.explvar * conj(var)^deg.conjvar
+            res *= (evaluate(var, pt)^deg.explvar) * (conj(evaluate(var, pt))^deg.conjvar)
         end
     end
     return res

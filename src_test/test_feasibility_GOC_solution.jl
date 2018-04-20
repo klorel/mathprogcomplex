@@ -73,6 +73,12 @@ function test_feasiblity_GOC_solution(instance_path, solution_path)
     sol_txt = read_solution_point_GOC(instance_path, solution_path)
     pt_txt = cplx2real(sol_txt)
 
+    # println("BinVolt_122_Scen1_eq_BaseCase : ", pt_txt[Variable("BinVolt_122_Scen1_eq_BaseCase",Bool)])
+    # println("BinVolt_122_Scen1_in_BaseCase : ", pt_txt[Variable("BinVolt_122_Scen1_inf_BaseCase",Bool)])
+    # println("abs2(BaseCase_122_VOLT) : ", abs2(sol_txt[Variable("BaseCase_122_VOLT",Complex)]))
+    # println("abs2(Scen1_122_VOLT) : ", abs2(sol_txt[Variable("Scen1_122_VOLT",Complex)]))
+    # println(pb_global_real.constraints["Scen1_122_Gen25_BinDef_upper_Re"].p)
+
     return get_minslack(pb_global_real, pt_txt)
 end
 
