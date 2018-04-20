@@ -17,43 +17,53 @@ function main()
     # Normalizing pb and setting relaxation order by constraint
     # relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
     
-    real_pb = true
-    if real_pb
-        # Build the init problem and set relaxation parameters
-        problem = buildPOPR_2v2cbis()
-        relax_ctx = set_relaxation(problem; hierarchykind=:Real, 
-                                            d = 1,
-                                            symmetries = [PhaseInvariance])
-    else
-        # Build the init problem and set relaxation parameters
-        problem = buildPOP_WB2_expl()
-        relax_ctx = set_relaxation(problem; hierarchykind=:Complex,
-                                            d = 2,
-                                            symmetries = [PhaseInvariance])
-        relax_ctx.di[get_momentcstrname()] = 2
-    end
+    # real_pb = true
+    # if real_pb
+    #     # Build the init problem and set relaxation parameters
+    #     problem = buildPOPR_2v2cbis()
+    #     relax_ctx = set_relaxation(problem; hierarchykind=:Real, 
+    #                                         d = 1,
+    #                                         symmetries = [PhaseInvariance])
+    # else
+    #     # Build the init problem and set relaxation parameters
+    #     problem = buildPOP_WB2_expl()
+    #     relax_ctx = set_relaxation(problem; hierarchykind=:Complex,
+    #                                         d = 2,
+    #                                         symmetries = [PhaseInvariance])
+    #     relax_ctx.di[get_momentcstrname()] = 2
+    # end
 
     WB2_C = buildPOP_WB2_expl()
+
+    println("\n--------------------------------------------------------")
+    println("WB2_C = \n$WB2_C")
+
+
     for (ctrname, ctr) in WB2_C.constraints
         if get_cstrtype(ctr) == :eq
             rm_constraint!(WB2_C, ctrname)
             add_constraint!(WB2_C, get_cstrname_lower(ctrname), 0 << (ctr.p - ctr.lb))
-            add_constraint!(WB2_C, get_cstrname_upper(ctrname), (ctr.p - ctr.ub) << 0)
+            add_constraint!(WB2_C, get_cstrname_upper(ctrname), 0 << (ctr.ub - ctr.p))
         end
     end
     
-    problem = pb_cplx2real(WB2_C)
+    println("\n--------------------------------------------------------")
+    println("WB2_C = \n$WB2_C")
 
-    relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        d = 2)
-                                        # symmetries = [PhaseInvariance])
+    println("\n--------------------------------------------------------")    
+    problem = pb_cplx2real(WB2_C)
 
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")
+
+    return
+    relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+                                        d = 2)
+                                        # symmetries = [PhaseInvariance])
     
     println("\n--------------------------------------------------------")
     println("relax_ctx = \n$relax_ctx")
-    
+
     ########################################
     # Build sparsity pattern, compute maximal cliques
     max_cliques = get_maxcliques(relax_ctx, problem)

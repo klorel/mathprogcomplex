@@ -27,15 +27,17 @@ function pb_cplx2real(pb_C::Problem)
     if length(realPart) != 0
       # Set bounds to proper infty, easier to detect... TODO : Missing attribute ctr_kind ?
       lb = real(cstr.lb)==-Inf ? -Inf-im*Inf : real(cstr.lb)
-      ub = real(cstr.ub)==-Inf ? +Inf+im*Inf : real(cstr.ub)
+      ub = real(cstr.ub)== Inf ? +Inf+im*Inf : real(cstr.ub)
       cstrreal = lb << realPart << ub
       cstr.precond != :none && (cstrreal.precond = cstr.precond)
+      warn("--> $cstrreal")
       add_constraint!(pb, cstrName_real, cstrreal)
     end
     if length(imagPart) != 0
       lb = imag(cstr.lb)==-Inf ? -Inf-im*Inf : imag(cstr.lb)
-      ub = imag(cstr.ub)==-Inf ? +Inf+im*Inf : imag(cstr.ub)
+      ub = imag(cstr.ub)== Inf ? +Inf+im*Inf : imag(cstr.ub)
       cstrimag = lb << imagPart << ub
+      warn("--> $cstrimag")
       cstr.precond != :none && (cstrimag.precond = cstr.precond)
       add_constraint!(pb, cstrName_imag, cstrimag)
     end
