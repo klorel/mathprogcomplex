@@ -7,7 +7,7 @@ end
 
 function read_SDPInstance(path::String)
   BLOCKS = readdlm(joinpath(path, "blocks.sdp"), String)
-  if filesize(joinpath(path, "lin.sdp")) > 0
+  if isfile(joinpath(path, "lin.sdp"))
     LINEAR = readdlm(joinpath(path, "lin.sdp"), String)
   else
     LINEAR = []
