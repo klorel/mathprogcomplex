@@ -93,11 +93,11 @@ subject to constraint{ctr in CONSTRAINTS diff SQRT_PRECOND_CSTR}:
 
 /* SQRT precond constraints */
 subject to sqrt_constraint{ctr in SQRT_PRECOND_CSTR}:
-	+(if ctr in CONSTRAINTS_LB then LEFT[LB, ctr, NONE, NONE] else -Infinity)
-	#+(if ctr in CONSTRAINTS_LB then sqrt(LEFT[LB, ctr, NONE, NONE]) else -Infinity)
+	#+(if ctr in CONSTRAINTS_LB then LEFT[LB, ctr, NONE, NONE] else -Infinity)
+	+(if ctr in CONSTRAINTS_LB then sqrt(LEFT[LB, ctr, NONE, NONE]) else -Infinity)
 	<=
-	#sqrt(
-	#	+1e-6
+	sqrt(
+		+1e-6
 		+sum{(MONO, ctr, monname, NONE) in KEYS}(
 			+LEFT [MONO, ctr, monname, NONE] * prod{(MONO_DEF, monname, var0, NONE) in KEYS}(
 				(if var0 in REAL_VARIABLES then x[var0] else y[var0])^LEFT [MONO_DEF, monname, var0, NONE]
@@ -113,8 +113,8 @@ subject to sqrt_constraint{ctr in SQRT_PRECOND_CSTR}:
 			+LEFT [LIN, ctr, NONE, var1] * (if var1 in REAL_VARIABLES then x[var1] else y[var1])
 		)
 	 	+(if (CONST, ctr, NONE, NONE) in KEYS then LEFT[CONST, ctr, NONE, NONE] else 0)
-	#)
+	)
 	<=
-	#+(if ctr in CONSTRAINTS_UB then sqrt(LEFT[UB, ctr, NONE, NONE]) else +Infinity)
-		+(if ctr in CONSTRAINTS_UB then LEFT[UB, ctr, NONE, NONE] else +Infinity)
+	+(if ctr in CONSTRAINTS_UB then sqrt(LEFT[UB, ctr, NONE, NONE]) else +Infinity)
+	#+(if ctr in CONSTRAINTS_UB then LEFT[UB, ctr, NONE, NONE] else +Infinity)
 	;
