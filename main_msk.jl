@@ -1,5 +1,6 @@
 using Mosek, DataStructures
 
+include("src_SOShierarchy/SOShierarchy.jl")
 include("src_SOShierarchy/SDP_types.jl")
 include("src_SOShierarchy/run_mosek.jl")
 

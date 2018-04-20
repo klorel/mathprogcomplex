@@ -1,11 +1,11 @@
 function build_SDP(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxationPb)
-    sdpbody = SDPBlocks()
+    sdpblocks = SDPBlocks()
     sdplin = SDPLin()
-    sdpcnst = SDPCnst()
+    sdpcst = SDPcst()
 
 
     ## Build blocks dict
-    for ((cstrname, blocname), mmt) in mmtrelax_pb.constraints
+    for ((cstrname, cliquename), mmt) in mmtrelax_pb.constraints
         
         for ((γ, δ), poly) in mmt.mm
             for (expo, λ) in poly
@@ -19,18 +19,13 @@ function build_SDP(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxationPb)
 
                 # Determine which moment to affect the current coefficient.
                 α, β = split_expo(relaxctx, expo)
+                block_name = get_blockname(cstrname, cliquename, mmtrelax_pb)
 
                 # Add the current coeff to the SDP problem
-                key = (cstrname, blocname, α, β)
-                if !haskey(sdpbody, key)
-                    sdpbody[key] = SDPBlock()
-                end
-                Bi = sdpbody[key]
+                key = ((α, β), block_name, γ, δ)
 
-                if !haskey(Bi, (γ, δ))
-                    Bi[(γ, δ)] = 0.0
-                end
-                Bi[(γ, δ)] += λ
+                @assert !haskey(sdpblocks, key)
+                sdpblocks[key] = λ
             end
         end
     end
@@ -44,14 +39,14 @@ function build_SDP(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxationPb)
         # Determine which moment to affect the current coefficient.
         α, β = split_expo(relaxctx, expo)
 
-        if !haskey(sdpcnst, (α, β))
-            sdpcnst[(α, β)] = 0.0
+        if !haskey(sdpcst, (α, β))
+            sdpcst[(α, β)] = 0.0
         end
 
-        sdpcnst[(α, β)] -= λ #Considered as the constant of the constraint body
+        sdpcst[(α, β)] -= λ #Considered as the constant of the constraint body
     end
 
-    return SDPInstance(sdpbody, sdplin, sdpcnst)
+    return SDPInstance(sdpblocks, sdplin, sdpcst)
 end
 
 
@@ -82,31 +77,29 @@ function print(io::IO, sdpinst::SDPInstance)
     println(io, " -- linear part:")
     length(sdpinst.lin) == 0 ? println("") : print(io, sdpinst.lin)
     println(io, " -- const part:")
-    print(io, sdpinst.cnst)
+    print(io, sdpinst.cst)
 end
 
 function print(io::IO, sdpblocks::SDPBlocks)
-    cstrlen = maximum(x->length(x[1]), keys(sdpblocks))
+    cstrlen = maximum(x->length(format_string(x[1][1], x[1][2])), keys(sdpblocks))
     blocklen = maximum(x->length(x[2]), keys(sdpblocks))
-    expolen = maximum(x->length("($(x[3]), $(x[4]))"), keys(sdpblocks))
+    rowlen = maximum(x->length(format_string(x[3])), keys(sdpblocks))
+    collen = maximum(x->length(format_string(x[4])), keys(sdpblocks))
 
-    for ((cstrname, blockname, α, β), Bi) in sdpblocks
-        coordlen = maximum(x->length("($(x[1]), $(x[2]))"), keys(Bi))
-        for ((γ, δ), λ) in Bi
-            print_string(io, cstrname, cstrlen)
-            print_string(io, blockname, blocklen)
-            print_string(io, "($α, $β)", expolen); print(io, ": ")
-            print_string(io, "($γ, $δ)", coordlen, alignright=false)
-            println(io, "$λ")
-        end
+    for (((α, β), blockname, γ, δ), λ) in sdpblocks
+        print_string(io, format_string(α, β), cstrlen)
+        print_string(io, blockname, blocklen)
+        print_string(io, format_string(γ), rowlen)
+        print_string(io, format_string(δ), collen)
+        @printf(io, "% .16e\n", λ)
     end
 end
 
-function print(io::IO, sdprhs::SDPCnst)
-    expolen = maximum(x->length("($(x[1]), $(x[2]))"), keys(sdprhs))
-    for ((α, β), λ) in sdprhs
-        print_string(io, "($α, $β)", expolen)
-        println(io, "\t$λ")
+function print(io::IO, sdpcst::SDPcst)
+    cstrlen = maximum(x->length(format_string(x[1], x[2])), keys(sdpcst))
+    for ((α, β), λ) in sdpcst
+        print_string(io, format_string(α, β), cstrlen)
+        @printf(io, "% .16e\n", λ)
     end
 end
 

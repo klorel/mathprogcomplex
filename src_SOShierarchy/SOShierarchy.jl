@@ -62,7 +62,7 @@ end
 #     name::String,
 #     blocks::SortedDict{String, SDPBlock}
 #     lin::Polynomial
-#     cnst::Number
+#     cst::Number
 #     ub::Number
 #     lb::Number
 
@@ -71,14 +71,19 @@ end
 
 const SDPBlock = SortedDict{Tuple{Exponent, Exponent}, Number}
 
-const SDPBlocks = SortedDict{Tuple{String, String, Exponent, Exponent}, SDPBlock}
-const SDPLin = SortedDict{Tuple{Exponent, Exponent, Exponent}, Number}
-const SDPCnst = SortedDict{Tuple{Exponent, Exponent}, Number}
+const SDPBlocks = SortedDict{Tuple{Tuple{Exponent, Exponent}, String, Exponent, Exponent}, Number}
+# ((α, β), block_name, γ, δ) -> coeff
+
+const SDPLin = SortedDict{Tuple{Tuple{Exponent, Exponent}, Exponent}, Number}
+# ((α, β), var) -> coeff
+
+const SDPcst = SortedDict{Tuple{Exponent, Exponent}, Number}
+# (α, β) -> coeff
 
 mutable struct SDPInstance
     blocks::SDPBlocks
     lin::SDPLin
-    cnst::SDPCnst
+    cst::SDPcst
 end
 
 

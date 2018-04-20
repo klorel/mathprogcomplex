@@ -1,15 +1,14 @@
-# cstrname            blocname row col  val
-       1,1    ineq1_hi,clique1   1   1  -1.0
-       1,1    ineq2_hi,clique1   1   1  4.0
-       1,1 moment_cstr,clique1   1   1  1.0
-      1,x1    ineq1_hi,clique1   1   1  -2.0
-      1,x1 moment_cstr,clique1   1  x1  1.0
-      1,x1 moment_cstr,clique1  x1   1  1.0
-    1,x1^2    ineq2_hi,clique1   1   1  -1.0
-    1,x1^2 moment_cstr,clique1  x1  x1  1.0
- 1,x1_*_x2 moment_cstr,clique1  x1  x2  1.0
- 1,x1_*_x2 moment_cstr,clique1  x2  x1  1.0
-      1,x2 moment_cstr,clique1   1  x2  1.0
-      1,x2 moment_cstr,clique1  x2   1  1.0
-    1,x2^2    ineq2_hi,clique1   1   1  -1.0
-    1,x2^2 moment_cstr,clique1  x2  x2  1.0
+      1,1    ineq1_hi  1  1 -1.0000000000000000e+00
+      1,1    ineq2_hi  1  1  4.0000000000000000e+00
+      1,1 moment_cstr  1  1  1.0000000000000000e+00
+1,x1_*_x2 moment_cstr x1 x2  1.0000000000000000e+00
+1,x1_*_x2 moment_cstr x2 x1  1.0000000000000000e+00
+     1,x1    ineq1_hi  1  1 -2.0000000000000000e+00
+     1,x1 moment_cstr  1 x1  1.0000000000000000e+00
+     1,x1 moment_cstr x1  1  1.0000000000000000e+00
+     1,x2 moment_cstr  1 x2  1.0000000000000000e+00
+     1,x2 moment_cstr x2  1  1.0000000000000000e+00
+   1,x1^2    ineq2_hi  1  1 -1.0000000000000000e+00
+   1,x1^2 moment_cstr x1 x1  1.0000000000000000e+00
+   1,x2^2    ineq2_hi  1  1 -1.0000000000000000e+00
+   1,x2^2 moment_cstr x2 x2  1.0000000000000000e+00

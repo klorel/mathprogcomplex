@@ -4,6 +4,16 @@ get_cstrname_eq(cstrname::String) = cstrname*"_eq"
 
 get_momentcstrname() = "moment_cstr"
 
+function get_blockname(cstrname, cliquename, mmtrelax_pb)
+    cstrcliques = Set(Iterators.filter(x->x[1] == cstrname, keys(mmtrelax_pb.constraints)))
+    if length(cstrcliques) == 1
+        return cstrname
+    else
+        warn("get_blockname(): several cliques found for $cstrname")
+        return cstrname*"_"*cliquename
+    end
+end
+
 function get_cstrname(cstrname::String, cstrtype::Symbol)
     if cstrtype == :eq
         return get_cstrname_eq(cstrname)
@@ -34,4 +44,20 @@ function get_pbcstrname(cstrname::String)
     else 
         return cstrname
     end
+end
+
+
+function format_string(α::Exponent, β::Exponent)
+    s = "$α,$β"
+    return replace(s, " ", "_")
+end
+
+function format_string(s1::String, s2::String)
+    s = "$s1,$s2"
+    return replace(s, " ", "_")
+end
+
+function format_string(α::Exponent)
+    s = "$α"
+    return replace(s, " ", "_")
 end
