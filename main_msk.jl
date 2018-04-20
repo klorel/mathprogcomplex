@@ -3,17 +3,20 @@ using Mosek, DataStructures
 include("src_SOShierarchy/SDP_types.jl")
 include("src_SOShierarchy/run_mosek.jl")
 
-instance = read_SDPInstance("body.sdp", "types.sdp", "rhs.sdp")
+instance = read_SDPInstance(".")
 
-println("BLOCKS size:        $(size(instance.BLOCKS))")
 println("VAR_TYPES size:     $(size(instance.VAR_TYPES))")
-println("CONSTRAINTS size:   $(size(instance.CONSTRAINTS))")
+println("BLOCKS size:        $(size(instance.BLOCKS))")
+println("LINEAR size:        $(size(instance.LINEAR))")
+println("CONST size:         $(size(instance.CONST))")
 
 sdp = SDP_Problem()
 
 set_constraints!(sdp, instance)
 set_blocks!(sdp, instance)
 set_matrices!(sdp, instance)
+set_linear!(sdp, instance)
+set_const!(sdp, instance)
 
 
 for (cstr, block) in sdp.name_to_block
@@ -25,11 +28,17 @@ for (name, ctr) in sdp.name_to_ctr
 end
 
 for (name, ctr) in sdp.matrices
-    println("  x $name \t $ctr")
+    println("  s $name \t $ctr")
 end
 
-@show sdp.linear
-@show sdp.cst_ctr
+for (name, ctr) in sdp.linear
+    println("  l $name \t $ctr")
+end
+
+for (name, ctr) in sdp.cst_ctr
+    println("  c $name \t $ctr")
+end
+
 
 
 
@@ -38,12 +47,13 @@ dual=Dict{String, Float64}()
 
 solve_mosek(sdp::SDP_Problem, primal::Dict{Tuple{String,String,String}, Float64}, dual::Dict{String, Float64})
 
+println()
 println("Primal:")
 for ((k1, k2, k3), v) in primal
-    @printf("%10s, %10s, %10s -> %f", k1, k2, k3, v)
+    @printf("%20s, %20s, %20s -> %f\n", k1, k2, k3, v)
 end
 
 println("Dual:")
 for (k, v) in dual
-    @printf("%10s -> %f", k, v)
+    @printf("%20s -> %f\n", k, v)
 end
