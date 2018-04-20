@@ -87,6 +87,44 @@ mutable struct SDPInstance
 end
 
 
+type SDP_Instance
+  VAR_TYPES
+  BLOCKS
+  LINEAR
+  CONST
+end
+
+type SDP_Block
+  id::Int64
+  name::String
+  var_to_id::Dict{String, Int64}
+
+  SDP_Block(id::Int64, name::String) = new(id, name, Dict{String, Int64}())
+  SDP_Block() = new(-1, "", Dict{String, Int64}())
+end
+
+
+type SDP_Problem
+  name_to_block::Dict{String, SDP_Block}
+  id_to_block::Dict{Int64, SDP_Block}
+
+  name_to_ctr::Dict{String, Tuple{Int64, String, Float64, Float64}} # Id, type et bornes des contraintes
+  id_to_ctr::Dict{Int64, String}
+
+  matrices::Dict{Tuple{String, String, String, String}, Float64} # Matrices du corps des contraintes / objectif
+  linear::Dict{Tuple{String, String}, Float64} # Matrice portant les parties linéaires des contraintes
+  cst_ctr::Dict{String, Float64} # Constante du corp des contraintes
+
+
+  SDP_Problem() = new(Dict{String, SDP_Block}(),
+                      Dict{Int64, SDP_Block}(),
+                      Dict{String, Tuple{Int64, String, Float64, Float64}}(),
+                      Dict{Int64, String}(),
+                      Dict{Tuple{String, String, String, String}, Float64}(),
+                      Dict{String, Dict{String, Float64}}(),
+                      Dict{String, Float64}()
+  ) 
+end
 
 """
     SparsityPattern
@@ -95,19 +133,18 @@ end
 """
 type SparsityPattern end
 
+include("build_relctx.jl")
+include("build_maxcliques.jl")
+include("build_momentpb.jl")
+include("build_SDPInstance.jl")
+include("build_SDP_Problem.jl")
 
-include("setproblem.jl")
-include("momentmatrix.jl")
-include("sparsity.jl")
 include("symmetries.jl")
-include("SDPcontainer.jl")
+include("export_SDPInstance.jl")
 
 include("example_problems.jl")
+include("run_mosek.jl")
 include("utils.jl")
-include("export_sdp.jl")
-# include("compute_Bi.jl")
-# include("build_SDP_SOS.jl")
-# include("export_JuMP.jl")
 
 
 function print_cmat(mat::AbstractArray, round = 1e-3)

@@ -1,10 +1,3 @@
-type SDP_Instance
-  VAR_TYPES
-  BLOCKS
-  LINEAR
-  CONST
-end
-
 function read_SDPInstance(path::String)
   BLOCKS = readdlm(joinpath(path, "blocks.sdp"), String)
   if isfile(joinpath(path, "lin.sdp"))
@@ -21,37 +14,6 @@ function read_SDPInstance(path::String)
                CONST)
 end
 
-type SDP_Block
-  id::Int64
-  name::String
-  var_to_id::Dict{String, Int64}
-
-  SDP_Block(id::Int64, name::String) = new(id, name, Dict{String, Int64}())
-  SDP_Block() = new(-1, "", Dict{String, Int64}())
-end
-
-
-type SDP_Problem
-  name_to_block::Dict{String, SDP_Block}
-  id_to_block::Dict{Int64, SDP_Block}
-
-  name_to_ctr::Dict{String, Tuple{Int64, String, Float64, Float64}} # Id, type et bornes des contraintes
-  id_to_ctr::Dict{Int64, String}
-
-  matrices::Dict{Tuple{String, String, String, String}, Float64} # Matrices du corps des contraintes / objectif
-  linear::Dict{Tuple{String, String}, Float64} # Matrice portant les parties linéaires des contraintes
-  cst_ctr::Dict{String, Float64} # Constante du corp des contraintes
-
-
-  SDP_Problem() = new(Dict{String, SDP_Block}(),
-                      Dict{Int64, SDP_Block}(),
-                      Dict{String, Tuple{Int64, String, Float64, Float64}}(),
-                      Dict{Int64, String}(),
-                      Dict{Tuple{String, String, String, String}, Float64}(),
-                      Dict{String, Dict{String, Float64}}(),
-                      Dict{String, Float64}()
-  ) 
-end
 
 
 """
@@ -122,10 +84,14 @@ function set_matrices!(sdp::SDP_Problem, instance::SDP_Instance)
   for i=1:size(instance.BLOCKS, 1)
     (ctr_name, block_name, var1, var2, coeff) = instance.BLOCKS[i, :]
 
-    @assert !haskey(sdp.matrices, (ctr_name, block_name, var1, var2))
+    if haskey(sdp.matrices, (ctr_name, block_name, var1, var2))
+      warn("set_matrices!() : sdp.matrices already has key ($ctr_name, $block_name, $var1, $var2) with val $(sdp.matrices[(ctr_name, block_name, var1, var2)]), $coeff")
+    end
 
     # Sort variables for triangular matrix storage
     var1, var2 = min(var1, var2), max(var1, var2)
+    println(ctr_name, " ", block_name, " ", var1, " ", var2, " ", coeff)
+    println(typeof(ctr_name), " ", typeof(block_name), " ", typeof(var1), " ", typeof(var2), " ", typeof(coeff))
     sdp.matrices[(ctr_name, block_name, var1, var2)] = parse(coeff)
   end
 end
@@ -143,5 +109,14 @@ function set_const!(sdp::SDP_Problem, instance::SDP_Instance)
 
     @assert !haskey(sdp.cst_ctr, ctr_name)
     sdp.cst_ctr[ctr_name] = parse(coeff)
+  end
+end
+
+function set_vartypes!(sdp::SDP_Problem, instance::SDP_Instance)
+  for i=1:size(instance.VAR_TYPES, 1)
+    (ctrname, vartype) = instance.VAR_TYPES[i, :]
+    if vartype == "SYM"
+      println("enforcing symmetry of matrix $ctrname")
+    end
   end
 end

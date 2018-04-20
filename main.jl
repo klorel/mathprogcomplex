@@ -33,8 +33,20 @@ function main()
         relax_ctx.di[get_momentcstrname()] = 2
     end
 
-    # WB2_C = buildPOP_WB2_expl()
-    # problem = pb_cplx2real(WB2_C)
+    WB2_C = buildPOP_WB2_expl()
+    for (ctrname, ctr) in WB2_C.constraints
+        if get_cstrtype(ctr) == :eq
+            rm_constraint!(WB2_C, ctrname)
+            add_constraint!(WB2_C, get_cstrname_lower(ctrname), 0 << (ctr.p - ctr.lb))
+            add_constraint!(WB2_C, get_cstrname_upper(ctrname), (ctr.p - ctr.ub) << 0)
+        end
+    end
+    
+    problem = pb_cplx2real(WB2_C)
+
+    relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+                                        d = 2)
+                                        # symmetries = [PhaseInvariance])
 
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")
@@ -64,7 +76,7 @@ function main()
         for clique in val1 print("$clique, ") end
         @printf("\b\b \n")
     end
-    
+
     ########################################
     # Compute partial moment hierarchy
     mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, moments_params, max_cliques)
@@ -73,33 +85,54 @@ function main()
     
     ########################################
     # Convert to a primal SDP problem
-    sdp = build_SDP(relax_ctx, mmtrel_pb)
+    sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
     println("\n--------------------------------------------------------")
-    println("sdp = \n$sdp")
+    println("sdpinstance = \n$sdpinstance")
 
-    export_SDP(relax_ctx, sdp, pwd())
+    export_SDP(relax_ctx, sdpinstance, pwd())
 
-    ########################################
-    # Calcul d'une solution par un solveur
-    # m, Zi, yα_re, yα_im, expo2int, int2expo = make_JuMPproblem(SDP_SOS, SCSSolver(max_iters=5000000, eps=1e-3, verbose=true), relax_ctx)
+    sdp_instance = read_SDPInstance(pwd())
 
-    # println("-----> SDP_SOS problem size: ", Base.summarysize(m)/1024, " ko")
-    # println("-----> JuMP problem size: ", Base.summarysize(m)/1024, " ko")
+    println("VAR_TYPES size:     $(size(sdp_instance.VAR_TYPES))")
+    println("BLOCKS size:        $(size(sdp_instance.BLOCKS))")
+    println("LINEAR size:        $(size(sdp_instance.LINEAR))")
+    println("CONST size:         $(size(sdp_instance.CONST))")
 
-    ########################################
-    # Résolution du SDP par un solveur
-    # println("-----> Starting solve")
-    # solve(m)
+    sdp = SDP_Problem()
 
-    # println("\n-----> Objective value: ", getobjectivevalue(m), "\n")
+    set_constraints!(sdp, sdp_instance)
+    set_blocks!(sdp, sdp_instance)
+    set_matrices!(sdp, sdp_instance)
+    set_linear!(sdp, sdp_instance)
+    set_const!(sdp, sdp_instance)
 
-    # # for (cstrname, mmb) in B_i
-    # #     println("$cstrname \t= ", getvalue(Zi[cstrname]), "\n")
-    # # end
+    for (cstr, block) in sdp.name_to_block
+        println("  b $cstr -> $block")
+    end
 
-    # println("\n\n----->Lagrange multipliers : yα =")
-    # yα = - getdual(yα_re) - im*getdual(yα_im)
-    # print_cmat(yα)
+    for (name, ctr) in sdp.name_to_ctr
+        println("  * $name \t $ctr")
+    end
+
+    for (name, ctr) in sdp.matrices
+        println("  s $name \t $ctr")
+    end
+
+    for (name, ctr) in sdp.linear
+        println("  l $name \t $ctr")
+    end
+
+    for (name, ctr) in sdp.cst_ctr
+        println("  c $name \t $ctr")
+    end
+
+
+
+
+    primal=Dict{Tuple{String,String,String}, Float64}()
+    dual=Dict{String, Float64}()
+
+    solve_mosek(sdp::SDP_Problem, primal::Dict{Tuple{String,String,String}, Float64}, dual::Dict{String, Float64})
 
     return
 end

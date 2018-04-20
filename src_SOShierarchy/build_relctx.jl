@@ -139,6 +139,6 @@ function print(io::IO, relctx::RelaxationContext)
     print(io, "ki                     : $cstrname  \t=> $ki\n")
     end
     for (cstrname, cstrtype) in relctx.cstrtypes
-    print(io, "ki                     : $cstrname  \t=> $(string(cstrtype))\n")
+    print(io, "bar var types          : $cstrname  \t=> $(string(cstrtype))\n")
     end
 end

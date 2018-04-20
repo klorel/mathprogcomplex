@@ -1,4 +1,4 @@
-function build_SDP(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxationPb)
+function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxationPb)
     sdpblocks = SDPBlocks()
     sdplin = SDPLin()
     sdpcst = SDPcst()
