@@ -24,11 +24,11 @@ function get_elem_type(elem::String, link::Link, OPFpbs::OPFProblems, scenario::
 end
 
 function get_links_in(bus::String, gs::GridStructure)
-  return haskey(gs.node_linksin, bus) ? gs.node_linksin[bus] : Set{Any}()
+  return haskey(gs.node_linksin, bus) ? gs.node_linksin[bus] : SortedSet{Any}()
 end
 
 function get_links_out(bus::String, gs::GridStructure)
-  return haskey(gs.node_linksout, bus) ? gs.node_linksout[bus] : Set{Any}()
+  return haskey(gs.node_linksout, bus) ? gs.node_linksout[bus] : SortedSet{Any}()
 end
 
 function get_Var(elem_type::String, bus::String, OPFpbs::OPFProblems, scenario::String)

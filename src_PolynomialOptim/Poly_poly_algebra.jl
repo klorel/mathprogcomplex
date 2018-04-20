@@ -35,7 +35,7 @@ function add!(p::Polynomial, p1::Polynomial)
 end
 
 function add(p1::Polynomial, p2::Polynomial)
-    p = copy(p1)
+    p = deepcopy(p1)
     add!(p, p2)
     return p
 end
@@ -153,11 +153,11 @@ function powpoly(p::Polynomial, d::Int)
     end
     expo, λ = collect(p)[1]
 
-    expod = Dict{Variable, Degree}()
+    expod = SortedDict{Variable, Degree}()
     for (var, deg) in expo.expo
         expod[var] = Degree(deg.explvar*d, deg.conjvar*d)
     end
-    return Polynomial(Dict{Exponent, Number}(Exponent(expod)=>λ^d))
+    return Polynomial(SortedDict{Exponent, Number}(Exponent(expod)=>λ^d))
 end
 
 function ^(p::T, d::Int) where T<:AbstractPolynomial

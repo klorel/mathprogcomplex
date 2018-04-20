@@ -29,8 +29,8 @@ println("minslack of GOC global solution: $(get_minslack(pb_global, global_point
 get_minslack(pb_global, global_point)
 
 pb_sansCC = Problem()
-pb_sansCC.variables = copy(pb_global.variables)
-pb_sansCC.objective = copy(pb_global.objective)
+pb_sansCC.variables = deepcopy(pb_global.variables)
+pb_sansCC.objective = deepcopy(pb_global.objective)
 for (cstrname, cstr) in pb_global.constraints
     if !ismatch(r"Pgen|Qgen", cstrname)
         add_constraint!(pb_sansCC, cstrname, cstr)

@@ -35,7 +35,7 @@ println("minslack : ", get_minslack(pb, voltage))
 # end
 
 ## Power at orig and dest of lines.
-# line_power = Dict{Link, Array{Complex128}}()
+# line_power = SortedDict{Link, Array{Complex128}}()
 # for link in get_links(OPFpbs, "BaseCase")
 #   link_elem = OPFpbs["BaseCase"].ds.link[link]
 #   length(link_elem) == 1 || warn("link $link has several lines.")

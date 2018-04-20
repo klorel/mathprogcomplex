@@ -1,14 +1,21 @@
+using DataStructures
 include(joinpath(ROOT, "src_PolynomialOptim", "PolynomialOptim.jl"))
+
+## Symetries
+abstract type AbstractSymetry end
+type PhaseInvariance <: AbstractSymetry end
+
 
 
 mutable struct RelaxationContext
     ismultiordered
     issparse
-    leveragesymmetries      # Check if equations have certain type of symmetry, to set afterwards some moments to 0 for example
-    hierarchykind           # :Complex or :Real
-    renamevars              # Replace variables with by shorter named ones
+    symmetries::SortedSet{DataType} # ::SortedSet{DataType}
+    hierarchykind             # :Complex or :Real
+    renamevars                # Replace variables with by shorter named ones
     di
     ki
+    cstrtypes
 end
 
 
@@ -19,8 +26,8 @@ end
     **Note** that the matrix is indexed by a tuple of exponents, *the first of which contains only conjugated variables*, et second only real ones.
 """
 mutable struct MomentMatrix
-    mm::Dict{Tuple{Exponent, Exponent}, AbstractPolynomial}
-    vars::Set{Variable}
+    mm::SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}
+    vars::SortedSet{Variable}
     order::Int
 end
 
@@ -31,30 +38,50 @@ end
 """
 struct MomentRelaxationPb
     objective::AbstractPolynomial
-    constraints::Dict{Tuple{String, String}, MomentMatrix}
+    constraints::SortedDict{Tuple{String, String}, MomentMatrix}
 end
 
-# """
-#     MomentMatrixBasis(basis, expo2int, int2expo, msize)
 
-#     Store the matrix coefficients of the moment variable decomposition of the moment matrix.
+# mutable struct SDPInstance
+#     name
+#     sense::Symbol       # :min or :max
+#     kind::Symbol        # :Real or :Complex
 
-#     Arguments:
-#     - basis::Dict{Exponent, AbstractMatrix} : matrice correspondant au moment clé,
-#     - expo2int : carte donnant les coordonnées de l'exposant clé dans la matrice des moments initiale,
-#     - int2expo : carte donnant l'xposant correspondant aux coordonnées clé dans la matrice des moments initiale,
-#     - msize: taille de la matrice des moments initiale (ordre d-k).
-# """
-# mutable struct MomentMatrixBasis
-#     basis::Dict{Tuple{Exponent, Exponent}, AbstractMatrix} # Les exposants sont de degré inférieur à d
-#     expo2int::Dict{Exponent, Int}   # Carte de la matrice des coefficients d-ki
-#     int2expo::Dict{Int, Exponent}
-#     msize::Int                      # size of the matrix
+#     objective::SDPForm
+#     constraints::SortedDict{String, SDPForm}
+
+#     isexportready::Bool
+#     isconsistent::Bool
+
+#     SDPInstance() = new("", :Undef, :Undef, 
+#                         SDPForm(), SortedDict{String, SDPForm}(),
+#                         false, false)
 # end
 
+# mutable struct SDPForm
+#     name::String,
+#     blocks::SortedDict{String, SDPBlock}
+#     lin::Polynomial
+#     cnst::Number
+#     ub::Number
+#     lb::Number
 
-const SDPBody = Dict{Tuple{String, String, Exponent, Exponent}, Dict{Tuple{Exponent, Exponent}, Complex128}}
-const SDPRhs = Dict{Tuple{Exponent, Exponent}, Complex128}
+#     SDPForm() = new("", SortedDict{String, SDPBlock}(), Polynomial(), NaN, NaN, NaN)
+# end
+
+const SDPBlock = SortedDict{Tuple{Exponent, Exponent}, Number}
+
+const SDPBlocks = SortedDict{Tuple{String, String, Exponent, Exponent}, SDPBlock}
+const SDPLin = SortedDict{Tuple{Exponent, Exponent, Exponent}, Number}
+const SDPCnst = SortedDict{Tuple{Exponent, Exponent}, Number}
+
+mutable struct SDPInstance
+    blocks::SDPBlocks
+    lin::SDPLin
+    cnst::SDPCnst
+end
+
+
 
 """
     SparsityPattern
@@ -71,6 +98,8 @@ include("symmetries.jl")
 include("SDPcontainer.jl")
 
 include("example_problems.jl")
+include("utils.jl")
+include("export_sdp.jl")
 # include("compute_Bi.jl")
 # include("build_SDP_SOS.jl")
 # include("export_JuMP.jl")

@@ -9,7 +9,7 @@ data_limits = readdlm(joinpath(path, "eod2020_network_limits.txt"))
 data_loads = readdlm(joinpath(path, "eod2020_network_loads.txt"))
 data_substations = readdlm(joinpath(path, "eod2020_network_substations.txt"))
 
-bus = Dict{String, Dict{String, Any}}()
+bus = SortedDict{String, SortedDict{String, Any}}()
 
 for i=1:size(data_buses, 1)
     busid = Int(data_buses[i, 1])
@@ -24,7 +24,7 @@ for i=1:size(data_buses, 1)
     data_buses[i, 8] == 0 || warn("Buses - $busname : parameter fault!=0 ($(data_buses[i, 8])), not handled")
     data_buses[i, 9] == 0 || warn("Buses - $busname : parameter curative!=0 ($(data_buses[i, 9])), not handled")
 
-    bus[busname] = Dict{String, Any}()
+    bus[busname] = SortedDict{String, Any}()
     bus[busname]["Volt"] = IIDMVolt(busname, busid, string(substationid), basekV, minV, maxV, V, θ, P, Q)
 end
 
@@ -46,7 +46,7 @@ for i=1:size(data_generators, 1)
     minP, maxP = data_generators[i, 5:6]
     volt_regulator_on, targetV = data_generators[i, 11:12]
     minQmaxP, minQminP, maxQmaxP, maxQminP = data_generators[i, 7:10]
-    S_bounds = Set([(minP+im*minQminP, minP+im*maxQminP), (maxP+im*minQmaxP, maxP+im*maxQmaxP)])
+    S_bounds = SortedSet([(minP+im*minQminP, minP+im*maxQminP), (maxP+im*minQmaxP, maxP+im*maxQmaxP)])
     busname = "BUS_$busid"
 
     data_generators[i, 2] == data_generators[i, 3] || warn("Generators - $busname : 'bus' is not 'con. bus', not handled")
@@ -59,7 +59,7 @@ for i=1:size(data_generators, 1)
 end
 
 
-link = Dict{Link, Dict{String, IIDMLine_π}}()
+link = SortedDict{Link, SortedDict{String, IIDMLine_π}}()
 for i=1:size(data_branches, 1)
     busid1, busid2 = data_branches[i, 2:3]
     r, x, g1, g2, b1, b2 = data_branches[i, 7:12]
@@ -68,7 +68,7 @@ for i=1:size(data_branches, 1)
 
     linkname = Link("BUS_$busid1", "BUS_$busid2")
     if !haskey(link, linkname)
-        link[linkname] = Dict{String, IIDMLine_π}()
+        link[linkname] = SortedDict{String, IIDMLine_π}()
     end
     link_elems = link[link_elems]
 

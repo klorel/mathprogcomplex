@@ -49,8 +49,9 @@ function isless(exp1::Exponent, exp2::Exponent)
   if exp1_deg < exp2_deg
     return true
   elseif exp1_deg == exp2_deg
-    vars = union(Set(keys(exp1)), Set(keys(exp2)))
-    for var in sort(collect(vars))
+    vars = SortedSet(keys(exp1))
+    union!(vars, keys(exp2))
+    for var in vars
       if !haskey(exp2, var) # hence haskey(exp1, var)
         return true
       elseif !haskey(exp1, var) # hence haskey(exp2, var)

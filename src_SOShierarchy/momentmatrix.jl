@@ -1,18 +1,26 @@
 """
-    mm = MomentMatrix(vars::Set{Variable}, d)
+    mm = MomentMatrix(vars::SortedSet{Variable}, d, symmetries)
 
-    Build the moment matrix corresponding to the moment of degree up to `d` of the `vars` polynomial algebra.
+    Build the moment matrix corresponding to the moment of degree up to `d` of the `vars` polynomial algebra. 
+    Only monomials featuring all `symmetries` appear in the moment matrix.
 """
-function MomentMatrix(vars::Set{Variable}, d::Int)
-    mm = Dict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
+function MomentMatrix(relax_ctx, vars::SortedSet{Variable}, d::Int, symmetries::SortedSet{DataType})
+    mm = SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
     realexpos = compute_exponents(vars, d)
     conjexpos = compute_exponents(vars, d, compute_conj=true)
     for cexp in conjexpos
         for rexp in realexpos
-            mm[(cexp, rexp)] = cexp*rexp
+            expo = cexp*rexp
+            hassyms = true
+            for sym in symmetries
+                hassyms = hassyms && has_symmetry(relax_ctx, expo, sym)
+            end
+            if hassyms
+                mm[(cexp, rexp)] = cexp*rexp
+            end
         end
     end
-    return MomentMatrix(mm, copy(vars), d)
+    return MomentMatrix(mm, SortedSet(vars), d)
 end
 
 function copy(mm::MomentMatrix)
@@ -54,7 +62,7 @@ end
 *(mm::MomentMatrix, λ::Number) = λ*mm
 
 function evaluate(mm::MomentMatrix, pt::Point)
-    mm_eval = Dict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
+    mm_eval = SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
     for (key, p) in mm.mm
         res = evaluate(p, pt)
         if res == Polynomial()
@@ -63,49 +71,68 @@ function evaluate(mm::MomentMatrix, pt::Point)
             mm_eval[key] = res
         end
     end
-    return MomentMatrix(mm_eval, setdiff(mm.vars, Set(keys(pt))), mm.order)
+    return MomentMatrix(mm_eval, setdiff(mm.vars, SortedSet(keys(pt))), mm.order)
 end
 
 
 """
-    momentmatrices = compute_momentmat(problem, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
+    momentrelaxation = MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{SortedSet{String}, Int}}, max_cliques::SortedDict{String, SortedSet{Variable}})
 
-    Compute the moment and localizing matrices associated with the problem constraints and clique decomposition.
+    Compute the `momentrelaxation` of `problem` corresponding to the clique decomposition `max_cliques` and parameters `moment_param`.
 """
-function compute_momentmat(relax_ctx, problem, moment_param::Dict{String, Tuple{Set{String}, Int}}, max_cliques::Dict{String, Set{Variable}})
-    println("\n=== compute_momentmat(relax_ctx, problem, moment_param, max_cliques)")
-    println("Compute the moment and localizing matrices associated with the problem constraints and vlique decomposition.")
+function MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{SortedSet{String}, Int}}, max_cliques::SortedDict{String, SortedSet{Variable}})
+    println("\n=== MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{SortedSet{String}, Int}}, max_cliques::SortedDict{String, SortedSet{Variable}})")
+    println("Compute the moment and localizing matrices associated with the problem constraints and clique decomposition and return a MomentRelaxationPb object.")
 
-    # NOTE: Things will have to be slightly extended to support the several SDP sparse moment constraint (cstr key will not suffise)
-    momentmatrices = Dict{Tuple{String, String}, MomentMatrix}()
+    momentmatrices = SortedDict{Tuple{String, String}, MomentMatrix}()
 
-    for (cstrname, (clique_keys, order)) in moment_param
-        # Collect variables involved in constraint
-        vars = Set{Variable}()
-        blocname = ""
-        for clique_key in clique_keys
-            union!(vars, max_cliques[clique_key])
-            blocname = blocname*clique_key*"_"
+    ## Build moment matrix
+    # NOTE: sparsity work tbd here : several moment matrices ?
+    clique_keys, order = moment_param[get_momentcstrname()]
+    vars, blocname = collect_cliquesvars(clique_keys, max_cliques)
+    
+    momentmatrices[(get_momentcstrname(), blocname)] = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries)
+
+    ## Build localizing matrices
+    for (cstrname, cstr) in problem.constraints
+
+        cstrtype = get_cstrtype(cstr)
+        if cstrtype == :ineqdouble
+            # Deal with lower inequality
+            clique_keys, order = moment_param[get_cstrname(cstrname, :ineqlo)]
+            vars, blocname = collect_cliquesvars(clique_keys, max_cliques)
+            
+            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries)
+            momentmatrices[(get_cstrname(cstrname, :ineqlo), blocname)] = mmt * (cstr.p - cstr.lb)
+
+            # Deal with upper inequality, no recomputing of variables or moment matrix if possible
+            clique_keys_upp, order_upp = moment_param[get_cstrname(cstrname, :ineqhi)]
+            if collect(clique_keys) != collect(clique_keys_upp)
+                warn("clique keys different from lower and upper side of double constraint")
+                vars, blocname = collect_cliquesvars(clique_keys_upp, max_cliques)
+
+                mmt = MomentMatrix(relax_ctx, vars, order_upp, relax_ctx.symmetries)
+            elseif order_upp != order
+                warn("order different from lower and upper side of double constraint")
+                mmt = MomentMatrix(relax_ctx, vars, order_upp, relax_ctx.symmetries)
+            end
+            
+            momentmatrices[(get_cstrname(cstrname, :ineqhi), blocname)] = mmt * (cstr.ub - cstr.p)
+
+        else
+            # either cstrtype == :ineqlo, :ineqhi, :eq
+            clique_keys, order = moment_param[get_cstrname(cstrname, cstrtype)]
+            vars, blocname = collect_cliquesvars(clique_keys, max_cliques)
+            
+            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries)
+            momentmatrices[(get_cstrname(cstrname, cstrtype), blocname)] = mmt * get_normalizedpoly(cstr, cstrtype)
         end
-        momentmatrices[(cstrname, blocname[1:end-1])] = MomentMatrix(vars, order) * problem.constraints[cstrname].p
     end
 
-    println("xxxxx which indicators ? xxxxx")
-
-    return momentmatrices
-end
-
-
-function MomentRelaxationPb(relax_ctx, problem, moment_param::Dict{String, Tuple{Set{String}, Int}}, max_cliques::Dict{String, Set{Variable}})
-    momentmatrices = compute_momentmat(relax_ctx, problem, moment_param, max_cliques)
-
-    if relax_ctx.leveragesymmetries && has_phasesymmetry(relax_ctx, problem)
-        warn("MomentRelaxationPb(): Problem is phase-shift invariant. Leveraging to reduce the number of moments.")
-        enforce_phaseinvariance!(relax_ctx, momentmatrices)
-    end
 
     return MomentRelaxationPb(problem.objective, momentmatrices)
 end
+
 
 function print(io::IO, momentrelax::MomentRelaxationPb)
     println(io, "Moment Relaxation Problem:")

@@ -7,7 +7,7 @@ folders = ["Phase_0_IEEE14", "Phase_0_RTS96", "Phase_0_Modified_RTS96", "Phase_0
 folder = "Phase_0_Modified_RTS96"
 path_folder = joinpath(pwd(),"..","data_GOC", folder)
 nb_scenarios = length(readdir(path_folder))-1
-# scenarios = Set(readdir(joinpath("instances", "GOC", folder)))
+# scenarios = SortedSet(readdir(joinpath("instances", "GOC", folder)))
 # for scenario in scenarios
 #     if ismatch(r".csv", scenario)
 #         pop!(scenarios, scenario)

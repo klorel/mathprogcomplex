@@ -23,12 +23,12 @@ end
 
 
 """
-    create_vars!(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}, scenario::String) where T <: MatpowerLine_π
+    create_vars!(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}, scenario::String) where T <: MatpowerLine_π
 
 Create voltage variables at origin and destination of `link` in `link_vars`. \n
 Return nothing.
 """
-function create_vars!(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}, scenario::String) where T <: MatpowerLine_π
+function create_vars!(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}, scenario::String) where T <: MatpowerLine_π
   origid, destid = link.orig, link.dest
   link_vars["Volt_orig"] = Variable(variable_name("VOLT", origid, "", scenario), Complex)
   link_vars["Volt_dest"] = Variable(variable_name("VOLT", destid, "", scenario), Complex)
@@ -37,7 +37,7 @@ end
 
 
 """
-    Sorig(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T <: MatpowerLine_π
+    Sorig(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}) where T <: MatpowerLine_π
 
 Return the polynomial power at the origin of the line `link` depending quadratically on the voltages :
 ```julia
@@ -51,12 +51,12 @@ Yft = -ys*1/(τ*exp(-im*θ))
 Sorig = Yff*link_variables["Volt_orig"] + Yft*link_variables["Volt_dest"]
 ```
 """
-function Sorig(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T <: MatpowerLine_π
+function Sorig(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}) where T <: MatpowerLine_π
   return element.baseMVA * link_vars["Volt_orig"] * conj(get_IorigMP(element, link_vars))
 end
 
 """
-    Sdest(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T <: MatpowerLine_π
+    Sdest(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}) where T <: MatpowerLine_π
 
 Return the polynomial power at the destination of the line `link` depending quadratically on the voltages :
 ```julia
@@ -70,19 +70,19 @@ Ytt = ys+im*bc/2
 Sdest = Ytf*link_variables["Volt_orig"] + Ytt*link_variables["Volt_dest"]
 ```
 """
-function Sdest(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}) where T <: MatpowerLine_π
+function Sdest(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}) where T <: MatpowerLine_π
   return element.baseMVA * link_vars["Volt_dest"] * conj(get_IdestMP(element, link_vars))
 end
 
 
 ## 3. Constraints creation
-# function constraint(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::Dict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T <: MyType
-#   return Dict{String, Constraint}()
+# function constraint(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T <: MyType
+#   return SortedDict{String, Constraint}()
 # end
 
 
 ## Utils functions
-function get_IorigMP(element::MatpowerLine_π, link_variables::Dict{String, Variable})
+function get_IorigMP(element::MatpowerLine_π, link_variables::SortedDict{String, Variable})
   τ = element.transfo_ratio
   θ = element.transfo_phase *pi/180
   if τ == 0
@@ -98,7 +98,7 @@ function get_IorigMP(element::MatpowerLine_π, link_variables::Dict{String, Vari
   return Yff*link_variables["Volt_orig"] + Yft*link_variables["Volt_dest"]
 end
 
-function get_IdestMP(element::MatpowerLine_π, link_variables::Dict{String, Variable})
+function get_IdestMP(element::MatpowerLine_π, link_variables::SortedDict{String, Variable})
   τ = element.transfo_ratio
   θ = element.transfo_phase *pi/180
   if τ == 0

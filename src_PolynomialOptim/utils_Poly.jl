@@ -4,18 +4,18 @@
 Compute the set of all exponents in `variables` variables, of degree up to
 `dmax`.
 """
-function compute_exponents(variables::Set{Variable}, dmax::Int; compute_conj=false)
-    cur_order = Set{Exponent}([Exponent()])
-    result = copy(cur_order)
-    prev_order = Set{Exponent}()
+function compute_exponents(variables::SortedSet{Variable}, dmax::Int; compute_conj=false)
+    cur_order = SortedSet{Exponent}([Exponent()])
+    result = deepcopy(cur_order)
+    prev_order = SortedSet{Exponent}()
     for i=1:dmax
-        prev_order = copy(cur_order)
-        cur_order = Set{Exponent}()
+        prev_order = deepcopy(cur_order)
+        cur_order = SortedSet{Exponent}()
         for var in variables
             if compute_conj
-                union!(cur_order, Set([product(conj(var), elt) for elt in prev_order]))
+                union!(cur_order, SortedSet([product(conj(var), elt) for elt in prev_order]))
             else
-                union!(cur_order, Set([product(Exponent(var), elt) for elt in prev_order]))
+                union!(cur_order, SortedSet([product(Exponent(var), elt) for elt in prev_order]))
             end
         end
         union!(result, cur_order)
@@ -55,20 +55,6 @@ function is_homogeneous(expo::Exponent, kind::Symbol)
 end
 
 """
-    make_homogeneous!(p, kind)
-
-    Remove in-place the non homogeneous (in the `is_homogeneous` sense) monomials of `p`.
-"""
-function make_homogeneous!(p::Polynomial, kind::Symbol)
-    for expo in keys(p)
-        if !is_homogeneous(expo, kind)
-            delete!(p.poly, expo)
-        end
-    end
-    update_degree!(p)
-end
-
-"""
     explsum, conjsum = get_sumdegs(expo)
 
     Compute `|α|`, `|β|` the sum of the real variables exponents and conjugated variables exponents.
@@ -80,4 +66,23 @@ function get_sumdegs(expo::Exponent)
         conjsum += deg.conjvar
     end
     return explsum, conjsum
+end
+
+"""
+    cstrtype = get_cstrtype(cstr::Constraint)
+
+    Return a cstraint type among `:eq`, `:ineqhi`, `:ineqlo`, `:ineqdouble`.
+"""
+function get_cstrtype(cstr::Constraint)
+    if cstr.lb == cstr.ub && isfinite(cstr.ub)
+        return :eq
+    elseif (cstr.lb == -Inf-im*Inf) && (cstr.lb != Inf+im*Inf)
+        return :ineqhi
+    elseif (cstr.lb != -Inf-im*Inf) && (cstr.lb == Inf+im*Inf)
+        return :ineqlo
+    elseif (cstr.lb != -Inf-im*Inf) && (cstr.lb != Inf+im*Inf)
+        return :ineqdouble
+    else
+        error("get_cstrtype(): unknown constraint type.\nConstraint is $cstr")
+    end
 end

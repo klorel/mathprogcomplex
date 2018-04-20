@@ -128,13 +128,13 @@ end
 
 
 """
-    get_Snodal(bus::String, bus_elems::Dict{String, Any}, bus_elems_formulations::Dict{String, Symbol}, bus_elems_var::Dict{String, Variable})
+    get_Snodal(bus::String, bus_elems::SortedDict{String, Any}, bus_elems_formulations::SortedDict{String, Symbol}, bus_elems_var::SortedDict{String, Variable})
 
 Return the total injected power at `bus` coming from nodal elements with bounds. The injected power for each specific element is computed using `Snodal`.
 
 # Arguments
 - `bus::String` :
-- `bus_elems::Dict{String,Any}`:
+- `bus_elems::SortedDict{String,Any}`:
 - `bus_elems_formulations` :
 - `bus_elems_var` :
 
@@ -147,8 +147,8 @@ Instance Matpower WB2 with two nodes
 julia > get_Snodal("BUS_1", )
 ```
 """
-function get_Snodal(bus::String, bus_elems::Dict{String, Any}, bus_elems_formulations::Dict{String, Symbol}, bus_elems_var::Dict{String, Variable})
-  cstrnames, Sres, lbres, ubres = [Set{String}(), Polynomial(), 0, 0]
+function get_Snodal(bus::String, bus_elems::SortedDict{String, Any}, bus_elems_formulations::SortedDict{String, Symbol}, bus_elems_var::SortedDict{String, Variable})
+  cstrnames, Sres, lbres, ubres = [SortedSet{String}(), Polynomial(), 0, 0]
   for (elemid, element) in bus_elems
     elem_formulation = bus_elems_formulations[elemid]
     cstrname_, Sres_, lbres_, ubres_ = Snodal(element, bus, elemid, elem_formulation, bus_elems_var)
@@ -157,7 +157,7 @@ function get_Snodal(bus::String, bus_elems::Dict{String, Any}, bus_elems_formula
   end
 
   # Remove all constraints names equal to ""
-  dense_cstrnames = Set{String}()
+  dense_cstrnames = SortedSet{String}()
   for cstr in cstrnames
     if cstr != ""
       push!(dense_cstrnames, cstr)

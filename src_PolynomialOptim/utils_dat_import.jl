@@ -7,8 +7,8 @@ the iniitial point possibly provided in the file (defaults value is null).
 """
 function import_from_dat(instancepath::String, precondcstrspath::String)
     init_point = Point()
-    variables = Dict{String, Variable}()
-    exponents = Dict{String, Exponent}()
+    variables = SortedDict{String, Variable}()
+    exponents = SortedDict{String, Exponent}()
     pb = Problem()
 
     instance_str = open(instancepath)
@@ -50,7 +50,7 @@ function import_from_dat(instancepath::String, precondcstrspath::String)
         if !haskey(exponents, exponame)
             exponents[exponame] = Exponent()
         end
-        exponents[exponame] = product(exponents[exponame], Exponent(Dict(var=>Degree(parse(line[5]), parse(line[6])))))
+        exponents[exponame] = product(exponents[exponame], Exponent(SortedDict(var=>Degree(parse(line[5]), parse(line[6])))))
         l = readline(instance_str)
         line = matchall(r"\S+", l)
     end
@@ -85,7 +85,7 @@ function import_from_dat(instancepath::String, precondcstrspath::String)
             var1, var2 = line[3:4]
             if line[1] == "MONO"
                 p += λ * exponents[var1]
-            elseif line[1] ∈ Set(["CONST", "LIN", "QUAD"])
+            elseif line[1] ∈ SortedSet(["CONST", "LIN", "QUAD"])
                 p += λ * (var1!="NONE" ? variables[var1] : 1) * (var2!="NONE" ? variables[var2] : 1)
             elseif line[1] == "UB"
                 ub = real(λ)

@@ -98,7 +98,7 @@ function create_participation_factors_dict(instance_path, index)
     end
     generator_data = readdlm(joinpath(path_folder,"generator.csv"),',',skipstart=1)
 
-    participation_factors = Dict{String,Dict{String,Float64}}()
+    participation_factors = SortedDict{String,SortedDict{String,Float64}}()
     for line in 1:size(generator_data,1)
         term_id = generator_data[line,3]
         if term_id == 9
@@ -111,7 +111,7 @@ function create_participation_factors_dict(instance_path, index)
             end
             value =  generator_data[line,4]
             if !haskey(participation_factors,bus_name(num_bus))
-                participation_factors[bus_name(num_bus)] = Dict{String,Float64}()
+                participation_factors[bus_name(num_bus)] = SortedDict{String,Float64}()
             end
             participation_factors[bus_name(num_bus)][generator_name(gen_id)] = value
         end
@@ -154,8 +154,8 @@ function nb_active_constraints_in_scenario_cc_Qgen(filenames, epsilon::Float64)
     generators = collect(gen_solution_basecase[:,1])
     generators = [ index[gen] for gen in generators]
     #println(length(generators))
-    module_v_basecase = Dict{Int64, Float64}()
-    module_v_scenarios = Dict{String,Dict{Int64, Float64}}()
+    module_v_basecase = SortedDict{Int64, Float64}()
+    module_v_scenarios = SortedDict{String,SortedDict{Int64, Float64}}()
     for i in 1:size(bus_solution,1)
         num_bus = index[bus_solution[i,2]]
             if bus_solution[i,1] == 0
@@ -164,7 +164,7 @@ function nb_active_constraints_in_scenario_cc_Qgen(filenames, epsilon::Float64)
                 id_contingency = bus_solution[i,1]
                 scenario_name = scenarioname(id_contingency)
                 if !haskey(module_v_scenarios, scenario_name)
-                    module_v_scenarios[scenario_name] = Dict{Int64, Float64}()
+                    module_v_scenarios[scenario_name] = SortedDict{Int64, Float64}()
                 end
                 module_v_scenarios[scenario_name][num_bus] = bus_solution[i,3]
             end
