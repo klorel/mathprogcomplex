@@ -76,11 +76,11 @@ end
 function get_cstrtype(cstr::Constraint)
     if cstr.lb == cstr.ub && isfinite(cstr.ub)
         return :eq
-    elseif (cstr.lb == -Inf-im*Inf) && (cstr.lb != Inf+im*Inf)
+    elseif (cstr.lb == -Inf-im*Inf) && (cstr.ub != Inf+im*Inf)
         return :ineqhi
-    elseif (cstr.lb != -Inf-im*Inf) && (cstr.lb == Inf+im*Inf)
+    elseif (cstr.lb != -Inf-im*Inf) && (cstr.ub == Inf+im*Inf)
         return :ineqlo
-    elseif (cstr.lb != -Inf-im*Inf) && (cstr.lb != Inf+im*Inf)
+    elseif (cstr.lb != -Inf-im*Inf) && (cstr.ub != Inf+im*Inf)
         return :ineqdouble
     else
         error("get_cstrtype(): unknown constraint type.\nConstraint is $cstr")
