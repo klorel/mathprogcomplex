@@ -3,14 +3,14 @@ include(joinpath(ROOT,"..","src_PowSysMod", "PowSysMod_body.jl"))
 using MAT
 
 function solve_GOC_via_Julia(data_path, folder, scenario)
-  originalSTDOUT = STDOUT
-  date = Dates.format(now(), "yy_u_dd_HH_MM_SS")
-  outpath = joinpath("..","JuMP_runs","$(folder)_$(scenario)")
-  isdir(outpath) || mkpath(outpath)
-  outlog = open(joinpath(outpath, "MyJulia1_$(date).log"), "w")
-  redirect_stdout(outlog)
+    originalSTDOUT = STDOUT
+    date = Dates.format(now(), "yy_u_dd_HH_MM_SS")
+    outpath = joinpath("..","JuMP_runs","$(folder)_$(scenario)")
+    isdir(outpath) || mkpath(outpath)
+    outlog = open(joinpath(outpath, "MyJulia1_$(date).log"), "w")
+    redirect_stdout(outlog)
 
-  println("Julia/JuMP test")
+    println("Julia/JuMP test")
     folder_path = joinpath(data_path, folder)
     instance_path = joinpath(folder_path, scenario)
     outpath = joinpath("..","JuMP_runs","$(folder)_$(scenario)")
@@ -35,9 +35,9 @@ function solve_GOC_via_Julia(data_path, folder, scenario)
     mysolver = KnitroSolver(KTR_PARAM_OUTLEV=3,
                             KTR_PARAM_MAXIT=600,
                             KTR_PARAM_SCALE=0,
-                            # KTR_PARAM_FEASTOL=1.0,
+                            KTR_PARAM_FEASTOL=1.0,
                             KTR_PARAM_OPTTOL=1.0,
-                            # KTR_PARAM_FEASTOLABS=1.001e-6,
+                            KTR_PARAM_FEASTOLABS=1.001e-6,
                             KTR_PARAM_OPTTOLABS=1e-3,
                             KTR_PARAM_BAR_INITPT=2,
                             KTR_PARAM_PRESOLVE=0,
@@ -67,9 +67,9 @@ function solve_GOC_via_Julia(data_path, folder, scenario)
     mysolver2 = KnitroSolver(KTR_PARAM_OUTLEV=3,
                             KTR_PARAM_MAXIT=600,
                             KTR_PARAM_SCALE=0,
-                            # KTR_PARAM_FEASTOL=1.0,
+                            KTR_PARAM_FEASTOL=1.0,
                             KTR_PARAM_OPTTOL=1.0,
-                            # KTR_PARAM_FEASTOLABS=1.001e-6,
+                            KTR_PARAM_FEASTOLABS=1.001e-6,
                             KTR_PARAM_OPTTOLABS=1e-3,
                             KTR_PARAM_BAR_INITPT=2,
                             KTR_PARAM_PRESOLVE=0,
@@ -97,9 +97,6 @@ function solve_GOC_via_Julia(data_path, folder, scenario)
     #   write(f, "$varname; $value\n")
     # end
     # close(f)
-
-    close(outlog)
-    redirect_stdout(originalSTDOUT)
 
     minslack = +Inf
     ctr_minslack = ""
@@ -130,7 +127,8 @@ function solve_GOC_via_Julia(data_path, folder, scenario)
     pt_txt = cplx2real(sol_txt)
     min_slack = get_minslack(pb_global_real, pt_txt)
     println("get_minslack point from txt files:", min_slack)
-
+    close(outlog)
+    redirect_stdout(originalSTDOUT)
     return scenario => (solve_result_1, solve_result_2, (feas,ctr), min_slack)
 end
 
