@@ -84,7 +84,7 @@ get_Smax_orig_cstrname() = "Smax_orig"
 get_Smax_dest_cstrname() = "Smax_dest"
 
 
-get_GOC_Volt_ϵ() = 1e-6
+get_GOC_Volt_ϵ() = 2e-6
 get_GOC_BigM() = 1e1
 
 ##node elems

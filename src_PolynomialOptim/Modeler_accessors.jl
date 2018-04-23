@@ -96,6 +96,28 @@ function get_slacks(pb::Problem, pt::Point)
   return Point(var_arr, val_arr)
 end
 
+function get_relative_slacks(pb::Problem, pt::Point)
+  var_arr = Variable[]
+  val_arr = Complex[]
+  for (cstrName, cstr) in pb.constraints
+    val = evaluate(cstr.p, pt)
+    lb = cstr.lb
+    ub = cstr.ub
+    isa(val, Number) || error("get_slacks(): constraint $cstrName not fully evaluated at provided point.\nEvaluated value is $val.")
+    push!(var_arr, Variable(cstrName, Complex))
+    if lb==ub
+      infeas = abs(real(val-ub))/max(abs(real(ub)),1) + im *abs(imag(val-ub))/max(abs(imag(ub)),1)
+    else
+      infeas_ub = max(0,real(val-ub))/max(abs(real(ub)),1) + im *max(0,imag(val-ub))/max(abs(imag(ub)),1)
+      infeas_lb = max(0,real(lb-val))/max(abs(real(ub)),1) + im *max(0,imag(lb-val))/max(abs(imag(ub)),1)
+      infeas = max(real(infeas_ub), real(infeas_lb)) + im * max(imag(infeas_ub), imag(infeas_lb))
+    end
+    push!(val_arr, infeas)
+  end
+  return Point(var_arr, val_arr)
+end
+
+
 function get_minslack(pb::Problem, pt::Point)
   minSlack = +Inf
   minCstrName = ""
@@ -107,4 +129,18 @@ function get_minslack(pb::Problem, pt::Point)
     end
   end
   return minSlack, minCstrName
+end
+
+function get_relativemaxslack(pb::Problem, pt::Point)
+  maxRelSlack = - Inf
+  maxCstrName = ""
+  slacks = get_relative_slacks(pb, pt)
+  for (cstrName, slack) in slacks
+    max_slack = max(real(slack), imag(slack))
+    if maxRelSlack < max_slack
+      maxRelSlack = max_slack
+      maxCstrName = cstrName
+    end
+  end
+  return maxRelSlack, maxCstrName
 end

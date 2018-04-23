@@ -6,9 +6,9 @@ suffix cscalefactor IN;
 
 suffix xfeastol IN;
 suffix cfeastol IN;
-suffix feaserror IN,>=0, <=1e6;
-suffix opterror IN,>=0, <=1e6;
-suffix numfcevals IN, >=0, <=1e6;
+suffix feaserror OUT,>=0, <=1e6;
+suffix opterror OUT,>=0, <=1e6;
+suffix numfcevals OUT, >=0, <=1e6;
 suffix intvarstrategy IN;
 
 param CONST_POINT symbolic := "CONST_POINT";
@@ -20,6 +20,8 @@ param OPTIMIZATION_CHOICE symbolic := MPEC;
 
 param STRATEGY_INITPOINT symbolic := CONST_POINT;
 /* param STRATEGY_INITPOINT symbolic := GOC_POINT; */
+
+display STRATEGY_INITPOINT;
 
 param TIME_BEGIN;
 let TIME_BEGIN := time();
@@ -82,6 +84,7 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	solve;
 
 	display solve_result_num;
+  display CRITERION.opterror;
 
 	/* printf"%-40s;%s\n", "#Var name", "Knitro sol" > ("solution_phase_1.csv");
 	printf{var0 in REAL_VARIABLES} "%s;%.20e\n", var0, x[var0] > ("solution_phase_1.csv");
@@ -90,6 +93,7 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	close knitro_info.csv;
 	printf "%s;%f\n", "Time resolution Phase 1 ", time()-TIME_BEGIN > knitro_info.csv;
 	printf "%s;%f\n", "solve_result_num Phase 1", solve_result_num >> knitro_info.csv;
+	printf "%s;%f\n", "opterror Phase 1", CRITERION.opterror >> knitro_info.csv;
 	close knitro_info.csv;
 
 	if card({i in 1.._ncons: _con[i].slack<-1e-6})>1 then{
@@ -126,10 +130,12 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	solve;
 
 	display solve_result_num;
+	display CRITERION.opterror;
 
 
 	printf "%s;%f\n", "Time resolution Phase 2", time()-TIME_BEGIN >> knitro_info.csv;
 	printf "%s;%f\n", "solve_result_num Phase 2", solve_result_num >> knitro_info.csv;
+	printf "%s;%f\n", "opterror Phase 2", CRITERION.opterror >> knitro_info.csv;
 	close knitro_info.csv;
 
 	display time()-TIME_BEGIN;

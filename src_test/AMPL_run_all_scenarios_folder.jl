@@ -29,7 +29,7 @@ function solve_GOC_via_AMPL(data_path, folder, scenario)
     _, t_knitro, _ = @timed run_knitro(amplexportpath, joinpath(pwd(),"..","src_ampl"))
     pt_knitro, _ = read_Knitro_output(amplexportpath, pb_global_real)
 
-    solve_result_1, solve_result_2 = read_knitro_info_csvfile(amplexportpath)
+    solve_result_1, opterror1, solve_result_2, opterror2 = read_knitro_info_csvfile(amplexportpath)
 
     outpath = joinpath(pwd(),"..","solutions", "$folder")
     isdir(outpath) || mkpath(outpath)
@@ -39,13 +39,15 @@ function solve_GOC_via_AMPL(data_path, folder, scenario)
 
     sol_txt = read_solution_point_GOC(instance_path, outpath)
     pt_txt = cplx2real(sol_txt)
-    min_slack = get_minslack(pb_global_real, pt_txt)
+    # min_slack = get_minslack(pb_global_real, pt_txt)
+    min_slack = get_relativemaxslack(pb_global_real, pt_txt)
 
-    feas,ctr = get_minslack(pb_global_real, pt_knitro)
+    # feas,ctr = get_minslack(pb_global_real, pt_knitro)
+    feas,ctr = get_relativemaxslack(pb_global_real, pt_knitro)
     obj = get_objective(pb_global_real, pt_knitro)
 
 
-    return scenario => (solve_result_1, solve_result_2, (feas,ctr), min_slack)
+    return scenario => (solve_result_1, solve_result_2, (feas,ctr), min_slack, opterror1, opterror2)
 end
 
 function read_args(ARGS)
@@ -74,30 +76,50 @@ results = pmap(solve_GOC_via_AMPL, [data_path for i=1:length(scenarios)], [folde
 println("----------> para jobs done\n")
 println("######################################################################################")
 
-filename = joinpath("..","knitro_runs","results_$folder.csv")
+solve_result_num_msg = Dict{Int64, String}()
+solve_result_num_msg[0] = "Locally optimal or satisfactory solution."
+solve_result_num_msg[200] = "Convergence to an infeasible point. Problem may be locally infeasible."
+solve_result_num_msg[201] = "Relative change in infeasible solution estimate < xtol."
+solve_result_num_msg[202] = "Current infeasible solution estimate cannot be improved."
+solve_result_num_msg[410] = "Iteration limit reached. Current point is infeasible."
+
+nb_scenarios_per_num = Dict( i => (0,0) for i in keys(solve_result_num_msg))
+
+date = Dates.format(now(), "yy_u_dd_HH_MM_SS")
+filename = joinpath("..","knitro_runs","results_$(folder)_$(date).csv")
 touch(filename)
 
 f = open(filename, "w")
 
-write(f, "Scenario;solve_result_1; solve_result_2; min slack from knitro point; min_slack from txt files\n")
+write(f, "Scenario;solve_result_1; solve_result_2; max relative slack from knitro point; ctr associated; max relative slack from txt files; ctr associated; opterror1 ; opterror2\n")
 nb_scenarios_with_pb = 0
 for (scenario, data) in results
     solve_result_1 = data[1]
+    nb1, nb2 = nb_scenarios_per_num[solve_result_1]
+    nb_scenarios_per_num[solve_result_1] = (nb1 + 1, nb2)
     solve_result_2 = data[2]
+    nb1, nb2 = nb_scenarios_per_num[solve_result_2]
+    nb_scenarios_per_num[solve_result_2] = (nb1, nb2+1)
     feas,ctr1 = data[3]
     min_slack,ctr2 = data[4]
+    opterror1 = data[5]
+    opterror2 = data[6]
 
-    if solve_result_1!=0 || solve_result_2!=0 || feas < -1e-6 || min_slack < -1e-6
+    if solve_result_1!=0 || solve_result_2!=0 || feas > 1e-6 || min_slack > 1e-6
         nb_scenarios_with_pb +=1
         println("PB: $scenario not feasible")
     end
-    write(f, "$(scenario);$(solve_result_1);$(solve_result_2);$(feas);$(min_slack)\n")
+    write(f, "$(scenario);$(solve_result_1);$(solve_result_2);$(feas);$(ctr1);$(min_slack);$(ctr2);$(opterror1);$(opterror2)\n")
 end
 if nb_scenarios_with_pb > 0
     println("\nNB OF SCENARIOS NOT FEASIBLE : $nb_scenarios_with_pb/$nb_scenarios. \nSee results_$folder.csv in knitro_runs for more details")
     write(f, "\n ; NB OF SCENARIOS NOT FEASIBLE;$nb_scenarios_with_pb/$nb_scenarios\n")
+    write(f, "\nNB OF SCENARIOS WITH CODE:; Code ;Phase 1 ;Phase2; Message\n ")
+    for (solve_result, (nb1,nb2)) in nb_scenarios_per_num
+        write(f, " ;$solve_result;$nb1;$nb2;$(solve_result_num_msg[solve_result])\n ")
+    end
 else
     println("ALL SCENARIOS ($nb_scenarios scenarios) FEASIBLE.\nSee results_$folder.csv in knitro_runs for more details.")
-    write(f, "\n ; NB OF SCENARIOS NOT FEASIBLE;0/$nb_scenarios\n")
+    write(f, "\n ; NB OF SCENARIOS NOT FEASIBLE;0\n")
 end
 close(f)
