@@ -93,9 +93,11 @@ for (scenario, data) in results
     end
     write(f, "$(scenario);$(solve_result_1);$(solve_result_2);$(feas);$(min_slack)\n")
 end
-close(f)
 if nb_scenarios_with_pb > 0
-    println("\nNB OF SCENARIOS NOT FEASIBLE : $nb_scenarios_with_pb/$nb_scenarios. \nSee results_$folder.csv in knito_runs for more details")
+    println("\nNB OF SCENARIOS NOT FEASIBLE : $nb_scenarios_with_pb/$nb_scenarios. \nSee results_$folder.csv in knitro_runs for more details")
+    write(f, "\n ; NB OF SCENARIOS NOT FEASIBLE;$nb_scenarios_with_pb/$nb_scenarios\n")
 else
-    println("ALL SCENARIOS ($nb_scenarios scenarios) FEASIBLE.\nSee results_$folder.csv in knito_runs for more details.")
+    println("ALL SCENARIOS ($nb_scenarios scenarios) FEASIBLE.\nSee results_$folder.csv in knitro_runs for more details.")
+    write(f, "\n ; NB OF SCENARIOS NOT FEASIBLE;0/$nb_scenarios\n")
 end
+close(f)
