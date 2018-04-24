@@ -52,7 +52,7 @@ function solve_GOC_via_AMPL(data_path, folder, scenario)
     obj = get_objective(pb_global_real, pt_knitro)
 
 
-    return scenario => (solve_result_1, solve_result_2, (feas,ctr), min_slack, opterror1, opterror2)
+    return scenario => (solve_result_1, solve_result_2, (feas,ctr), min_slack, opterror1, opterror2,infeas_ctr_knitro)
 end
 
 function read_args(ARGS)
@@ -97,39 +97,8 @@ touch(filename)
 f = open(filename, "w")
 
 write(f, "Scenario;solve_result_1; solve_result_2; max relative slack from knitro point; ctr associated; max relative slack from txt files; ctr associated; opterror1 ; opterror2\n")
-nb_scenarios_with_pb = 0
-for (scenario, data) in results
-    solve_result_1 = data[1]
-    nb1, nb2 = nb_scenarios_per_num[solve_result_1]
-    nb_scenarios_per_num[solve_result_1] = (nb1 + 1, nb2)
-    solve_result_2 = data[2]
-    nb1, nb2 = nb_scenarios_per_num[solve_result_2]
-    nb_scenarios_per_num[solve_result_2] = (nb1, nb2+1)
-    feas,ctr1 = data[3]
-    min_slack,ctr2 = data[4]
-    opterror1 = data[5]
-    opterror2 = data[6]
-
-    if solve_result_1!=0 || solve_result_2!=0 || feas > 1e-6 || min_slack > 1e-6
-        nb_scenarios_with_pb +=1
-        println("PB: $scenario not feasible")
-    end
-    write(f, "$(scenario);$(solve_result_1);$(solve_result_2);$(feas);$(ctr1);$(min_slack);$(ctr2);$(opterror1);$(opterror2)\n")
-end
-close(f2)
-if nb_scenarios_with_pb > 0
-    println("\nNB OF SCENARIOS NOT FEASIBLE : $nb_scenarios_with_pb/$nb_scenarios. \nSee results_$folder.csv in knitro_runs for more details")
-    write(f, "\n ; NB OF SCENARIOS NOT FEASIBLE;$nb_scenarios_with_pb/$nb_scenarios\n")
-    write(f, "\nNB OF SCENARIOS WITH CODE:; Code ;Phase 1 ;Phase2; Message\n ")
-    for (solve_result, (nb1,nb2)) in nb_scenarios_per_num
-        write(f, " ;$solve_result;$nb1;$nb2;$(solve_result_num_msg[solve_result])\n ")
-    end
-else
-    println("ALL SCENARIOS ($nb_scenarios scenarios) FEASIBLE.\nSee results_$folder.csv in knitro_runs for more details.")
-    write(f, "\n ; NB OF SCENARIOS NOT FEASIBLE;0\n")
-end
-close(f)
-
+filename = joinpath("..","knitro_runs","infeas_by_ctr_$(folder)_$(date).csv")
+f2 = open(filename, "w")
 
 ctrtypes = [("BALANCE", "Re"),
             ("BALANCE", "Im"),
@@ -146,6 +115,51 @@ ctrtypes = [("BALANCE", "Re"),
           (get_Smax_orig_cstrname(),"Re"),
           (get_Smax_dest_cstrname(), "Re")]
 
-filename = joinpath("..","knitro_runs","infeas_by_ctr_$(folder)_$(date).csv")
-f2 = open(filename, "w")
-write(f2, "Scenario;BALANCE, Re;BALANCE, Im;$(get_VoltM_cstrname()),Re;$(get_GenBounds_cstrname()),Re;$(get_GenBounds_cstrname()),Im;$(get_NullImpVolt_cstrname()),Re;$(get_VoltBinDef_upper()),Re;$(get_VoltBinDef_lower()),Re;$(get_VoltBinDef_complement()),Re;$(get_CC_active_cstrname()),Re;$(get_CC_reactiveupper_cstrname()),Re;$(get_CC_reactivelower_cstrname()),Re;$(get_Smax_orig_cstrname()),Re;$(get_Smax_dest_cstrname()), Re\n")
+
+write(f2, "Scenario;BALANCE,Re;BALANCE,Im;$(get_VoltM_cstrname()),Re;$(get_GenBounds_cstrname()),Re;$(get_GenBounds_cstrname()),Im;$(get_NullImpVolt_cstrname()),Re;$(get_VoltBinDef_upper()),Re;$(get_VoltBinDef_lower()),Re;$(get_VoltBinDef_complement()),Re;$(get_CC_active_cstrname()),Re;$(get_CC_reactiveupper_cstrname()),Re;$(get_CC_reactivelower_cstrname()),Re;$(get_Smax_orig_cstrname()),Re;$(get_Smax_dest_cstrname()), Re\n")
+
+
+nb_scenarios_with_pb = 0
+for (scenario, data) in results
+    solve_result_1 = data[1]
+    nb1, nb2 = nb_scenarios_per_num[solve_result_1]
+    nb_scenarios_per_num[solve_result_1] = (nb1 + 1, nb2)
+    solve_result_2 = data[2]
+    nb1, nb2 = nb_scenarios_per_num[solve_result_2]
+    nb_scenarios_per_num[solve_result_2] = (nb1, nb2+1)
+    feas,ctr1 = data[3]
+    min_slack,ctr2 = data[4]
+    opterror1 = data[5]
+    opterror2 = data[6]
+    infeas_ctr_knitro = data[7]
+
+    if solve_result_1!=0 || solve_result_2!=0 || feas > 1e-6 || min_slack > 1e-6
+        nb_scenarios_with_pb +=1
+        println("PB: $scenario not feasible")
+    end
+    write(f, "$(scenario);$(solve_result_1);$(solve_result_2);$(feas);$(ctr1);$(min_slack);$(ctr2);$(opterror1);$(opterror2)\n")
+    write(f2, "$(scenario)")
+
+    for ctr in ctrtypes
+        if !haskey(infeas_ctr_knitro, ctr)
+            value = 0
+        else
+            value = infeas_ctr_knitro[ctr]
+        end
+        write(f2, ";$value")
+    end
+    write(f2, "\n")
+end
+close(f2)
+if nb_scenarios_with_pb > 0
+    println("\nNB OF SCENARIOS NOT FEASIBLE : $nb_scenarios_with_pb/$nb_scenarios. \nSee results_$folder.csv in knitro_runs for more details")
+    write(f, "\n ; NB OF SCENARIOS NOT FEASIBLE;$nb_scenarios_with_pb/$nb_scenarios\n")
+    write(f, "\nNB OF SCENARIOS WITH CODE:; Code ;Phase 1 ;Phase2; Message\n ")
+    for (solve_result, (nb1,nb2)) in nb_scenarios_per_num
+        write(f, " ;$solve_result;$nb1;$nb2;$(solve_result_num_msg[solve_result])\n ")
+    end
+else
+    println("ALL SCENARIOS ($nb_scenarios scenarios) FEASIBLE.\nSee results_$folder.csv in knitro_runs for more details.")
+    write(f, "\n ; NB OF SCENARIOS NOT FEASIBLE;0\n")
+end
+close(f)
