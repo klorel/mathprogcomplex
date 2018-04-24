@@ -29,7 +29,7 @@ function solve_GOC_via_AMPL(data_path, folder, scenario)
     _, t_knitro, _ = @timed run_knitro(amplexportpath, joinpath(pwd(),"..","src_ampl"))
     pt_knitro, _ = read_Knitro_output(amplexportpath, pb_global_real)
 
-    solve_result_1, opterror1, solve_result_2, opterror2 = read_knitro_info_csvfile(amplexportpath)
+    solve_result_1, opterror1, solve_result_2, opterror2, solve_result_3, opterror3 = read_knitro_info_csvfile(amplexportpath)
 
     outpath = joinpath(pwd(),"..","solutions", "$folder")
     isdir(outpath) || mkpath(outpath)
@@ -48,11 +48,11 @@ function solve_GOC_via_AMPL(data_path, folder, scenario)
     feas,ctr = get_relativemaxslack(pb_global_real, pt_knitro)
     # rel_slacks_knitro = get_relative_slacks(pb_global_real, pt_knitro)
     infeas_ctr_knitro = get_nb_infeasible_ctr_by_ctrtype(pb_global_real, pt_knitro, 1e-6)
-    println(infeas_ctr_knitro)
+    # println(infeas_ctr_knitro)
     obj = get_objective(pb_global_real, pt_knitro)
 
 
-    return scenario => (solve_result_1, solve_result_2, (feas,ctr), min_slack, opterror1, opterror2,infeas_ctr_knitro)
+    return scenario => (solve_result_1, solve_result_2, solve_result_3, (feas,ctr), min_slack, opterror1, opterror2,infeas_ctr_knitro)
 end
 
 function read_args(ARGS)
@@ -96,7 +96,7 @@ touch(filename)
 
 f = open(filename, "w")
 
-write(f, "Scenario;solve_result_1; solve_result_2; max relative slack from knitro point; ctr associated; max relative slack from txt files; ctr associated; opterror1 ; opterror2\n")
+write(f, "Scenario;solve_result_1; solve_result_2; solve_result_3;max relative slack from knitro point; ctr associated; max relative slack from txt files; ctr associated; opterror1 ; opterror2\n")
 filename = joinpath("..","knitro_runs","infeas_by_ctr_$(folder)_$(date).csv")
 f2 = open(filename, "w")
 
@@ -127,17 +127,18 @@ for (scenario, data) in results
     solve_result_2 = data[2]
     nb1, nb2 = nb_scenarios_per_num[solve_result_2]
     nb_scenarios_per_num[solve_result_2] = (nb1, nb2+1)
-    feas,ctr1 = data[3]
-    min_slack,ctr2 = data[4]
-    opterror1 = data[5]
-    opterror2 = data[6]
-    infeas_ctr_knitro = data[7]
+    solve_result_3 = data[3]
+    feas,ctr1 = data[4]
+    min_slack,ctr2 = data[5]
+    opterror1 = data[6]
+    opterror2 = data[7]
+    infeas_ctr_knitro = data[8]
 
-    if solve_result_1!=0 || solve_result_2!=0 || feas > 1e-6 || min_slack > 1e-6
+    if solve_result_1!=0 || solve_result_2!=0 || solve_result_3!=0 || feas > 1e-6 || min_slack > 1e-6
         nb_scenarios_with_pb +=1
         println("PB: $scenario not feasible")
     end
-    write(f, "$(scenario);$(solve_result_1);$(solve_result_2);$(feas);$(ctr1);$(min_slack);$(ctr2);$(opterror1);$(opterror2)\n")
+    write(f, "$(scenario);$(solve_result_1);$(solve_result_2);$(solve_result_3);$(feas);$(ctr1);$(min_slack);$(ctr2);$(opterror1);$(opterror2)\n")
     write(f2, "$(scenario)")
 
     for ctr in ctrtypes
