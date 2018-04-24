@@ -6,9 +6,8 @@ suffix cscalefactor IN;
 
 suffix xfeastol IN;
 suffix cfeastol IN;
-suffix feaserror OUT,>=0, <=1e6;
-suffix opterror OUT,>=0, <=1e6;
-suffix numfcevals OUT, >=0, <=1e6;
+suffix feaserror OUT;
+suffix opterror OUT;
 suffix intvarstrategy IN;
 
 param CONST_POINT symbolic := "CONST_POINT";
@@ -85,6 +84,7 @@ if OPTIMIZATION_CHOICE == MPEC then {
 
 	display solve_result_num;
   display CRITERION.opterror;
+	display CRITERION.feaserror;
 
 	/* printf"%-40s;%s\n", "#Var name", "Knitro sol" > ("solution_phase_1.csv");
 	printf{var0 in REAL_VARIABLES} "%s;%.20e\n", var0, x[var0] > ("solution_phase_1.csv");

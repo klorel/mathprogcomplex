@@ -144,3 +144,26 @@ function get_relativemaxslack(pb::Problem, pt::Point)
   end
   return maxRelSlack, maxCstrName
 end
+
+
+function get_nb_infeasible_ctr_by_ctrtype(pb::Problem, pt::Point, epsilon::Float64)
+  slacks = get_relative_slacks(pb, pt)
+  nb_infeas_per_ctrtype = Dict{Tuple{String,String},Int64}()
+  for (cstrName, slack) in slacks
+    if real(slack) > epsilon || imag(slack) > epsilon
+      ctr_elemid = split(cstrName.name, '_')
+      scenario = ctr_elemid[1]
+      bus_or_link = ctr_elemid[2]
+      im_or_re = String(ctr_elemid[end])
+      ctrtype = String(ctr_elemid[end-1])
+      if ismatch(r"BALANCE", ctrtype)
+        ctrtype = "BALANCE"
+      end
+      if !haskey(nb_infeas_per_ctrtype, (ctrtype,im_or_re))
+        nb_infeas_per_ctrtype[(ctrtype,im_or_re)] = 0
+      end
+      nb_infeas_per_ctrtype[(ctrtype, im_or_re)] +=1
+    end
+  end
+  return nb_infeas_per_ctrtype
+end
