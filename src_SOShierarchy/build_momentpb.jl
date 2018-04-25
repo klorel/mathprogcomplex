@@ -11,11 +11,14 @@ function MomentMatrix(relax_ctx, vars::SortedSet{Variable}, d::Int, symmetries::
     for cexp in conjexpos
         for rexp in realexpos
             expo = cexp*rexp
-            hassyms = true
+            issym = true
             for sym in symmetries
-                hassyms = hassyms && has_symmetry(relax_ctx, expo, sym)
+                issym = issym && has_symmetry(relax_ctx, expo, sym)
             end
-            if hassyms
+            if !issym
+                continue
+            end
+            if cexp ≥ rexp
                 mm[(cexp, rexp)] = cexp*rexp
             end
         end
