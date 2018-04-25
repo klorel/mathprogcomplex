@@ -83,3 +83,63 @@ function buildPOPR_2v2c()
     # add_constraint!(problem, "eq", (x1-2*x2) == 0)
     return problem
 end
+
+"""
+    problem = lasserre_ex1()
+
+    From Lasserre2001, global minimum : -0.2428.
+"""
+function lasserre_ex1()
+    x1 = Variable("x1", Real)
+    x2 = Variable("x2", Real)
+    problem = Problem()
+    add_variable!(problem, x1); add_variable!(problem, x2)
+    set_objective!(problem, (x1^2+1)^2 + (x2^2+1)^2 + (x1^2+x2^2+1)^2)
+    return problem
+end
+
+"""
+    problem = lasserre_ex2()
+
+    From Lasserre2001, global minimum : -11.4581.
+"""
+function lasserre_ex2()
+    x1 = Variable("x1", Real)
+    x2 = Variable("x2", Real)
+    problem = Problem()
+    add_variable!(problem, x1); add_variable!(problem, x2)
+    set_objective!(problem, (x1^2+1)^2 + (x2^2+1)^2 -2*(x1^2+x2^2+1)^2)
+    return problem
+end
+
+"""
+    problem = lasserre_ex3()
+
+    From Lasserre2001, global minimum : -1/27, x1*² = x2*² = 1/3.
+"""
+function lasserre_ex3()
+    x1 = Variable("x1", Real)
+    x2 = Variable("x2", Real)
+    problem = Problem()
+    add_variable!(problem, x1); add_variable!(problem, x2)
+    set_objective!(problem, (x1^2+1)^2 + (x2^2+1)^2 -2*(x1^2+x2^2+1)^2)
+    return problem
+end
+
+"""
+    problem = lasserre_ex5()
+
+    From Lasserre2001, global minimum : -2, for (1, 2).
+    Relaxation : order 1 -> -3; order 2 -> -2.
+"""
+function lasserre_ex5()
+    x1 = Variable("x1", Real)
+    x2 = Variable("x2", Real)
+    problem = Problem()
+    add_variable!(problem, x1); add_variable!(problem, x2)
+    set_objective!(problem, -(x1-1)^2 -(x1-x2)^2 -(x2-3)^2)
+    add_constraint!(problem, "crt1", 1-(x1-1)^2 >> 0)
+    add_constraint!(problem, "crt2", 1-(x1-x2)^2 >> 0)
+    add_constraint!(problem, "crt3", 1-(x2-3)^2 >> 0)
+    return problem
+end
