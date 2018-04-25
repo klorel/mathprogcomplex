@@ -221,7 +221,7 @@ for (scenario, data) in results
     min_slack,ctr2 = data[4]
     infeas_ctr_txt = data[5]
 
-    if solve_result_1!=0 || solve_result_2!=0 || feas > 1e-6 || min_slack > 1e-6
+    if solve_result_1!=:Optimal || solve_result_2!=:Optimal || feas > 1e-6 || min_slack > 1e-6
         nb_scenarios_with_pb +=1
         println("PB: $scenario not feasible")
     end
