@@ -18,18 +18,18 @@ end
 files_m = [split(name, ".")[1] for name in readdir(joinpath("instances", "matpower"))]
 files_dat = [split(name, ".")[1] for name in readdir(joinpath("instances", "matpower_QCQP"))]
 
-instances = intersect(files_m, files_dat)
+instances = SortedSet(intersect(files_m, files_dat))
 
 nb_repeat = 3
 
-instancename = sort(collect(instances))[1]
+instancename = fisrt(instances)
 
 data_OPFpbs = SortedDict{String, Measurement}()
 data_Problems = SortedDict{String, Measurement}()
 data_errors = SortedDict{String, Float64}()
 
 instnb = 1
-for instancename in sort(collect(instances))
+for instancename in instances
   println("\n-- Working on $instancename ($instnb/$(length(instances)))")
   nb_buses = parse(matchall(r"\d+", instancename)[1])
 

@@ -79,7 +79,7 @@ end
 
 ## copy methods
 function copy(p::Polynomial)
-    pdict = copy(p.poly)
+    pdict = deepcopy(p.poly)
     return Polynomial(pdict)
 end
 

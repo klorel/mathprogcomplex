@@ -35,7 +35,7 @@ function add!(p::Polynomial, p1::Polynomial)
 end
 
 function add(p1::Polynomial, p2::Polynomial)
-    p = copy(p1)
+    p = deepcopy(p1)
     add!(p, p2)
     return p
 end
