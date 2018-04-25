@@ -7,7 +7,6 @@ instance = ARGS[1]
 instance_path = joinpath(pwd(),"..", "data_Matpower", "matpower",instance)
 
 include(joinpath(pwd(),"..","src_PowSysMod", "PowSysMod_body.jl"))
-include("polyproblem_to_jump.jl")
 
 function MyJulia_matpower(instance_path)
   ##read and load files
