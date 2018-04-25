@@ -158,7 +158,9 @@ function print_poly!(io::IO, p::AbstractPolynomial, cat::String, maxvarlen, maxc
       if !haskey(expos, expo)
         expos[expo] = "MONO_$(length(expos))"
       end
+      print_dat_line(io, "MONO", cat, expos[expo], "NONE", real(coeff), imag(coeff), maxvarlen, maxcstrlen)
     end
+  end
     if constval != 0
       print_dat_line(io, "CONST", cat, "NONE", "NONE", real(constval), imag(constval), maxvarlen, maxcstrlen)
   end
