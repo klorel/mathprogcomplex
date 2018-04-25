@@ -22,15 +22,14 @@ param STRATEGY_INITPOINT symbolic := CONST_POINT;
 
 display STRATEGY_INITPOINT;
 
-param FEASTOL := 1e-6;
+param FEASTOL := 1.001e-6;
 param OPTTOL  := 1e-3;
 param FEASTOLABS := 1e-0;
-param OPTTOLBAS  := 1e-0;
+param OPTTOLABS  := 1e-0;
 
 param TIME_BEGIN;
 let TIME_BEGIN := time();
 
-/* display _SUFFIXES; */
 
 model real_minlp.mod;
 
@@ -44,7 +43,7 @@ model;
 
 
 option solver knitroampl;
-option knitro_options ('outlev=3 maxit=600 scale=2 feastol='&FEASTOL&' opttol='&OPTTOL&' feastolabs='&FEASTOLABS&' opttolabs='&OPTTOLBAS&' bar_initpt=2 presolve=0 honorbnds=0');
+option knitro_options ('outlev=3 maxit=600 scale=2 feastol='&FEASTOL&' opttol='&OPTTOL&' feastolabs='&FEASTOLABS&' opttolabs='&OPTTOLABS&' bar_initpt=2 presolve=0 honorbnds=0');
 
 
 ###
@@ -93,13 +92,11 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	/* write gphase1; */
 	solve;
 
-	display solve_result_num;
-  display CRITERION.opterror;
-	display CRITERION.feaserror;
+	let{i in 1.._ncons} _con[i].cscalefactor := if abs(_con[i])>1e-5 then 1/abs(_con[i]) else 1;
+	#let{i in 1.._nvars} _var[i].xscalefactor := if abs(_var[i])>1e-5 then abs(_var[i]) else 1;
+	
+	let{(VAR_TYPE, REAL, name, NONE) in KEYS} x[name].xscalefactor := if abs(x[name])>1e-5 then abs(x[name]) else 1;
 
-	/* printf"%-40s;%s\n", "#Var name", "Knitro sol" > ("solution_phase_1.csv");
-	printf{var0 in REAL_VARIABLES} "%s;%.20e\n", var0, x[var0] > ("solution_phase_1.csv");
-	printf{var0 in BINARY_VARIABLES} "%s;%.20e\n", var0, y[var0] > ("solution_phase_1.csv"); */
 
 	close knitro_info.csv;
 	printf "%s;%f\n", "Time resolution Phase 1 ", time()-TIME_BEGIN > knitro_info.csv;
@@ -122,7 +119,7 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	display abs(min(0, min{i in 1.._nvars} _var[i].slack));
 	option presolve 0;
 	#exit;
-	option knitro_options ('outlev=3 maxit=600 scale=2 feastol='&FEASTOL&' opttol='&OPTTOL&' feastolabs='&FEASTOLABS&' opttolabs='&OPTTOLBAS&' bar_initpt=2 presolve=0 honorbnds=0');
+	option knitro_options ('outlev=3 maxit=600 scale=2 feastol='&FEASTOL&' opttol='&OPTTOL&' feastolabs='&FEASTOLABS&' opttolabs='&OPTTOLABS&' bar_initpt=2 presolve=0 honorbnds=0');
 
 	printf"Binary variables max dist to 1, phase 1\n";
 	display max{varname in BINARY_VARIABLES}min(
@@ -146,8 +143,6 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	/* write gphase2; */
 	solve;
 
-	display solve_result_num;
-	display CRITERION.opterror;
 
 
 	printf "%s;%f\n", "Time resolution Phase 2", time()-TIME_BEGIN >> knitro_info.csv;
@@ -155,7 +150,6 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	printf "%s;%f\n", "opterror Phase 2", CRITERION.opterror >> knitro_info.csv;
 	close knitro_info.csv;
 
-	display time()-TIME_BEGIN;
 
 	option solution_precision 0;
 	option display_precision 0;
@@ -181,7 +175,14 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	close knitro_info.csv;
 	
 	
-	display{i in 1.._ncons: _con[i].slack<-1e-6}(_conname [i], _con[i].slack); 
+#	printf{i in 1.._ncons: _con[i].slack / (if abs(_con[i])==0 then 1 else _con[i]) <-1e-6}"violation on %50s : %10.6E\n", _conname [i], _con[i].slack;
+ 	printf{i in 1.._ncons: _con[i].slack / max(1, abs(_con[i].body))<-1e-6}"violation on %50s : %10.6E, %10.6E\n", _conname [i], _con[i].slack, _con[i].body;
+ 	#expand{i in 1.._ncons: _con[i].slack<-1e-6}_con[i]; 
+ 	
+ 	expand constraint['Scen1_2_Gen1_BinDef-lower_Re'];
+ 	fix;
+ 	display y['BinVolt_2_Scen1_eq_BaseCase'];
+	display y['BinVolt_2_Scen1_inf_BaseCase'];
 
 };
 
@@ -189,6 +190,7 @@ printf"%-40s;%s;%s\n", "#Var name", "Knitro sol", "GOC sol" > ("solution_"&STRAT
 printf{var0 in REAL_VARIABLES} "%s;%.20e;%.20e\n", var0, x[var0], LEFT[VAR_TYPE, REAL, var0, NONE] > ("solution_"&STRATEGY_INITPOINT&".csv");
 printf{var0 in BINARY_VARIABLES} "%s;%.20e;%.20e\n", var0, y[var0], LEFT[VAR_TYPE, BOOL, var0, NONE] > ("solution_"&STRATEGY_INITPOINT&".csv");
 
-
-printf"||x-x_GOC||_2   : %f\n", sqrt(sum{var0 in REAL_VARIABLES} (x[var0] - LEFT[VAR_TYPE, REAL, var0, NONE])^2);
-printf"||x-x_GOC||_inf : %f\n\n", max{var0 in REAL_VARIABLES} abs(x[var0] - LEFT[VAR_TYPE, REAL, var0, NONE]);
+if STRATEGY_INITPOINT == GOC_POINT then{
+	printf"||x-x_GOC||_2   : %f\n", sqrt(sum{var0 in REAL_VARIABLES} (x[var0] - LEFT[VAR_TYPE, REAL, var0, NONE])^2);
+	printf"||x-x_GOC||_inf : %f\n\n", max{var0 in REAL_VARIABLES} abs(x[var0] - LEFT[VAR_TYPE, REAL, var0, NONE]);
+	}
