@@ -1,7 +1,7 @@
 using DataStructures
 ##read plateforme results for a dataset
-csv_results = "results_Phase_0_IEEE14_18_Apr_23_16_38_32.csv"
-submission_number = "297-1524497278"
+csv_results = "results_Phase_0_IEEE14_18_Apr_24_17_24_59.csv"
+submission_number = "297-1524642324"
 results_path = joinpath(pwd(),"..", "..", "Plateforme_GOC_results")
 logs_path = joinpath(pwd(),"..", "knitro_runs")
 

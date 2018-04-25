@@ -35,10 +35,10 @@ function solve_GOC_via_Julia(data_path, folder, scenario)
     mysolver = KnitroSolver(KTR_PARAM_OUTLEV=3,
                             KTR_PARAM_MAXIT=600,
                             KTR_PARAM_SCALE=0,
-                            KTR_PARAM_FEASTOL=1.0,
-                            KTR_PARAM_OPTTOL=1.0,
-                            KTR_PARAM_FEASTOLABS=1.001e-6,
-                            KTR_PARAM_OPTTOLABS=1e-3,
+                            KTR_PARAM_FEASTOL=1e-6,
+                            KTR_PARAM_OPTTOL=1e-3,
+                            KTR_PARAM_FEASTOLABS=1.0,
+                            KTR_PARAM_OPTTOLABS=1.0,
                             KTR_PARAM_BAR_INITPT=2,
                             KTR_PARAM_PRESOLVE=0,
                             KTR_PARAM_HONORBNDS=0,
@@ -49,12 +49,12 @@ function solve_GOC_via_Julia(data_path, folder, scenario)
     toc()
     #resolution
     status1 = solve(m)
-
-    if status1 == :Optimal
-      solve_result_1 = 0
-    else
-      solve_result_1 = 1000
-    end
+    #
+    # if status1 == :Optimal
+    #   solve_result_1 = 0
+    # else
+    #   solve_result_1 = 1000
+    # end
 
 
 
@@ -67,24 +67,47 @@ function solve_GOC_via_Julia(data_path, folder, scenario)
     mysolver2 = KnitroSolver(KTR_PARAM_OUTLEV=3,
                             KTR_PARAM_MAXIT=600,
                             KTR_PARAM_SCALE=0,
-                            KTR_PARAM_FEASTOL=1.0,
-                            KTR_PARAM_OPTTOL=1.0,
-                            KTR_PARAM_FEASTOLABS=1.001e-6,
-                            KTR_PARAM_OPTTOLABS=1e-3,
+                            KTR_PARAM_FEASTOL=1e-6,
+                            KTR_PARAM_OPTTOL=1e-3,
+                            KTR_PARAM_FEASTOLABS=1.0,
+                            KTR_PARAM_OPTTOLABS=1.0,
                             KTR_PARAM_BAR_INITPT=2,
                             KTR_PARAM_PRESOLVE=0,
                             KTR_PARAM_HONORBNDS=0,
                             KTR_PARAM_MIP_INTVAR_STRATEGY=2)
 
-
+    for (varname, varjump) in variables_jump
+      setvalue(varjump, getvalue(varjump))
+    end
     setsolver(m, mysolver2)
     status2 = solve(m)
 
-    if status2 == :Optimal
-      solve_result_2 = 0
-    else
-      solve_result_2 = 1000
-    end
+    # if status2 == :Optimal
+    #   solve_result_2 = 0
+    # else
+    #   solve_result_2 = 1000
+    # end
+
+    # for (varname, varjump) in variables_jump
+    #   if getcategory(varjump) == :Bin
+    #     println(varname, " : ", getvalue(varjump), "arrondi : ",(getvalue(varjump) > 0.5 ? 1 : 0))
+    #     JuMP.fix(varjump,(getvalue(varjump) > 0.5 ? 1 : 0))
+    #   end
+    # end
+    #
+    # mysolver3 = KnitroSolver(KTR_PARAM_OUTLEV=3,
+    #                         KTR_PARAM_MAXIT=600,
+    #                         KTR_PARAM_SCALE=0,
+    #                         KTR_PARAM_FEASTOL=1e-6,
+    #                         KTR_PARAM_OPTTOL=1e-3,
+    #                         KTR_PARAM_FEASTOLABS=1.0,
+    #                         KTR_PARAM_OPTTOLABS=1.0,
+    #                         KTR_PARAM_BAR_INITPT=2,
+    #                         KTR_PARAM_PRESOLVE=0,
+    #                         KTR_PARAM_HONORBNDS=0)
+    # setsolver(m, mysolver3)
+    # solve(m)
+
 
     ##get values
     println("Objective value : ", getobjectivevalue(m),"\n")
@@ -126,10 +149,11 @@ function solve_GOC_via_Julia(data_path, folder, scenario)
     sol_txt = read_solution_point_GOC(instance_path, outpath)
     pt_txt = cplx2real(sol_txt)
     min_slack = get_minslack(pb_global_real, pt_txt)
+    infeas_ctr_txt = get_nb_infeasible_ctr_by_ctrtype(pb_global_real, pt_txt, 1e-6)
     println("get_minslack point from txt files:", min_slack)
     close(outlog)
     redirect_stdout(originalSTDOUT)
-    return scenario => (solve_result_1, solve_result_2, (feas,ctr), min_slack)
+    return scenario => (status1, status2, (feas,ctr), min_slack, infeas_ctr_txt)
 end
 
 function read_args(ARGS)
@@ -158,31 +182,68 @@ results = pmap(solve_GOC_via_Julia, [data_path for i=1:length(scenarios)], [fold
 println("----------> para jobs done\n")
 println("######################################################################################")
 
-filename = joinpath("..","JuMP_runs","results_$folder.csv")
+
+
+date = Dates.format(now(), "yy_u_dd_HH_MM_SS")
+filename = joinpath("..","JuMP_runs","results_$(folder)_$(date).csv")
 touch(filename)
 
 f = open(filename, "w")
 
-write(f, "Scenario;solve_result_1; solve_result_2; min slack from knitro point; min_slack from txt files\n")
+write(f, "Scenario;solve_result_1; solve_result_2;max relative slack from knitro point; ctr associated; max relative slack from txt files; ctr associated; opterror1 ; opterror2\n")
+filename = joinpath("..","JuMP_runs","infeas_by_ctr_$(folder)_$(date).csv")
+f2 = open(filename, "w")
+
+ctrtypes = [("BALANCE", "Re"),
+            ("BALANCE", "Im"),
+          (get_VoltM_cstrname(),"Re"),
+          (get_GenBounds_cstrname(),"Re"),
+          (get_GenBounds_cstrname(),"Im"),
+          (get_NullImpVolt_cstrname(),"Re"),
+          (get_VoltBinDef_upper(),"Re"),
+          (get_VoltBinDef_lower(),"Re"),
+          (get_VoltBinDef_complement(),"Re"),
+          (get_CC_active_cstrname(),"Re"),
+          (get_CC_reactiveupper_cstrname(),"Re"),
+          (get_CC_reactivelower_cstrname(),"Re"),
+          (get_Smax_orig_cstrname(),"Re"),
+          (get_Smax_dest_cstrname(), "Re")]
+
+
+write(f2, "Scenario;BALANCE,Re;BALANCE,Im;$(get_VoltM_cstrname()),Re;$(get_GenBounds_cstrname()),Re;$(get_GenBounds_cstrname()),Im;$(get_NullImpVolt_cstrname()),Re;$(get_VoltBinDef_upper()),Re;$(get_VoltBinDef_lower()),Re;$(get_VoltBinDef_complement()),Re;$(get_CC_active_cstrname()),Re;$(get_CC_reactiveupper_cstrname()),Re;$(get_CC_reactivelower_cstrname()),Re;$(get_Smax_orig_cstrname()),Re;$(get_Smax_dest_cstrname()), Re\n")
+
+
 nb_scenarios_with_pb = 0
 for (scenario, data) in results
     solve_result_1 = data[1]
     solve_result_2 = data[2]
     feas,ctr1 = data[3]
     min_slack,ctr2 = data[4]
+    infeas_ctr_txt = data[5]
 
-    if solve_result_1!=0 || solve_result_2!=0 || feas < -1e-6 || min_slack < -1e-6
+    if solve_result_1!=0 || solve_result_2!=0 || feas > 1e-6 || min_slack > 1e-6
         nb_scenarios_with_pb +=1
         println("PB: $scenario not feasible")
     end
-    write(f, "$(scenario);$(solve_result_1);$(solve_result_2);$(feas);$(min_slack)\n")
-end
+    write(f, "$(scenario);$(solve_result_1);$(solve_result_2);$(feas);$(ctr1);$(min_slack);$(ctr2)\n")
+    write(f2, "$(scenario)")
 
+    for ctr in ctrtypes
+        if !haskey(infeas_ctr_txt, ctr)
+            value = 0
+        else
+            value = infeas_ctr_txt[ctr]
+        end
+        write(f2, ";$value")
+    end
+    write(f2, "\n")
+end
+close(f2)
 if nb_scenarios_with_pb > 0
     println("\nNB OF SCENARIOS NOT FEASIBLE : $nb_scenarios_with_pb/$nb_scenarios. \nSee results_$folder.csv in JuMP_runs for more details")
     write(f, "\n ; NB OF SCENARIOS NOT FEASIBLE;$nb_scenarios_with_pb/$nb_scenarios\n")
 else
     println("ALL SCENARIOS ($nb_scenarios scenarios) FEASIBLE.\nSee results_$folder.csv in JuMP_runs for more details.")
-    write(f, "\n ; NB OF SCENARIOS NOT FEASIBLE;0/$nb_scenarios\n")
+    write(f, "\n ; NB OF SCENARIOS NOT FEASIBLE;0\n")
 end
 close(f)
