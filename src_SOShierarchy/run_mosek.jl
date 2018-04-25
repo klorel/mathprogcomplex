@@ -40,7 +40,7 @@ function get_triplets(problem::SDP_Problem)
       barcj[nzc] = sdp_block.id
       barck[nzc] = upper
       barcl[nzc] = lower
-      barcjkl[nzc] = coeff * (lower==upper? 1: 0.5)
+      barcjkl[nzc] = coeff # * (lower==upper? 1: 0.5)
     else
       nza+=1
       barai[nza] = problem.name_to_ctr[objctr][1]
@@ -133,10 +133,10 @@ function solve_mosek(problem::SDP_Problem, primal::Dict{Tuple{String,String,Stri
       appendcons(task,numcon)
       # Set the bounds on constraints.
       putconboundslice(task,1,numcon+1, bkc,blc,buc)
-      
+
       # Minimize
       putobjsense(task,MSK_OBJECTIVE_SENSE_MINIMIZE)
-      
+
       # Set constraints matrices
       putbarablocktriplet(task, length(barai), barai, baraj, barak, baral, baraijkl)
 

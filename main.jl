@@ -16,7 +16,7 @@ function main()
     ########################################
     # Normalizing pb and setting relaxation order by constraint
     # relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
-    
+
     pb_ind = 0
     if pb_ind == 0
         # Build the init problem and set relaxation parameters
@@ -30,7 +30,7 @@ function main()
                 add_constraint!(problem, get_cstrname_upper(ctrname), 0 << (ctr.ub - ctr.p))
             end
         end
-        relax_ctx = set_relaxation(problem; hierarchykind=:Real, 
+        relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                             d = 3,
                                             symmetries = [PhaseInvariance])
     elseif pb_ind == 1

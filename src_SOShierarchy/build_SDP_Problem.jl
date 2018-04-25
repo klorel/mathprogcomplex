@@ -90,6 +90,11 @@ function set_matrices!(sdp::SDP_Problem, instance::SDP_Instance)
 
     # Sort variables for triangular matrix storage
     var1, var2 = min(var1, var2), max(var1, var2)
+    if !haskey(sdp.matrices, (ctr_name, block_name, var1, var2))
+      println("Adding $var1, $var2 to ctr $ctr_name, block $block_name")
+    else
+      warn("Impressing $var1, $var2 to ctr $ctr_name, block $block_name ($coeff replaces $(sdp.matrices[(ctr_name, block_name, var1, var2)])")
+    end
     sdp.matrices[(ctr_name, block_name, var1, var2)] = parse(coeff)
   end
 end
