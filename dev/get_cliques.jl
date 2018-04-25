@@ -22,6 +22,8 @@ introduce_Sgenvariables!(OPFpbs)
 pb_global = build_globalpb!(OPFpbs)
 pb_global_real = pb_cplx2real(pb_global)
 
+cliques = Dict{String, Set{Variable}}()
+
 function get_cliques(pb_real::Problem)
     vars = pb_real.variables
 
@@ -34,7 +36,12 @@ function get_cliques(pb_real::Problem)
     end
     println(generator_buses)
 
-    cliques = Dict{String, Set{Variable}}()
+    for var in vars
+        scen, bus, _ = split(var[1],'_')
+        if bus ∈ generator_buses
+
+
+
     return cliques
 end
 
