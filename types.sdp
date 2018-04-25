@@ -1,5 +1,6 @@
  # cstrname  var_type
-         eq  SDP
+      eq_lo  SDP
+      eq_up  SDP
    ineq1_hi  SDP
    ineq1_lo  SDP
    ineq2_hi  SDP

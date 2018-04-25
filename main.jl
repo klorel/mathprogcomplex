@@ -17,7 +17,7 @@ function main()
     # Normalizing pb and setting relaxation order by constraint
     # relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
 
-    pb_ind = 0
+    pb_ind = 2
     if pb_ind == 0
         # Build the init problem and set relaxation parameters
         # problem = buildPOPR_2v2cbis()
@@ -31,7 +31,7 @@ function main()
             end
         end
         relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                            d = 3,
+                                            d = 1,
                                             symmetries = [PhaseInvariance])
     elseif pb_ind == 1
         # Build the init problem and set relaxation parameters
@@ -50,14 +50,14 @@ function main()
                 add_constraint!(WB2_C, get_cstrname_upper(ctrname), 0 << (ctr.ub - ctr.p))
             end
         end
-        
+
         problem = pb_cplx2real(WB2_C)
-        
+
         relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                             d = 2)
                                             # symmetries = [PhaseInvariance])
     end
-    
+
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")
 
@@ -67,7 +67,7 @@ function main()
     ########################################
     # Build sparsity pattern, compute maximal cliques
     max_cliques = get_maxcliques(relax_ctx, problem)
-    
+
     println("\n--------------------------------------------------------")
     println("max cliques =")
     for (cliquename, vars) in max_cliques
@@ -75,7 +75,7 @@ function main()
         for var in vars print("$var, ") end
         @printf("\b\b \n")
     end
-    
+
     ########################################
     # Compute moment matrices parameters: order et variables
     moments_params = build_sparsity(relax_ctx, problem, max_cliques)
@@ -92,13 +92,12 @@ function main()
     mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, moments_params, max_cliques)
     println("\n--------------------------------------------------------")
     println("mmtrel_pb = $mmtrel_pb")
-    
+
     ########################################
     # Convert to a primal SDP problem
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
-    # println("\n--------------------------------------------------------")
-    # println("sdpinstance = \n$sdpinstance")
-
+    println("\n--------------------------------------------------------")
+    println("sdpinstance = \n$sdpinstance")
     export_SDP(relax_ctx, sdpinstance, pwd())
 
     sdp_instance = read_SDPInstance(pwd())
@@ -110,41 +109,17 @@ function main()
 
     sdp = SDP_Problem()
 
-    set_constraints!(sdp, sdp_instance)
-    set_blocks!(sdp, sdp_instance)
-    set_matrices!(sdp, sdp_instance)
-    set_linear!(sdp, sdp_instance)
-    set_const!(sdp, sdp_instance)
-
-    for (cstr, block) in sdp.name_to_block
-        println("  b $cstr -> $block")
-    end
-
-    for (name, ctr) in sdp.name_to_ctr
-        println("  * $name \t $ctr")
-    end
-
-    for (name, ctr) in sdp.matrices
-        println("  s $name \t $ctr")
-    end
-
-    for (name, ctr) in sdp.linear
-        println("  l $name \t $ctr")
-    end
-
-    for (name, ctr) in sdp.cst_ctr
-        println("  c $name \t $ctr")
-    end
+    set_constraints!(sdp, sdp_instance, debug=true)
+    set_blocks!(sdp, sdp_instance, debug=true)
+    set_matrices!(sdp, sdp_instance, debug=true)
+    set_linear!(sdp, sdp_instance, debug=true)
+    set_const!(sdp, sdp_instance, debug=true)
 
 
+    primal=SortedDict{Tuple{String,String,String}, Float64}()
+    dual=SortedDict{String, Float64}()
 
-
-    primal=Dict{Tuple{String,String,String}, Float64}()
-    dual=Dict{String, Float64}()
-
-    solve_mosek(sdp::SDP_Problem, primal::Dict{Tuple{String,String,String}, Float64}, dual::Dict{String, Float64})
-
-    return
+    solve_mosek(sdp::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64}, dual::SortedDict{String, Float64}, debug=false)
 end
 
 main()

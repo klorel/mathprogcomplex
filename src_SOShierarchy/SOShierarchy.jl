@@ -105,25 +105,25 @@ end
 
 
 type SDP_Problem
-  name_to_block::Dict{String, SDP_Block}
-  id_to_block::Dict{Int64, SDP_Block}
+  name_to_block::SortedDict{String, SDP_Block}
+  id_to_block::SortedDict{Int64, SDP_Block}
 
-  name_to_ctr::Dict{String, Tuple{Int64, String, Float64, Float64}} # Id, type et bornes des contraintes
-  id_to_ctr::Dict{Int64, String}
+  name_to_ctr::SortedDict{String, Tuple{Int64, String, Float64, Float64}} # Id, type et bornes des contraintes
+  id_to_ctr::SortedDict{Int64, String}
 
-  matrices::Dict{Tuple{String, String, String, String}, Float64} # Matrices du corps des contraintes / objectif
-  linear::Dict{Tuple{String, String}, Float64} # Matrice portant les parties linéaires des contraintes
-  cst_ctr::Dict{String, Float64} # Constante du corp des contraintes
+  matrices::SortedDict{Tuple{String, String, String, String}, Float64} # Matrices du corps des contraintes / objectif
+  linear::SortedDict{Tuple{String, String}, Float64} # Matrice portant les parties linéaires des contraintes
+  cst_ctr::SortedDict{String, Float64} # Constante du corp des contraintes
 
 
-  SDP_Problem() = new(Dict{String, SDP_Block}(),
-                      Dict{Int64, SDP_Block}(),
-                      Dict{String, Tuple{Int64, String, Float64, Float64}}(),
-                      Dict{Int64, String}(),
-                      Dict{Tuple{String, String, String, String}, Float64}(),
-                      Dict{String, Dict{String, Float64}}(),
-                      Dict{String, Float64}()
-  ) 
+  SDP_Problem() = new(SortedDict{String, SDP_Block}(),
+                      SortedDict{Int64, SDP_Block}(),
+                      SortedDict{String, Tuple{Int64, String, Float64, Float64}}(),
+                      SortedDict{Int64, String}(),
+                      SortedDict{Tuple{String, String, String, String}, Float64}(),
+                      SortedDict{Tuple{String, String}, Float64}(),
+                      SortedDict{String, Float64}()
+  )
 end
 
 """

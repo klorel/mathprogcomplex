@@ -24,7 +24,7 @@ function export_SDP(relax_ctx, sdp::SDPInstance, path)
     end
 
     # Export constants of constraints
-    cst_file = joinpath(path, "cst.sdp")
+    cst_file = joinpath(path, "const.sdp")
     !isfile(cst_file) || rm(cst_file)
 
     cst = open(cst_file, "w")
