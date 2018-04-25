@@ -65,3 +65,13 @@ function format_string(α::Exponent)
     s = "$α"
     return replace(s, " ", "_")
 end
+
+function change_eq_to_ineq!(problem::Problem)
+    for (ctrname, ctr) in problem.constraints
+        if get_cstrtype(ctr) == :eq
+            rm_constraint!(problem, ctrname)
+            add_constraint!(problem, get_cstrname_lower(ctrname), 0 << (ctr.p - ctr.lb))
+            add_constraint!(problem, get_cstrname_upper(ctrname), 0 << (ctr.ub - ctr.p))
+        end
+    end
+end

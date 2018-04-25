@@ -86,14 +86,12 @@ function set_matrices!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   for i=1:size(instance.BLOCKS, 1)
     (ctr_name, block_name, var1, var2, coeff) = instance.BLOCKS[i, :]
 
-    if haskey(sdp.matrices, (ctr_name, block_name, var1, var2))
-      warn("set_matrices!() : sdp.matrices already has key ($ctr_name, $block_name, $var1, $var2) with val $(sdp.matrices[(ctr_name, block_name, var1, var2)]), $coeff")
-    end
-
     # Sort variables for triangular matrix storage
     var1, var2 = min(var1, var2), max(var1, var2)
     if !haskey(sdp.matrices, (ctr_name, block_name, var1, var2))
       sdp.matrices[(ctr_name, block_name, var1, var2)] = parse(coeff)
+    else
+      warn("set_matrices!() : sdp.matrices already has key ($ctr_name, $block_name, $var1, $var2) with val $(sdp.matrices[(ctr_name, block_name, var1, var2)]), $(prase(coeff))")
     end
   end
 

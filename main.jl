@@ -17,22 +17,16 @@ function main()
     # Normalizing pb and setting relaxation order by constraint
     # relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
 
-    pb_ind = 2
+    pb_ind = 0
     if pb_ind == 0
         # Build the init problem and set relaxation parameters
         # problem = buildPOPR_2v2cbis()
         problem = buildPOPR_2v2c()
+        change_eq_to_ineq!(problem)
 
-        for (ctrname, ctr) in problem.constraints
-            if get_cstrtype(ctr) == :eq
-                rm_constraint!(problem, ctrname)
-                add_constraint!(problem, get_cstrname_lower(ctrname), 0 << (ctr.p - ctr.lb))
-                add_constraint!(problem, get_cstrname_upper(ctrname), 0 << (ctr.ub - ctr.p))
-            end
-        end
         relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                            d = 1,
-                                            symmetries = [PhaseInvariance])
+                                            d = 1)
+                                            # symmetries = [PhaseInvariance])
     elseif pb_ind == 1
         # Build the init problem and set relaxation parameters
         problem = buildPOP_WB2_expl()
@@ -43,13 +37,7 @@ function main()
     else
         # WB2 problem converted to real
         WB2_C = buildPOP_WB2_expl()
-        for (ctrname, ctr) in WB2_C.constraints
-            if get_cstrtype(ctr) == :eq
-                rm_constraint!(WB2_C, ctrname)
-                add_constraint!(WB2_C, get_cstrname_lower(ctrname), 0 << (ctr.p - ctr.lb))
-                add_constraint!(WB2_C, get_cstrname_upper(ctrname), 0 << (ctr.ub - ctr.p))
-            end
-        end
+        change_eq_to_ineq!(WB2_C)
 
         problem = pb_cplx2real(WB2_C)
 
@@ -57,6 +45,8 @@ function main()
                                             d = 2)
                                             # symmetries = [PhaseInvariance])
     end
+
+    problem, relax_ctx = lasserre_ex1()
 
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")

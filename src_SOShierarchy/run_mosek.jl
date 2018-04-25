@@ -174,8 +174,6 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
       optimize(task)
       solutionsummary(task,MSK_STREAM_MSG)
 
-      # analyzeproblem(task, MSK_STREAM_WRN)
-      # analyzesolution(task, MSK_STREAM_LOG, MSK_SOL_ITR)
       # Get status information about the solution
       prosta = getprosta(task,MSK_SOL_ITR)
       solsta = getsolsta(task,MSK_SOL_ITR)
@@ -211,20 +209,6 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
           end
 
 
-          # activities = Dict{String, Float64}()
-          # for ((objctr, block, var1, var2), coeff) in problem.matrices
-          #   if !haskey(activities, objctr)
-          #     activities[objctr] = 0
-          #   end
-          #   if haskey(primal, (block, var1, var2))
-          #     activities[objctr] += coeff * primal[block, var1, var2]
-          #   else
-          #     activities[objctr] += coeff * primal[block, var2, var1]
-          #   end
-          #   # if objctr==obj_key()
-          #   #   println(block, " - ", var1, " - ", var2, " - ", coeff)
-          # end
-          # # println(activities)
       elseif solsta == MSK_SOL_STA_DUAL_INFEAS_CER
           println("Primal or dual infeasibility.\n")
       elseif solsta == MSK_SOL_STA_PRIM_INFEAS_CER
@@ -237,6 +221,11 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
           println("Unknown solution status")
       else
           println("Other solution status")
+      end
+
+      if solsta != MSK_SOL_STA_OPTIMAL && solsta != MSK_SOL_STA_NEAR_OPTIMAL
+        analyzeproblem(task, MSK_STREAM_WRN)
+        analyzesolution(task, MSK_STREAM_LOG, MSK_SOL_ITR)
       end
 
   end
