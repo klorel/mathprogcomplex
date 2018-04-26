@@ -156,7 +156,7 @@ function cost(element::T, bus::String, elemid::String, elem_formulation::Symbol,
   Sactive = (Sgen)*0.5
   Sexp = 1 + Polynomial()
   dict_coeffs = element.dict_obj_coeffs
-  degrees_sorted = SortedSet(keys(dict_coeffs))
+  degrees_sorted = sort(collect(keys(dict_coeffs)))
   #quartic objective
   imax = 3
   #quadratic objective :TODO

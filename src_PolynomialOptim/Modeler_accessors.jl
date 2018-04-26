@@ -30,7 +30,7 @@ function add_variable!(pb::Problem, x::Variable)
   pb.variables[x.name] = x.kind
 end
 
-function add_variable!(pb::Problem, x::Pair{String, Type})
+function add_variable!(pb::Problem, x::Pair{String, T}) where T
   return add_variable!(pb, Variable(x[1], x[2]))
 end
 
