@@ -42,10 +42,18 @@ end
 
 hash(expo::Exponent, h::UInt) = hash(expo.degree, hash(expo.expo, h))
 
+"""
+  isless(exp1, exp2)
 
+  BEWARE: Order is valid for fully real or conjugated exponents. Mixed case is not treated.
+"""
 function isless(exp1::Exponent, exp2::Exponent)
-  exp1_deg = exp1.degree.explvar + exp1.degree.conjvar
-  exp2_deg = exp2.degree.explvar + exp2.degree.conjvar
+  exp1_explsum, exp1_conjsum = get_sumdegs(exp1)
+  exp2_explsum, exp2_conjsum = get_sumdegs(exp2)
+  exp1_explsum==0 || exp1_conjsum==0 || warn("isless(::Exponent, Exponent): exp1 has expl and conj vars, order may be ill defined...")
+  exp2_explsum==0 || exp2_conjsum==0 || warn("isless(::Exponent, Exponent): exp2 has expl and conj vars, order may be ill defined...")
+  exp1_deg = exp1_explsum + exp1_conjsum
+  exp2_deg = exp2_explsum + exp2_conjsum
   if exp1_deg < exp2_deg
     return true
   elseif exp1_deg == exp2_deg
