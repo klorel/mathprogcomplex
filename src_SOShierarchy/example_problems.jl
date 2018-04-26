@@ -15,7 +15,7 @@ function buildPOP_1v2c()
     add_variable!(problem, z)
     set_objective!(problem, imag(z))
     add_constraint!(problem, "ineq", abs2(z) << 4)
-    add_constraint!(problem, "ineq_rot", real(z*exp(-im*π/4)) >> 0)
+    add_constraint!(problem, "ineq_rot", real(z*exp(-im*π/6)) >> 0)
     return problem
 end
 

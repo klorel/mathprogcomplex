@@ -51,12 +51,11 @@ function main()
     # problem, relax_ctx = lasserre_ex3()
     # problem, relax_ctx = lasserre_ex5(d=3)
 
-    # problem_C = buildPOP_EllJoszMolc()
-    # change_eq_to_ineq!(problem_C)
-    # problem = pb_cplx2real(problem_C)
+    problem_C = buildPOP_1v2c()
+    problem = pb_cplx2real(problem_C)
 
-    # relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-    #                                     d = 4)
+    relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+                                        d = 2)
 
     # problem_C = buildPOP_WB2_expl()
     # change_eq_to_ineq!(problem_C)
