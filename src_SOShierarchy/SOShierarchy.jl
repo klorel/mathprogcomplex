@@ -26,7 +26,7 @@ end
 """
 mutable struct MomentMatrix
     mm::Dict{Tuple{Exponent, Exponent}, AbstractPolynomial}
-    vars::Set{Variable}
+    vars::SortedSet{Variable}
     order::Int
 end
 
