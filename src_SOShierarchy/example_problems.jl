@@ -24,7 +24,7 @@ end
 
     Elliptic example problemp from Josz, Molzahn 2018 paper.
 """
-function buildPOP_2v3c()
+function buildPOP_EllJoszMolc()
     z1 = Variable("z1", Complex)
     z2 = Variable("z2", Complex)
     problem = Problem()
@@ -49,13 +49,33 @@ function buildPOP_WB2_expl()
     add_variable!(problem, z1); add_variable!(problem, z2);
     set_objective!(problem, 8*abs2(z2-z1))
     add_constraint!(problem, "VOLTM1", 0.9025 << abs2(z1) << 1.1025)
-    add_constraint!(problem, "VOLTM2", 0.9025 << abs2(z2) << 1.1025)
+    add_constraint!(problem, "VOLTM2", 0.9025 << abs2(z2) << 1.0568)
 
     add_constraint!(problem, "BAL1", ((2+10im)*z1*conj(z2) + (2-10im)*z2*conj(z1) - 4*abs2(z2)) == 350)
     add_constraint!(problem, "BAL2", ((-10+2im)*z1*conj(z2) + (-10-2im)*z2*conj(z1) + 20*abs2(z2)) == -350)
     return problem
 end
 
+function buildPOP_WB2R_expl()
+    x1 = Variable("x1", Real)
+    x2 = Variable("x2", Real)
+    x3 = Variable("x3", Real)
+    x4 = Variable("x4", Real)
+    problem = Problem()
+    add_variable!(problem, x1); add_variable!(problem, x2);
+    add_variable!(problem, x3); add_variable!(problem, x4);
+    set_objective!(problem, 8*(x1-x2)^2 + 8*(x3-x4)^2)
+    add_constraint!(problem, "VOLTM1", 0.9025 << (x1+x3)^2 << 1.1025)
+    add_constraint!(problem, "VOLTM2", 0.9025 << (x2+x4)^2 << 1.0568)
+
+    eps = 0
+
+    add_constraint!(problem, "BAL1_hi", (  4*x1*x2 + 4*x3*x4 + 20*x1*x4 -20*x3*x2 - 4*x2^2 + 4*x4^2) << (350 + eps))
+    add_constraint!(problem, "BAL1_lo", (  4*x1*x2 + 4*x3*x4 + 20*x1*x4 -20*x3*x2 - 4*x2^2 + 4*x4^2) >> (350 - eps))
+    add_constraint!(problem, "BAL2_hi", (-20*x1*x2 -20*x3*x4 +  4*x1*x4 - 4*x3*x2 +20*x2^2 +20*x4^2) << (-350 + eps))
+    add_constraint!(problem, "BAL2_lo", (-20*x1*x2 -20*x3*x4 +  4*x1*x4 - 4*x3*x2 +20*x2^2 +20*x4^2) >> (-350 - eps))
+    return problem
+end
 
 function buildPOPR_2v2cbis()
     x1 = Variable("x1", Real)
@@ -131,7 +151,7 @@ function lasserre_ex3()
     set_objective!(problem, x1^2 * x2^2 * (x1^2 + x2^2 - 1))
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        d = 2)
+                                        d = 3)
     return problem, relax_ctx
 end
 
@@ -141,17 +161,17 @@ end
     From Lasserre2001, global minimum : -2, for (1, 2).
     Relaxation : order 1 -> -3; order 2 -> -2.
 """
-function lasserre_ex5()
+function lasserre_ex5(;d = 2)
     x1 = Variable("x1", Real)
     x2 = Variable("x2", Real)
     problem = Problem()
     add_variable!(problem, x1); add_variable!(problem, x2)
     set_objective!(problem, -(x1-1)^2 -(x1-x2)^2 -(x2-3)^2)
-    add_constraint!(problem, "crt1", 1-(x1-1)^2 >> 0)
-    add_constraint!(problem, "crt2", 1-(x1-x2)^2 >> 0)
-    add_constraint!(problem, "crt3", 1-(x2-3)^2 >> 0)
+    add_constraint!(problem, "crt1", (1-(x1-1)^2) >> 0)
+    add_constraint!(problem, "crt2", (1-(x1-x2)^2) >> 0)
+    add_constraint!(problem, "crt3", (1-(x2-3)^2) >> 0)
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        d = 2)
+                                        d = d)
     return problem, relax_ctx
 end

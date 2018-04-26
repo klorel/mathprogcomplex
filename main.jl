@@ -48,7 +48,30 @@ function main()
 
     # problem, relax_ctx = lasserre_ex1()
     # problem, relax_ctx = lasserre_ex2()
-    problem, relax_ctx = lasserre_ex3()
+    # problem, relax_ctx = lasserre_ex3()
+    # problem, relax_ctx = lasserre_ex5(d=3)
+
+    # problem_C = buildPOP_EllJoszMolc()
+    # change_eq_to_ineq!(problem_C)
+    # problem = pb_cplx2real(problem_C)
+
+    # relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+    #                                     d = 4)
+
+    # problem_C = buildPOP_WB2_expl()
+    # change_eq_to_ineq!(problem_C)
+    # problem = pb_cplx2real(problem_C)
+
+    # relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+    #                                     d = 2,
+    #                                     symmetries = [PhaseInvariance])
+
+    # problem = buildPOP_WB2R_expl()
+    # change_eq_to_ineq!(problem)
+    # relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+    #                                     d = 3)
+    #                                     # symmetries = [PhaseInvariance])
+
 
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")
@@ -113,7 +136,7 @@ function main()
     primal=SortedDict{Tuple{String,String,String}, Float64}()
     dual=SortedDict{String, Float64}()
 
-    solve_mosek(sdp::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64}, dual::SortedDict{String, Float64}, debug=false)
+    solve_mosek(sdp::SDP_Problem, primal, dual, debug=false, print_sol=false)
 end
 
 main()

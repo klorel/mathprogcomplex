@@ -107,7 +107,7 @@ function get_bounds(problem::SDP_Problem; debug = false)
 end
 
 
-function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64}, dual::SortedDict{String, Float64}; debug = false)
+function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64}, dual::SortedDict{String, Float64}; debug = false, print_sol=false)
   num_block = length(problem.id_to_block)
   # println("num_block : ", num_block)
   barvardim = [ length(problem.id_to_block[block].var_to_id) for block in 1:num_block ]
@@ -179,6 +179,7 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
 
       # Get status information about the solution
       prosta = getprosta(task,MSK_SOL_ITR)
+      @show prosta
       solsta = getsolsta(task,MSK_SOL_ITR)
       if solsta == MSK_SOL_STA_OPTIMAL || solsta == MSK_SOL_STA_NEAR_OPTIMAL
           # Get primal solution
@@ -198,9 +199,11 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
             end
           end
 
-          println("Primal solution")
-          for ((blockname, var1, var2), val) in primal
-            @printf("%15s %5s %5s %f\n", blockname, var1, var2, val)
+          if print_sol
+            println("Primal solution")
+            for ((blockname, var1, var2), val) in primal
+              @printf("%15s %5s %5s %f\n", blockname, var1, var2, val)
+            end
           end
 
           # X = Dict()
@@ -219,7 +222,6 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
           # end
 
           # Get dual solution
-          println("Dual solution")
           # for (ctrid, ctrname) in problem.id_to_ctr
           #   bars = getbarsj(task, MSK_SOL_ITR, ctrid)
           #   println("--> $ctrid, $ctrname")
@@ -241,10 +243,10 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
           println("Other solution status")
       end
 
-      if solsta != MSK_SOL_STA_OPTIMAL && solsta != MSK_SOL_STA_NEAR_OPTIMAL
-        analyzeproblem(task, MSK_STREAM_WRN)
-        analyzesolution(task, MSK_STREAM_LOG, MSK_SOL_ITR)
-      end
+      # if solsta != MSK_SOL_STA_OPTIMAL && solsta != MSK_SOL_STA_NEAR_OPTIMAL
+      #   analyzeproblem(task, MSK_STREAM_WRN)
+      #   analyzesolution(task, MSK_STREAM_LOG, MSK_SOL_ITR)
+      # end
 
   end
 end
