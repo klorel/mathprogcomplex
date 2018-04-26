@@ -73,11 +73,43 @@ end
 
     Compute `|α|`, `|β|` the sum of the real variables exponents and conjugated variables exponents.
 """
-function get_sumdegs(expo::Exponent) 
+function get_sumdegs(expo::Exponent)
     explsum = conjsum = 0
     for (var, deg) in expo
         explsum += deg.explvar
         conjsum += deg.conjvar
     end
     return explsum, conjsum
+end
+
+function compute_degree(expo::Exponent)
+    expldeg = conjdeg = 0
+    for (var, deg) in expo.expo
+        expldeg = max(expldeg, deg.explvar)
+        conjdeg = max(conjdeg, deg.conjvar)
+    end
+    return Degree(expldeg, conjdeg)
+end
+
+function compute_degree(p::Polynomial)
+    expldeg = conjdeg = 0
+    for (expo, λ) in p
+        for (var, deg) in expo
+            expldeg = max(expldeg, deg.explvar)
+            conjdeg = max(conjdeg, deg.conjvar)
+        end
+    end
+    return Degree(expldeg, conjdeg)
+end
+
+function update_degree!(expo::Exponent)
+    updeg = compute_degree(expo)
+    expo.degree.explvar = updeg.explvar
+    expo.degree.conjvar = updeg.conjvar
+end
+
+function update_degree!(p::Polynomial)
+    updeg = compute_degree(p)
+    p.degree.explvar = updeg.explvar
+    p.degree.conjvar = updeg.conjvar
 end
