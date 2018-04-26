@@ -10,7 +10,7 @@ Structure descendant of AbstractNodeLabel
 
 """
 struct GOCShunt <: AbstractNodeLabel
-    busname::String
+    busid::Int64
     id::String #label
     shunt::Complex128 # coeffS = Gs + im*Bs
 end

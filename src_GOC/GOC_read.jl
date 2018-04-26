@@ -121,8 +121,8 @@ function get_bus_index(power_data)
     end
     index = SortedDict{Int64,Int64}()
     for line in 1:nb_lines
-        id_bus = Int(raw_bus_data[line,1])
-        index[id_bus] = line
+        id_bus = Int64(raw_bus_data[line,1])
+        index[id_bus] = id_bus
     end
     return index
 end
@@ -157,7 +157,7 @@ function read_data_bus(power_data)
         if !haskey(bus, busname)
             bus[busname] = SortedDict{String,Any}()
         end
-        bus[busname][volt_name()] = GOCVolt(busname, baseKV, baseMVA, voltage_magnitude_min, voltage_magnitude_max)
+        bus[busname][volt_name()] = GOCVolt(id_bus, baseKV, baseMVA, voltage_magnitude_min, voltage_magnitude_max)
     end
 
     all_loadID_key = filter(x->ismatch(r"all_loadID", x), collect(keys(power_data)))[1]
@@ -171,7 +171,7 @@ function read_data_bus(power_data)
         load = load_data[line,5] + im * load_data[line,6]
         id_load = id_elem(load_id,line)
         loadname = load_name(id_load)
-        bus[busname][loadname] = GOCLoad(busname,loadname,load)
+        bus[busname][loadname] = GOCLoad(id_bus,loadname,load)
     end
 
     all_fixedshuntID_key = filter(x->ismatch(r"all_fixedshuntID", x), collect(keys(power_data)))[1]
@@ -184,7 +184,7 @@ function read_data_bus(power_data)
         shunt = shunt_data[line,3] + im * shunt_data[line,4]
         id_shunt = id_elem(shunt_id,line)
         shuntname = shunt_name(id_shunt)
-        bus[busname][shuntname] = GOCShunt(busname,shuntname,shunt)
+        bus[busname][shuntname] = GOCShunt(id_bus,shuntname,shunt)
     end
 
     return bus,index
@@ -279,11 +279,12 @@ function add_generator_data!(power_data,generator_data_dict,bus,index)
         power_max = Pmax + im*Qmax
         # cost_degrees = generator_data["RealPowerCostExponent"][gen,:]
         # cost_coeffs = generator_data["RealPowerCostCoefficient"][gen,:]
-        gen_id = remove_simple_quotes_if_present(gen_id)
-        if typeof(gen_id)==Float64
-            gen_id = Int(gen_id)
+        gen_id2 = gen_id
+        gen_id2 = remove_simple_quotes_if_present(gen_id2)
+        if typeof(gen_id2)==Float64
+            gen_id2 = Int(gen_id2)
         end
-        generatorname = generator_name(gen_id)
+        generatorname = generator_name(gen_id2)
         dict_obj_coeffs = SortedDict{Int64,Float64}()
         for (degree, value) in generator_data_dict[busname][generatorname]
             if (degree ∈ [0,1,2])
@@ -296,7 +297,7 @@ function add_generator_data!(power_data,generator_data_dict,bus,index)
             if !haskey(dict_obj_coeffs,1) dict_obj_coeffs[1] = 0 end
             if !haskey(dict_obj_coeffs,2) dict_obj_coeffs[2] = 0 end
        end
-        bus[busname][generatorname] = GOCGenerator(busname,generatorname,power_min,power_max,participation_factor,dict_obj_coeffs)
+        bus[busname][generatorname] = GOCGenerator(bus_id,gen_id,power_min,power_max,participation_factor,dict_obj_coeffs)
     end
     return bus
 end
@@ -336,7 +337,9 @@ function read_branch_data(power_data, index)
         origin = Int(get_branch_data(branch_data, ["Origin"], branch)[1])
         destination = Int(get_branch_data(branch_data, ["Destination"], branch)[1])
         linkname = Link(bus_name(index[origin]),bus_name(index[destination]))
-        branch_id = remove_simple_quotes_if_present(lines_data[branch])
+        br_id = lines_data[branch]
+        br_id2 = br_id
+        branch_id = remove_simple_quotes_if_present(br_id2)
         if typeof(branch_id)==Float64
             branch_id = Int(branch_id)
         end
@@ -347,10 +350,10 @@ function read_branch_data(power_data, index)
         if resistance == reactance == 0
             println(linkname, " nullimpedance line without transformer")
             name_line = nullimpedance_notransformer_name(branch_id)
-            link[linkname][name_line] = GOCNullImpedance_notransformer(linkname,name_line,susceptance, power_magnitude_max)
+            link[linkname][name_line] = GOCNullImpedance_notransformer(origin,destination,br_id,susceptance, power_magnitude_max)
         else
             name_line = linepi_notransformer_name(branch_id)
-            link[linkname][name_line] = GOCLineπ_notransformer(linkname,name_line,resistance,reactance,susceptance, power_magnitude_max)
+            link[linkname][name_line] = GOCLineπ_notransformer(origin,destination,br_id,resistance,reactance,susceptance, power_magnitude_max)
         end
     end
 
@@ -362,7 +365,9 @@ function read_branch_data(power_data, index)
         origin = Int(get_branch_data(branch_data, ["Origin"], branch)[1])
         destination = Int(get_branch_data(branch_data, ["Destination"], branch)[1])
         linkname = Link(bus_name(index[origin]),bus_name(index[destination]))
-        branch_id = remove_simple_quotes_if_present(transformername_data[branch-nb_lines])
+        br_id = transformername_data[branch-nb_lines]
+        br_id2 = br_id
+        branch_id = remove_simple_quotes_if_present(br_id2)
         if typeof(branch_id)==Float64
             branch_id = Int(branch_id)
         end
@@ -374,10 +379,10 @@ function read_branch_data(power_data, index)
         if resistance == reactance == 0
             println(linkname, " nullimpedance line with transformer")
             name_line = nullimpedance_withtransformer_name(branch_id)
-            link[linkname][name_line] = GOCNullImpedance_withtransformer(linkname,name_line,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
+            link[linkname][name_line] = GOCNullImpedance_withtransformer(origin,destination,br_id,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
         else
             name_line = linepi_withtransformer_name(branch_id)
-            link[linkname][name_line] = GOCLineπ_withtransformer(linkname,name_line,resistance,reactance,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
+            link[linkname][name_line] = GOCLineπ_withtransformer(origin,destination,br_id,resistance,reactance,susceptance, transfo_ratio,transfo_phase, power_magnitude_max)
         end
     end
 
@@ -427,12 +432,12 @@ function scenarios_data(ds,gs,mp,contingency_data,index)
                 if bus==busname
                     for (buslabel,data) in dict
                         if buslabel != generator_name(gen_ID)
-                            ds_scenario.bus[bus][buslabel] = ds.bus[bus][buslabel]
+                            ds_scenario.bus[bus][buslabel] = data
                         end
                     end
                 else
                     for (buslabel,data) in dict
-                        ds_scenario.bus[bus][buslabel] = ds.bus[bus][buslabel]
+                        ds_scenario.bus[bus][buslabel] = data
                     end
                 end
             end
@@ -446,6 +451,7 @@ function scenarios_data(ds,gs,mp,contingency_data,index)
             origin = Int(contingency_data[ct,3])
             destination = Int(contingency_data[ct,4])
             link_to_remove = Link(bus_name(index[origin]),bus_name(index[destination]))
+            # println("link_to_remove : ", link_to_remove)
             CID = contingency_data[ct,5]
             if typeof(CID)==SubString{String}
                 id_line = CID[2:(end-1)]
@@ -454,23 +460,23 @@ function scenarios_data(ds,gs,mp,contingency_data,index)
             end
             for (busname,dict) in ds.bus
                 for (buslabel,data) in dict
-                    ds_scenario.bus[busname][buslabel] = ds.bus[busname][buslabel]
+                    ds_scenario.bus[busname][buslabel] = data
                 end
             end
-            for (linkname,dict) in ds_scenario.link
+            for (linkname,dict) in ds.link
                 if linkname.orig == link_to_remove.orig && linkname.dest == link_to_remove.dest
-                    #println("link to remove : ", link_to_remove)
-                    for (linklabel,data) in ds.link[linkname]
+                    # println("link to remove : ", link_to_remove)
+                    for (linklabel,data) in dict
                         if !contains(linklabel,id_line)
-                            ds_scenario.link[linkname][linklabel] = ds.link[linkname][linklabel]
+                            ds_scenario.link[linkname][linklabel] = data
                         end
                     end
                     if isempty(ds_scenario.link[linkname])
                         delete!(ds_scenario.link,linkname)
                     end
                 else
-                    for (linklabel,data) in ds.link[linkname]
-                    ds_scenario.link[linkname][linklabel] = ds.link[linkname][linklabel]
+                    for (linklabel,data) in dict
+                    ds_scenario.link[linkname][linklabel] = data
                     end
                 end
             end

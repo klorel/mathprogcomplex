@@ -11,8 +11,9 @@ Structure descendant of AbstractLinkLabel
 
 """
 struct GOCNullImpedance_notransformer <: AbstractLinkLabel
-    link::Link
-    id::String
+    orig_id::Int64
+    dest_id::Int64
+    id::Any
     susceptance::Float64 #bc
     power_magnitude_max::Float64 #Smax
 end

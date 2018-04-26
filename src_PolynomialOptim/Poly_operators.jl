@@ -138,6 +138,12 @@ function evaluate(p::Polynomial, pt::Point)
     for (expo, λ) in p
         res += λ*evaluate(expo, pt)
     end
+    typeof(res)<:Polynomial && update_degree!(res)
+
+    # Fully evaluated polynomial
+    if typeof(res) == Polynomial && res.degree == Degree(0,0)
+        return first(res)[2]
+    end
     return res
 end
 
@@ -145,8 +151,10 @@ function evaluate(expo::Exponent, pt::Point)
     res=1
     for (var, deg) in expo.expo
         if haskey(pt, var)
-            val = evaluate(var, pt)
-            res *= (val^deg.explvar) * (conj(val)^deg.conjvar)
+            res *= (evaluate(var, pt)^deg.explvar) * (conj(evaluate(var, pt))^deg.conjvar)
+        else
+            # res *= var^deg.explvar * conj(var)^deg.conjvar
+            res *= (evaluate(var, pt)^deg.explvar) * (conj(evaluate(var, pt))^deg.conjvar)
         end
     end
     return res

@@ -3,13 +3,30 @@ function solution_point(instance_path::String)
     solution2 = readdlm(joinpath(instance_path,"solution2.txt"), ',')
     basecase_generator_solution = read_solution1(solution1)
     contingency_generator_solution, bus_solution, delta_solution, line_flow_solution = read_solution2(solution2)
-    power_data= getpowerdata(instance_path)
+    power_data = getpowerdata(instance_path)
     index = get_bus_index(power_data)
     participation_factors = create_participation_factors_dict(instance_path, index)
     global_point = create_global_point(solution1, solution2, participation_factors, index)
     # Add delta solution
     delta_point = create_delta_solution(solution2)
-    global_point = merge(global_point, delta_point)
+    binary_point = compute_binary_values(basecase_generator_solution, bus_solution, power_data)
+    global_point = merge(global_point, delta_point,binary_point)
+    return global_point
+end
+
+function read_solution_point_GOC(instance_path::String, solution_path::String)
+    solution1 = readdlm(joinpath(solution_path,"solution1.txt"), ',')
+    solution2 = readdlm(joinpath(solution_path,"solution2.txt"), ',')
+    basecase_generator_solution = read_solution1(solution1)
+    contingency_generator_solution, bus_solution, delta_solution, line_flow_solution = read_solution2(solution2)
+    power_data = getpowerdata(instance_path)
+    index = get_bus_index(power_data)
+    participation_factors = create_participation_factors_dict(instance_path, index)
+    global_point = create_global_point(solution1, solution2, participation_factors, index)
+    # Add delta solution
+    delta_point = create_delta_solution(solution2)
+    binary_point = compute_binary_values(basecase_generator_solution, bus_solution, power_data)
+    global_point = merge(global_point, delta_point,binary_point)
     return global_point
 end
 
@@ -18,7 +35,8 @@ function create_voltagesolutionpoint(bus_solution, index)
     point = Point()
     for i in 1:size(bus_solution,1)
         num_bus = index[bus_solution[i,2]]
-        value = bus_solution[i,3]*exp(im*bus_solution[i,4]*pi/180)
+        module_volt = bus_solution[i,3]
+        value = module_volt*exp(im*bus_solution[i,4]*pi/180)
         if bus_solution[i,1] == 0
             add_coord!(point, Variable(variable_name("VOLT", bus_name(num_bus), "",basecase_scenario_name()), Complex), value)
         else
@@ -36,8 +54,8 @@ function gen_solution_basecase(basecase_generator_solution,index)
     for i in 1:size(basecase_generator_solution,1)
         num_bus = index[basecase_generator_solution[i,1]]
         gen_id = basecase_generator_solution[i,2]
-        if typeof(gen_id)!=Int64
-            gen_id = matchall(r"\d+" ,gen_id)[1]
+        if typeof(gen_id) == String || typeof(gen_id) == SubString{String}
+            gen_id = matchall(r"\d+" , gen_id)[1]
         else
             gen_id = Int(gen_id)
         end
@@ -57,7 +75,7 @@ function gen_solution_contingencies(basecase_generator_solution,contingency_gene
         scenario_name = scenarioname(id_contingency)
         gen_id = contingency_generator_solution[i,4]
         num_bus = index[Int(contingency_generator_solution[i,3])]
-        if typeof(gen_id)!=Int64
+        if typeof(gen_id) == String || typeof(gen_id) == SubString{String}
             gen_id = matchall(r"\d+" ,gen_id)[1]
         else
             gen_id = Int(gen_id)
@@ -74,7 +92,7 @@ function gen_solution_contingencies(basecase_generator_solution,contingency_gene
         for i in 1:size(basecase_generator_solution,1)
             num_bus = index[Int(basecase_generator_solution[i,1])]
             gen_id = basecase_generator_solution[i,2]
-            if typeof(gen_id)!=Int64
+            if typeof(gen_id) == String || typeof(gen_id) == SubString{String}
                 gen_id = matchall(r"\d+" ,gen_id)[1]
             else
                 gen_id = Int(gen_id)
@@ -98,7 +116,7 @@ function create_participation_factors_dict(instance_path, index)
     end
     generator_data = readdlm(joinpath(path_folder,"generator.csv"),',',skipstart=1)
 
-    participation_factors = SortedDict{String,SortedDict{String,Float64}}()
+    participation_factors = Dict{String,Dict{String,Float64}}()
     for line in 1:size(generator_data,1)
         term_id = generator_data[line,3]
         if term_id == 9
@@ -111,7 +129,7 @@ function create_participation_factors_dict(instance_path, index)
             end
             value =  generator_data[line,4]
             if !haskey(participation_factors,bus_name(num_bus))
-                participation_factors[bus_name(num_bus)] = SortedDict{String,Float64}()
+                participation_factors[bus_name(num_bus)] = Dict{String,Float64}()
             end
             participation_factors[bus_name(num_bus)][generator_name(gen_id)] = value
         end
@@ -142,20 +160,12 @@ function create_global_point(solution1,solution2, participation_factors,index)
 end
 
 
-function nb_active_constraints_in_scenario_cc_Qgen(filenames, epsilon::Float64)
-    filenames_path = joinpath("instances","GOC", filenames[1], filenames[2])
-    solution1 = readdlm(joinpath(filenames_path,"solution1.txt"), ',')
-    solution2 = readdlm(joinpath(filenames_path,"solution2.txt"), ',')
-    gen_solution_basecase = read_solution1(solution1)
-    ~, bus_solution, ~, ~ = read_solution2(solution2)
-    power_data = getpowerdata(filenames)
+function compute_binary_values(basecase_generator_solution, bus_solution, power_data)
     index = get_bus_index(power_data)
-    #bus_id = Int(generator_data[line,1])
-    generators = collect(gen_solution_basecase[:,1])
+    generators = SortedSet(basecase_generator_solution[:,1])
     generators = [ index[gen] for gen in generators]
-    #println(length(generators))
-    module_v_basecase = SortedDict{Int64, Float64}()
-    module_v_scenarios = SortedDict{String,SortedDict{Int64, Float64}}()
+    module_v_basecase = Dict{Int64, Float64}()
+    module_v_scenarios = Dict{String,Dict{Int64, Float64}}()
     for i in 1:size(bus_solution,1)
         num_bus = index[bus_solution[i,2]]
             if bus_solution[i,1] == 0
@@ -164,21 +174,32 @@ function nb_active_constraints_in_scenario_cc_Qgen(filenames, epsilon::Float64)
                 id_contingency = bus_solution[i,1]
                 scenario_name = scenarioname(id_contingency)
                 if !haskey(module_v_scenarios, scenario_name)
-                    module_v_scenarios[scenario_name] = SortedDict{Int64, Float64}()
+                    module_v_scenarios[scenario_name] = Dict{Int64, Float64}()
                 end
                 module_v_scenarios[scenario_name][num_bus] = bus_solution[i,3]
             end
     end
-    nb = 0
+    point = Point()
     for (scenario, dict_modules) in module_v_scenarios
         for num_bus in generators
-            if abs(dict_modules[num_bus] - module_v_basecase[num_bus]) > epsilon
-                nb += 1
+            ## NOTE: squares or not?
+            if abs(dict_modules[num_bus]^2 - module_v_basecase[num_bus]^2) < get_GOC_Volt_ϵ()
+                add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 1.0)
+                # add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 1e-16)
+                # add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 1e-16)
+            elseif dict_modules[num_bus]^2 - module_v_basecase[num_bus]^2 > get_GOC_Volt_ϵ()
+                add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 1.0)
+                # add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 1e-16)
+                # add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 1e-16)
+            else
+                add_coord!(point, Variable(get_binInf_varname(scenario, basecase_scenario_name(),bus_name(num_bus)),Bool), 1.0)
+                # add_coord!(point, Variable(get_binInf_varname(basecase_scenario_name(),scenario, bus_name(num_bus)),Bool), 1e-16)
+                # add_coord!(point, Variable(get_binEq_varname(scenario, basecase_scenario_name(), bus_name(num_bus)),Bool), 1e-16)
             end
         end
     end
-
-    return nb
+    # println(point)
+    return point
 end
 # filenames = ["Phase_0_IEEE14_1Scenario", "scenario_1"]
 # filenames = ["Phase_0_RTS96", "scenario_10"]

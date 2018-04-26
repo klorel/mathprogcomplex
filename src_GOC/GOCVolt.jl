@@ -11,7 +11,7 @@ Structure descendant of AbstractNodeLabel
 - `voltage_magnitude_max::Float64`: Vmax
 """
 struct GOCVolt <: AbstractNodeLabel
-  busname::String
+  busid::Int64
   baseKV::Float64
   baseMVA::Float64 ##TODO: remove
   voltage_magnitude_min::Float64 #Vmin

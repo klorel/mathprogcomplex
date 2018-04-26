@@ -24,11 +24,11 @@ end
 function cstrname_nodal_balance(cstrnames::SortedSet{String}, scenario::String, bus::String)
     cstr = ""
     for cstrname in cstrnames
-        cstr = "$(cstr)_$cstrname"
+        cstr = "$(cstr)-$cstrname"
     end
 
     if cstr == ""
-      cstr = "_LOAD"
+      cstr = "-LOAD"
     end
 
     return "$(scenario)_$(get_busid(bus))_BALANCE$(cstr)"
@@ -62,6 +62,7 @@ shunt_name(id_shunt) = "Shunt$id_shunt"
 
 get_delta_varname(scenario::String) = "$(scenario)_Delta"
 get_binInf_varname(scenario1::String, scenario2::String, bus::String) = "BinVolt_$(get_busid(bus))_$(scenario1)_inf_$(scenario2)"
+get_binEq_varname(scenario1::String, scenario2::String, bus::String) = "BinVolt_$(get_busid(bus))_$(scenario1)_eq_$(scenario2)"
 
 # constraint names
 get_VoltM_cstrname() = "VOLTM"
@@ -71,19 +72,19 @@ get_GenBounds_cstrname() = "GenBounds"
 get_NullImpVolt_cstrname() = "NullImpVolt"
 
 
-get_VoltBinDef_upper() = "BinDef_upper"
-get_VoltBinDef_lower() = "BinDef_lower"
-get_VoltBinDef_complement() = "BinDef_compl"
+get_VoltBinDef_upper() = "BinDef-upper"
+get_VoltBinDef_lower() = "BinDef-lower"
+get_VoltBinDef_complement() = "BinDef-compl"
 
-get_CC_active_cstrname() = "CC_Pgen"
-get_CC_reactiveupper_cstrname() = "CC_Qgen_upper"
-get_CC_reactivelower_cstrname() = "CC_Qgen_lower"
+get_CC_active_cstrname() = "CC-Pgen"
+get_CC_reactiveupper_cstrname() = "CC-Qgen-upper"
+get_CC_reactivelower_cstrname() = "CC-Qgen-lower"
 
-get_Smax_orig_cstrname() = "Smax_orig"
-get_Smax_dest_cstrname() = "Smax_dest"
+get_Smax_orig_cstrname() = "Smax-orig"
+get_Smax_dest_cstrname() = "Smax-dest"
 
 
-get_GOC_Volt_ϵ() = 1e-3
+get_GOC_Volt_ϵ() = 1e-6
 get_GOC_BigM() = 1e1
 
 ##node elems

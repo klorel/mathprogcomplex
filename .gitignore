@@ -26,15 +26,6 @@ src_ampl/minlp.dat
 /case14_scenario1_only_voltage_variables.dat
 /IEEE14_real.dat
 Knitro_runs
-instances/*
-/instances/GOC/Phase_0_Feas179/scenario_1/pscopf_data.mat
-/instances/GOC/Phase_0_Feas179/scenario_1/pscopf_data.mat
-/instances/GOC/Phase_0_Feas179/scenario_1/pscopf_data.mat
-instances/GOC/Phase_0_Feas179/scenario_1/pscopf_data.mat
-RTS96_GOC_Knitro_solcomp.xlsx
-instances/GOC/Phase_0_Feas179/scenario_1/pscopf_data.mat
-instances/GOC/Phase_0_Feas179/scenario_1/pscopf_data.mat
-instances/GOC/Phase_0_Feas179/scenario_1/pscopf_data.mat
 src_ampl/minlp.dat
 src_modeler/Modeler/QCQP_ampl.jl
 /WB2.temp
@@ -53,3 +44,4 @@ src_modeler/Modeler/QCQP_ampl.jl
 /data_GOC/Phase_0_Feas179/*
 /dev/solution1.txt
 /dev/solution2.txt
+JuMP_runs

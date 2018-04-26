@@ -13,8 +13,9 @@ Structure descendant of AbstractLinkLabel
 
 """
 struct GOCNullImpedance_withtransformer <: AbstractLinkLabel
-    link::Link
-    id::String
+    orig_id::Int64
+    dest_id::Int64
+    id::Any
     susceptance::Float64 #bc
     transfo_ratio::Float64 #τ
     transfo_phase::Float64 #θ

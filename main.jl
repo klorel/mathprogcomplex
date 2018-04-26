@@ -55,7 +55,7 @@ function main()
     println("relax_ctx = \n$relax_ctx")
 
     ########################################
-    # Build sparsity pattern, compute maximal cliques
+    # Construction du sparsity pattern, extension chordale, cliques maximales.
     max_cliques = get_maxcliques(relax_ctx, problem)
 
     println("\n--------------------------------------------------------")
@@ -70,7 +70,7 @@ function main()
     # Compute moment matrices parameters: order et variables
     moments_params = build_sparsity(relax_ctx, problem, max_cliques)
     println("\n--------------------------------------------------------")
-    println("Matrix moment parameters =")
+    println("moment params =")
     for (key, (val1, val2)) in moments_params
         print("$key \t -> di-ki = $val2, \tcliques = ")
         for clique in val1 print("$clique, ") end
@@ -78,7 +78,8 @@ function main()
     end
 
     ########################################
-    # Compute partial moment hierarchy
+    # Calcul des matrices de moment
+
     mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, moments_params, max_cliques)
     println("\n--------------------------------------------------------")
     println("mmtrel_pb = $mmtrel_pb")

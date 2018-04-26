@@ -1,170 +1,155 @@
 include(joinpath(pwd(),"src_PowSysMod", "PowSysMod_body.jl"))
+# push!(LOAD_PATH, "D:\\repo\\GOC_Gimaju\\src_PowSysMod")
+# using PowSysMod, JuMP, KNITRO
 
-function MyJulia1(rawfile,genfile,contfile)
-  ##read and load files
-  OPFpbs = load_OPFproblems(rawfile, genfile, contfile)
-  introduce_Sgenvariables!(OPFpbs)
-  ## Building optimization problem
-  pb_global = build_globalpb!(OPFpbs)
+function MyJulia1(rawFile, genFile, contFile)
+  println(rawFile, genFile, contFile)
 
-  ## convert into real problem
-  pb_global_real = pb_cplx2real(pb_global)
+  folder_path, scenario = splitdir(splitdir(rawFile)[1])
+  folder = splitdir(folder_path)[2]
+  #
+  # rGOC = "/state/partition1/data/141982//Phase_0_IEEE14_1Scenario/scenario_1/powersystem.raw"
+  # gGOC = "/state/partition1/data/141982//Phase_0_IEEE14_1Scenario/scenario_1/generator.csv"
+  # cGOC = "/state/partition1/data/141982//Phase_0_IEEE14_1Scenario/scenario_1/contingency.csv"
+  #
+    f = open(joinpath("solutions",folder, scenario,"solution1.txt"),"r")
+    lines1 = readlines(f)
+    close(f)
 
-  ##convert to JuMP model
-  mysolver = KnitroSolver(KTR_PARAM_OUTLEV=3,
-                          KTR_PARAM_MAXIT=600,
-                          KTR_PARAM_SCALE=0,
-                          KTR_PARAM_HESSOPT=0,
-                          KTR_PARAM_FEASTOL=1.0,
-                          KTR_PARAM_OPTTOL=1.0,
-                          KTR_PARAM_FEASTOLABS=1e-6,
-                          KTR_PARAM_OPTTOLABS=1e-3,
-                          KTR_PARAM_BAR_INITPT=2,
-                          KTR_PARAM_PRESOLVE=0,
-                          KTR_PARAM_HONORBNDS=0,
-                          KTR_PARAM_MIP_INTVAR_STRATEGY=2)
-  tic()
-  my_timer = @elapsed m, variables_jump = get_JuMP_cartesian_model(pb_global_real, mysolver)
-  @printf("%-35s%10.6f s\n", "get_JuMP_cartesian_model", my_timer)
-  toc()
-
-  #resolution
-  solve(m)
-
-  ##get values
-  println("Objective value : ", getobjectivevalue(m))
-
-  ##create solution1.txt and solution2.txt
-  println("Solution writing")
-
-   open("solution1.txt","w") do f
-     write(f, "--generation dispatch \nbus id,unit id,pg(MW),qg(MVar) \n");
-     for (busname, elems) in OPFpbs[basecase_scenario_name()].ds.bus
-       for (elemname,element) in elems
-               if typeof(element) == GOCGenerator
-                 bus = matchall(r"\d+", element.busname)[1]
-                 gen = matchall(r"\d+", element.id)[1]
-                 Pgen = getvalue(variables_jump[variable_name("Sgen", busname, elemname, basecase_scenario_name())*"_Re"])
-                 Qgen = getvalue(variables_jump[variable_name("Sgen", busname, elemname, basecase_scenario_name())*"_Im"])
-                 write(f, "$bus, $gen, $Pgen, $Qgen\n")
-               end
-        end
-      end
-     write(f,"--end of generation dispatch \n");
-   end
-
-   Qgen_scen_values = SortedDict{Tuple{String,String,String,String}, Float64}()
-   volt_values = SortedDict{Tuple{String,String}, Tuple{Float64, Float64}}()
-   delta_values = SortedDict{String,Float64}()
-   Slink_values = SortedDict{Tuple{String,String,String,String,String}, Tuple{Float64, Float64, Float64, Float64}}()
-
-   for (scenario, OPFpb) in OPFpbs
-     if scenario==basecase_scenario_name()
-       scenario_id = "0"
-       ##volt values
-        for (busname, elems) in OPFpb.ds.bus
-          for (elemid, element) in elems
-            if typeof(element) == GOCVolt
-              busname = element.busname
-              bus = String(matchall(r"\d+", element.busname)[1])
-              V_re = getvalue(variables_jump[variable_name("VOLT", busname, "", scenario)*"_Re"])
-              V_im = getvalue(variables_jump[variable_name("VOLT", busname, "", scenario)*"_Im"])
-              V_mod = abs(V_re + V_im * im)
-              V_theta = angle(V_re + V_im * im)*180/pi
-              volt_values[(scenario_id,bus)] = (V_mod, V_theta)
-            end
-          end
-        end
-     else
-       ##delta values
-       scenario_id = String(matchall(r"\d+", scenario)[1])
-       delta_values[scenario_id] = getvalue(variables_jump[get_delta_varname(scenario)])
-       ##volt values
-        for (busname, elems) in OPFpb.ds.bus
-          for (elemid, element) in elems
-            if typeof(element) == GOCVolt
-              busname = element.busname
-              bus = String(matchall(r"\d+", element.busname)[1])
-              V_re = getvalue(variables_jump[variable_name("VOLT", busname, "", scenario)*"_Re"])
-              V_im = getvalue(variables_jump[variable_name("VOLT", busname, "", scenario)*"_Im"])
-              V_mod = abs(V_re + V_im * im)
-              V_theta = angle(V_re + V_im * im)*180/pi
-              volt_values[(scenario_id,bus)] = (V_mod, V_theta)
-            elseif typeof(element) == GOCGenerator
-               bus = String(matchall(r"\d+", element.busname)[1])
-               gen = String(matchall(r"\d+", element.id)[1])
-               Qgen = getvalue(variables_jump[variable_name("Sgen", busname, elemid, basecase_scenario_name())*"_Im"])
-               Qgen_scen_values[(scenario_id,gen,bus, gen)] = Qgen
-            end
-          end
-        end
-     end
-
-     for (link, elems) in OPFpb.ds.link
-       orig = link.orig
-       dest = link.dest
-       Vo_re = getvalue(variables_jump[variable_name("VOLT", orig, "", scenario)*"_Re"])
-       Vo_im = getvalue(variables_jump[variable_name("VOLT", orig, "", scenario)*"_Im"])
-       Vd_re = getvalue(variables_jump[variable_name("VOLT", dest, "", scenario)*"_Re"])
-       Vd_im = getvalue(variables_jump[variable_name("VOLT", dest, "", scenario)*"_Im"])
-
-       link_elems_formulations = OPFpb.mp.link_formulations[link]
-       link_vars = OPFpb.mp.link_vars[link]
-
-       pt = Point()
-       add_coord!(pt, link_vars["Volt_orig"] , Vo_re + im * Vo_im)
-       add_coord!(pt, link_vars["Volt_dest"], Vd_re + im * Vd_im)
-
-       for (elemid, element) in elems
-           scenario == basecase_scenario_name() ? scenario_id = "0" : scenario_id = String(matchall(r"\d+", scenario)[1])
-           link_id = split(element.id, "_")[end]
-           orig_id = String(matchall(r"\d+", orig)[1])
-           dest_id = String(matchall(r"\d+", dest)[1])
-           elem_formulation = link_elems_formulations[elemid]
-           Sor = evaluate(Sorig(element, link, elemid, elem_formulation, link_vars),pt)
-           Sde = evaluate(Sdest(element, link, elemid, elem_formulation, link_vars),pt)
-           Slink_values[(scenario_id, link_id, orig_id, dest_id, link_id)] = (real(Sor),imag(Sor),real(Sde),imag(Sde))
-        end
-      end
-
+    s1 = open("solution1.txt","w")
+    for line in lines1
+      write(s1, line,"\n")
     end
+    close(s1)
 
-   open("solution2.txt","w") do f
-     write(f, "--contingency generator \nconID,genID,busID,unitID,q(MW) \n");
-     for ((sc, genID, busID, unitID),q) in Qgen_scen_values
-       write(f,"$sc, $genID, $busID, $unitID, $q\n")
-     end
+    f = open(joinpath("solutions",folder, scenario,"solution2.txt"),"r")
+    lines2 = readlines(f)
+    close(f)
 
-     write(f,"--end of contingency generator \n--bus \ncontingency id,bus id,v(pu),theta(deg) \n");
-     for ((sc,bus), (V_mod, V_theta)) in volt_values
-       write(f, "$sc, $bus, $V_mod, $V_theta\n")
-     end
+    s2 = open("solution2.txt","w")
+    for line in lines2
+      write(s2, line, "\n")
+    end
+    close(s2)
 
-     write(f,"--end of bus \n--Delta \ncontingency id,Delta(MW) \n");
-     for (sc, delta) in delta_values
-       write(f, "$sc, $delta \n")
-     end
-
-     write(f,"--end of Delta \n--line flow \ncontingency id,line id,origin bus id,destination bus id,circuit id,p_origin(MW),q_origin(MVar),p_destination(MW),q_destination(MVar) \n");
-     for ((sc, br_id, orig_id, dest_id, br_id), (porig, qorig, pdest, qdest)) in Slink_values
-       write(f, "$sc, $br_id, $orig_id, $dest_id, $br_id, $porig, $qorig, $pdest, $qdest \n")
-     end
-     write(f,"--end of line flow \n")
-   end
+  # folder_path, scenario = splitdir(splitdir(rawFile)[1])
+  # folder = splitdir(folder_path)[2]
+#   outpath = joinpath("JuMP_runs","$(folder)_$(scenario)")
+#   ##read and load files
+#   OPFpbs = load_OPFproblems(rawFile, genFile, contFile)
+#   introduce_Sgenvariables!(OPFpbs)
+#   ## Building optimization problem
+#   pb_global = build_globalpb!(OPFpbs)
+#
+#   ## convert into real problem
+#   pb_global_real = pb_cplx2real(pb_global)
+#
+#   ##convert to JuMP model
+#   ##phase 1 : continuous relaxation
+#   println("
+# ##############################################\n
+# Phase 1 : resolution  of continuous relaxation\n
+# ##############################################")
+#
+#   mysolver = KnitroSolver(KTR_PARAM_OUTLEV=3,
+#                           KTR_PARAM_MAXIT=600,
+#                           KTR_PARAM_SCALE=0,
+#                           KTR_PARAM_FEASTOL=1.0,
+#                           KTR_PARAM_OPTTOL=1.0,
+#                           KTR_PARAM_FEASTOLABS=1.001e-6,
+#                           KTR_PARAM_OPTTOLABS=1e-3,
+#                           KTR_PARAM_BAR_INITPT=2,
+#                           KTR_PARAM_PRESOLVE=0,
+#                           KTR_PARAM_HONORBNDS=0,
+#                           KTR_PARAM_MIP_INTVAR_STRATEGY=1)
+#   tic()
+#   my_timer = @elapsed m, variables_jump, ctr_jump, ctr_exp = get_JuMP_cartesian_model(pb_global_real, mysolver)
+#   @printf("%-35s%10.6f s\n", "get_JuMP_cartesian_model", my_timer)
+#   toc()
+#   #resolution
+#   solve(m)
+#
+#   minslack = +Inf
+#   ctr_minslack = ""
+#   for (ctrname, (exp,lb,ub)) in ctr_exp
+#     body_value = getvalue(exp)
+#     slack = min(body_value-lb, ub-body_value)
+#     if slack <= minslack
+#       minslack = slack
+#       ctr_minslack = ctrname
+#     end
+#   end
+#   println("min slack for constraints in problem JuMP Phase 1 : ($minslack,$ctr_minslack)")
+#
+#   ##phase 2 : resolution with complementary constraints + initial point = solution continuous relaxation
+#   println("
+# ##############################################################################################\n
+# Phase 2 : resolution with complementary constraints from the solution of continuous relaxation\n
+# ##############################################################################################")
+#
+#   mysolver2 = KnitroSolver(KTR_PARAM_OUTLEV=3,
+#                           KTR_PARAM_MAXIT=600,
+#                           KTR_PARAM_SCALE=0,
+#                           KTR_PARAM_FEASTOL=1.0,
+#                           KTR_PARAM_OPTTOL=1.0,
+#                           KTR_PARAM_FEASTOLABS=1.001e-6,
+#                           KTR_PARAM_OPTTOLABS=1e-3,
+#                           KTR_PARAM_BAR_INITPT=2,
+#                           KTR_PARAM_PRESOLVE=0,
+#                           KTR_PARAM_HONORBNDS=0,
+#                           KTR_PARAM_MIP_INTVAR_STRATEGY=2)
+#
+#
+#   setsolver(m, mysolver2)
+#   # tic()
+#   # my_timer = @elapsed m2, variables_jump2 = get_JuMP_cartesian_model(pb_global_real, mysolver)
+#   # @printf("%-35s%10.6f s\n", "get_JuMP_cartesian_model", my_timer)
+#   # f = open(joinpath(outpath,"JuMP_solution_phase1.csv"),"w")
+#   # write(f, "Varname ; Value\n")
+#   # for (varname, varjump) in variables_jump
+#   #   write(f, "$varname; $(getvalue(varjump))\n")
+#   #   setvalue(variables_jump[varname], getvalue(varjump))
+#   # end
+#   # close(f)
+#   # toc()
+#   #resolution
+#   solve(m)
+#
+#   ##get values
+#   println("Objective value : ", getobjectivevalue(m),"\n")
+#
+#   # println("----Solution csv writing")
+#   # f = open(joinpath(outpath,"JuMP_solution.csv"),"w")
+#   # write(f, "Varname ; Value\n")
+#   # for (varname, var) in variables_jump
+#   #   value = getvalue(var)
+#   #   write(f, "$varname; $value\n")
+#   # end
+#   # close(f)
+#
+#   minslack = +Inf
+#   ctr_minslack = ""
+#   # f = open(joinpath(outpath,"KnitroJuMP_constraints_eval.csv"),"w")
+#   # write(f, "Ctrname ; Value ; LB ; UB\n")
+#   for (ctrname, (exp,lb,ub)) in ctr_exp
+#     body_value = getvalue(exp)
+#     slack = min(body_value-lb, ub-body_value)
+#     if slack <= minslack
+#       minslack = slack
+#       ctr_minslack = ctrname
+#     end
+#     # write(f, "$ctrname; $body_value ; $lb ; $ub ; $slack\n")
+#   end
+#   # close(f)
+#   # println("----End solution csv writing\n")
+#   println("min slack for constraints in problem JuMP Phase 2 : ($minslack,$ctr_minslack)")
+#
+#   ##create solution1.txt and solution2.txt
+#   println("--Solution txt writing")
+#   write_solutions(OPFpbs, variables_jump, pwd())
+#   # write_solutions(OPFpbs, variables_jump, outpath)
+#   println("--End solution txt writing\n")
+#
+#   return pb_global_real
 
 end
-
-# raw = "powersystem.raw"
-# gen = "generator.csv"
-# con = "contingency.csv"
-#
-# instance_path = joinpath(pwd(), "data_GOC", "Phase_0_IEEE14_1Scenario","scenario_1")
-# # instance_path = joinpath(pwd(), "data_GOC", "Phase_0_RTS96","scenario_1")
-# # instance_path = joinpath(pwd(), "data_GOC", "Phase_0_Feas179","scenario_1")
-#
-#
-# rawfile = joinpath(instance_path,raw)
-# genfile = joinpath(instance_path, gen)
-# contfile = joinpath(instance_path, con)
-#
-# MyJulia1(rawfile,genfile,contfile)

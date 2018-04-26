@@ -109,3 +109,15 @@ function read_Knitro_output(pb_path::String, pb::Problem)
   cd(root)
   return pt_knitro, pt_GOC
 end
+
+function read_knitro_info_csvfile(filepath::String)
+  lines = readdlm(joinpath(filepath, "knitro_info.csv"), ';')
+  solve_result_1 = lines[2,2]
+  opterror1 = lines[3,2]
+  solve_result_2 = lines[5,2]
+  opterror2 = lines[6,2]
+  solve_result_3 = lines[8,2]
+  opterror3 = lines[9,2]
+
+  return solve_result_1, opterror1, solve_result_2, opterror2, solve_result_3, opterror3
+end

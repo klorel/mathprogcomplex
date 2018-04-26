@@ -1,9 +1,13 @@
 reset;
+
+suffix xscalefactor IN;
+suffix cscalefactor IN;
+
+
 suffix xfeastol IN;
 suffix cfeastol IN;
-suffix feaserror IN,>=0, <=1e6;
-suffix opterror IN,>=0, <=1e6;
-suffix numfcevals IN, >=0, <=1e6;
+suffix feaserror OUT;
+suffix opterror OUT;
 suffix intvarstrategy IN;
 
 param CONST_POINT symbolic := "CONST_POINT";
@@ -16,10 +20,16 @@ param OPTIMIZATION_CHOICE symbolic := MPEC;
 param STRATEGY_INITPOINT symbolic := CONST_POINT;
 /* param STRATEGY_INITPOINT symbolic := GOC_POINT; */
 
+display STRATEGY_INITPOINT;
+
+param FEASTOL := 1.001e-6;
+param OPTTOL  := 1e-3;
+param FEASTOLABS := 1e-0;
+param OPTTOLABS  := 1e-0;
+
 param TIME_BEGIN;
 let TIME_BEGIN := time();
 
-/* display _SUFFIXES; */
 
 model real_minlp.mod;
 
@@ -33,7 +43,7 @@ model;
 
 
 option solver knitroampl;
-option knitro_options 'outlev=3 maxit=600 scale=0 feastol=1 opttol=1 feastolabs=1e-6 opttolabs=1e-3 bar_initpt=2 presolve=0 honorbnds=0';
+option knitro_options ('outlev=3 maxit=600 scale=2 feastol='&FEASTOL&' opttol='&OPTTOL&' feastolabs='&FEASTOLABS&' opttolabs='&OPTTOLABS&' bar_initpt=2 presolve=0 honorbnds=0');
 
 
 ###
@@ -47,6 +57,14 @@ if STRATEGY_INITPOINT == GOC_POINT then{
 	let{(VAR_TYPE, REAL, name, NONE) in KEYS} x[name] := 1.1;
 	let{(VAR_TYPE, BOOL, name, NONE) in KEYS} y[name] := 0.0;
 };
+let{varname in BINARY_VARIABLES} y[varname].xscalefactor   := 1e+0;
+let{(VAR_TYPE, REAL, name, NONE) in KEYS} x[name].xscalefactor := 1e-1;
+option presolve 10;
+	#display{i in REAL_VARIABLES: x[i].lb2 != -Infinity and x[i].ub2 != Infinity}(x[i].lb2, x[i].ub2);	
+let{i in REAL_VARIABLES: x[i].lb2 != -Infinity and x[i].ub2 != Infinity} x[i].xscalefactor := (x[i].ub2-x[i].lb2);	
+option presolve 0;
+
+# let{(VAR_TYPE, BOOL, name, NONE) in KEYS} y[name].xscalefactor := 1e+0;
 
 option presolve 0;
 if STRATEGY_INITPOINT == GOC_POINT and card({i in 1.._ncons: _con[i].slack<-1e-5})>1 then{
@@ -70,14 +88,24 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	# first phase relaxation binary constraints
 	let{varname in BINARY_VARIABLES} y[varname].intvarstrategy := 1;
 
+	option knitro_options;
+	/* write gphase1; */
 	solve;
 
+	let{i in 1.._ncons} _con[i].cscalefactor := if abs(_con[i])>1e-5 then 1/abs(_con[i]) else 1;
+	#let{i in 1.._nvars} _var[i].xscalefactor := if abs(_var[i])>1e-5 then abs(_var[i]) else 1;
+	
+	let{(VAR_TYPE, REAL, name, NONE) in KEYS} x[name].xscalefactor := if abs(x[name])>1e-5 then abs(x[name]) else 1;
+
+
 	close knitro_info.csv;
-	printf "%s;%f\n", "Time first resolution", time()-TIME_BEGIN > knitro_info.csv;
+	printf "%s;%f\n", "Time resolution Phase 1 ", time()-TIME_BEGIN > knitro_info.csv;
+	printf "%s;%f\n", "solve_result_num Phase 1", solve_result_num >> knitro_info.csv;
+	printf "%s;%f\n", "opterror Phase 1", CRITERION.opterror >> knitro_info.csv;
 	close knitro_info.csv;
 
 	if card({i in 1.._ncons: _con[i].slack<-1e-6})>1 then{
-		printf "---\nListing the constraints violated by initial point\n---\n";
+		printf "---\nListing the constraints violated by relaxation solution point\n---\n";
 		printf "%60s%15s%15s%15s%15s\n", "NAME", "LB", "BODY", "UB", "SLACK";
 		printf{i in 1.._ncons: _con[i].slack<-1e-6}"%60s%15.6E%15.6E%15.6E%15.6E\n",
 			_conname[i],
@@ -87,9 +115,11 @@ if OPTIMIZATION_CHOICE == MPEC then {
 			_con[i].slack;
 		printf "---\n";
 	}
+	display abs(min(0, min{i in 1.._ncons} _con[i].slack));
+	display abs(min(0, min{i in 1.._nvars} _var[i].slack));
 	option presolve 0;
-
-	option knitro_options 'outlev=3 maxit=600 scale=0 feastol=1 opttol=1 feastolabs=1e-6 opttolabs=1e-3 bar_initpt=2 presolve=0 honorbnds=0';
+	#exit;
+	option knitro_options ('outlev=3 maxit=600 scale=2 feastol='&FEASTOL&' opttol='&OPTTOL&' feastolabs='&FEASTOLABS&' opttolabs='&OPTTOLABS&' bar_initpt=2 presolve=0 honorbnds=0');
 
 	printf"Binary variables max dist to 1, phase 1\n";
 	display max{varname in BINARY_VARIABLES}min(
@@ -103,14 +133,23 @@ if OPTIMIZATION_CHOICE == MPEC then {
 
 	# second phase reformulating binary constraints into MPEC and starting from the previous KKT solution
 	let{varname in BINARY_VARIABLES} y[varname].intvarstrategy := 2;
+	
 
+	#option presolve 10;
+	#display{i in REAL_VARIABLES: x[i].lb2 != -Infinity and x[i].ub2 != Infinity}(x[i].lb2, x[i].ub2);	
+	#let{i in REAL_VARIABLES: x[i].lb2 != -Infinity and x[i].ub2 != Infinity} x[i].xscalefactor := (x[i].ub2-x[i].lb2)*1e-2;	
+	option presolve 0;
+	#exit;
+	/* write gphase2; */
 	solve;
 
 
-	printf "%s;%f\n", "Time second resolution", time()-TIME_BEGIN >> knitro_info.csv;
+
+	printf "%s;%f\n", "Time resolution Phase 2", time()-TIME_BEGIN >> knitro_info.csv;
+	printf "%s;%f\n", "solve_result_num Phase 2", solve_result_num >> knitro_info.csv;
+	printf "%s;%f\n", "opterror Phase 2", CRITERION.opterror >> knitro_info.csv;
 	close knitro_info.csv;
 
-	display time()-TIME_BEGIN;
 
 	option solution_precision 0;
 	option display_precision 0;
@@ -124,6 +163,26 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	display card(BINARY_VARIABLES);
 	display BINARY_VARIABLES;
 	display y;
+	let{varname in BINARY_VARIABLES} y[varname] := if y[varname] > 0.5 then 1 else 0;
+	
+	display{i in 1.._ncons: _con[i].slack<-1e-6}(_conname [i], _con[i].slack);
+	fix{varname in BINARY_VARIABLES} y[varname];
+	solve;
+	
+	printf "%s;%f\n", "Time resolution Phase 3", time()-TIME_BEGIN >> knitro_info.csv;
+	printf "%s;%f\n", "solve_result_num Phase 3", solve_result_num >> knitro_info.csv;
+	printf "%s;%f\n", "opterror Phase 3", CRITERION.opterror >> knitro_info.csv;
+	close knitro_info.csv;
+	
+	
+#	printf{i in 1.._ncons: _con[i].slack / (if abs(_con[i])==0 then 1 else _con[i]) <-1e-6}"violation on %50s : %10.6E\n", _conname [i], _con[i].slack;
+ 	printf{i in 1.._ncons: _con[i].slack / max(1, abs(_con[i].body))<-1e-6}"violation on %50s : %10.6E, %10.6E\n", _conname [i], _con[i].slack, _con[i].body;
+ 	#expand{i in 1.._ncons: _con[i].slack<-1e-6}_con[i]; 
+ 	
+ 	expand constraint['Scen1_2_Gen1_BinDef-lower_Re'];
+ 	fix;
+ 	display y['BinVolt_2_Scen1_eq_BaseCase'];
+	display y['BinVolt_2_Scen1_inf_BaseCase'];
 
 };
 
@@ -131,6 +190,7 @@ printf"%-40s;%s;%s\n", "#Var name", "Knitro sol", "GOC sol" > ("solution_"&STRAT
 printf{var0 in REAL_VARIABLES} "%s;%.20e;%.20e\n", var0, x[var0], LEFT[VAR_TYPE, REAL, var0, NONE] > ("solution_"&STRATEGY_INITPOINT&".csv");
 printf{var0 in BINARY_VARIABLES} "%s;%.20e;%.20e\n", var0, y[var0], LEFT[VAR_TYPE, BOOL, var0, NONE] > ("solution_"&STRATEGY_INITPOINT&".csv");
 
-
-printf"||x-x_GOC||_2   : %f\n", sqrt(sum{var0 in REAL_VARIABLES} (x[var0] - LEFT[VAR_TYPE, REAL, var0, NONE])^2);
-printf"||x-x_GOC||_inf : %f\n\n", max{var0 in REAL_VARIABLES} abs(x[var0] - LEFT[VAR_TYPE, REAL, var0, NONE]);
+if STRATEGY_INITPOINT == GOC_POINT then{
+	printf"||x-x_GOC||_2   : %f\n", sqrt(sum{var0 in REAL_VARIABLES} (x[var0] - LEFT[VAR_TYPE, REAL, var0, NONE])^2);
+	printf"||x-x_GOC||_inf : %f\n\n", max{var0 in REAL_VARIABLES} abs(x[var0] - LEFT[VAR_TYPE, REAL, var0, NONE]);
+	}

@@ -12,8 +12,8 @@ Mutable structure descendant of AbstractNodeLabel
 - `dict_obj_coeffs::SortedDict{Int64,Float64}`: dictionary for objective coefficients: degree => coeff
 """
 mutable struct GOCGenerator <: AbstractNodeLabel
-  busname::String
-  id::String
+  busid::Int64
+  id::Any
   power_min::Complex128 #Smin = Pmin + i Qmin
   power_max::Complex128 #Smax = Pmax + i Qmax
   participation_factor::Float64
@@ -42,6 +42,9 @@ function create_vars!(element::T, bus::String, elemid::String, elem_formulation:
 
         Vsc_inf_Vbc = get_binInf_varname(scenario, basecase_scenario_name(), bus)
         bus_vars[Vsc_inf_Vbc] = Variable(Vsc_inf_Vbc, Bool)
+
+        Veq = get_binEq_varname(scenario, basecase_scenario_name(), bus)
+        bus_vars[Veq] = Variable(Veq, Bool)
 
         # Scaling factor for current scenario
         delta_varname = get_delta_varname(scenario)
@@ -98,6 +101,7 @@ function constraint(element::T, bus::String, elemid::String, elem_formulation::S
 
         Vbc_inf_Vsc = bus_vars[get_binInf_varname(basecase_scenario_name(), scenario, bus)]
         Vsc_inf_Vbc = bus_vars[get_binInf_varname(scenario, basecase_scenario_name(), bus)]
+        Veq = bus_vars[get_binEq_varname(scenario, basecase_scenario_name(), bus)]
 
         Pmin, Qmin = real(element.power_min), imag(element.power_min)
         Pmax, Qmax = real(element.power_max), imag(element.power_max)
@@ -105,14 +109,32 @@ function constraint(element::T, bus::String, elemid::String, elem_formulation::S
 
         ## Definition of binary variables, upper constraint
         ccname_bindef_upper = get_VoltBinDef_upper()
-        cstrs[ccname_bindef_upper] = (abs2(Volt_sc) - abs2(Volt_bc) - (Vbc_inf_Vsc * (-ϵ) + (1-Vbc_inf_Vsc) * M)) << 0
+        cstrs[ccname_bindef_upper] = (abs2(Volt_bc) - abs2(Volt_sc) - (Vbc_inf_Vsc * (-ϵ) + (1-Vbc_inf_Vsc+Veq) * M - 2*M*Veq)) << 0
         ## Definition of binary variables, lower constraint
         ccname_bindef_lower = get_VoltBinDef_lower()
-        cstrs[ccname_bindef_lower] = (abs2(Volt_sc) - abs2(Volt_bc) - (Vsc_inf_Vbc * ϵ + (1-Vsc_inf_Vbc) * (-M))) >> 0
+        ##TODO: verify big M constraints
+        cstrs[ccname_bindef_lower] = (abs2(Volt_bc) - abs2(Volt_sc) - (Vsc_inf_Vbc * ϵ + (1-Vsc_inf_Vbc+Veq) * (-M) + 2*M*Veq)) >> 0
+        ####
+        # If Vsc < Vbc, lhs = abs2(Volt_bc) - abs2(Volt_sc) > 0
+        ## If Vbc_inf_Vsc = 1, positive lhs < -ϵ => upper constraint not satisfied => NOT POSSIBLE
+        ## If Veq = 1, positive lhs <  0 => upper constraint not satisfied => NOT POSSIBLE
+        ## If Vsc_inf_Vbc = 1, positive lhs < M, upper constraint satisfied AND lhs > ϵ, lower constraint satisfied
+
+        # If Vbc < Vsc, lhs = abs2(Volt_bc) - abs2(Volt_sc) < 0
+        ## If Vbc_inf_Vsc = 1, lhs < -ϵ, upper constraint satisfied AND lhs > -M, lower constraint satisfied
+        ## If Veq = 1,  lhs < 0, upper constraint satisfied AND lhs > 0, lower constraint not satisfied => NOT POSSIBLE
+        ## If Vsc_inf_Vbc = 1, lhs < M, upper constraint satisfied AND lhs > ϵ, lower constraint not satisfied => NOT POSSIBLE
+
+        # If |Vbc-Vsc|< ϵ, -ϵ < abs2(Volt_bc) - abs2(Volt_sc) < ϵ
+        ## If Vbc_inf_Vsc = 1, lhs < -ϵ, upper constraint not satisfied => NOT POSSIBLE
+        ## If Veq = 1,  lhs < 0, upper constraint satisfied AND lhs > 0, lower constraint satisfied
+        ## If Vsc_inf_Vbc = 1, lhs < M, upper constraint satisfied AND lhs > ϵ, lower constraint not satisfied => NOT POSSIBLE
+
+        ####
         ## Definition of binary variables, complementarity
         ccname_compl = get_VoltBinDef_complement()
-        cstrs[ccname_compl] = (Vbc_inf_Vsc + Vsc_inf_Vbc) << 1
-
+        ## Three separate possibilities => only one binary variable == 1
+        cstrs[ccname_compl] = (Vbc_inf_Vsc + Vsc_inf_Vbc + Veq == 1)
 
         P0 = real(OPFpbs[basecase_scenario_name()].mp.node_vars[bus][elemid])
         Pgen, Qgen = real(Sgen), imag(Sgen)
@@ -122,6 +144,9 @@ function constraint(element::T, bus::String, elemid::String, elem_formulation::S
         ## Coupling constraint active :
         cstrname = get_CC_active_cstrname()
         cstrs[cstrname] = (Pgen - (P0 + α * deltavar)) == 0
+
+        cstrname = get_GenBounds_cstrname()
+        cstrs[cstrname] = Pmin << Pgen << Pmax
 
         ## Coupling constraint reactive : upper bound
         ccname_upper = get_CC_reactiveupper_cstrname()

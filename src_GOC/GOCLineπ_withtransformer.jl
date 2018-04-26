@@ -15,8 +15,9 @@ Structure descendant of AbstractLinkLabel
 
 """
 struct GOCLineπ_withtransformer <: AbstractLinkLabel
-    link::Link
-    id::String
+    orig_id::Int64
+    dest_id::Int64
+    id::Any
     resistance::Float64 #rs
     reactance::Float64 #xs
     susceptance::Float64 #bc
