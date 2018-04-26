@@ -54,6 +54,8 @@ function main()
     problem_C = buildPOP_1v2c()
     problem = pb_cplx2real(problem_C)
 
+    problem = buildPOP_1v2()
+
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         d = 2)
 
@@ -130,12 +132,29 @@ function main()
     set_linear!(sdp, sdp_instance)
     set_const!(sdp, sdp_instance)
 
-    # println("SDP_Problem :\n$sdp")
 
-    primal=SortedDict{Tuple{String,String,String}, Float64}()
-    dual=SortedDict{String, Float64}()
+    primal, dual = solve_mosek(sdp::SDP_Problem; debug=false)
 
-    solve_mosek(sdp::SDP_Problem, primal, dual, debug=false, print_sol=false)
+    println("\nDual solution")
+    for var in problem.variables
+        ctrname = get_momentcstrname()
+        var1 = var[1]
+        var2 = "1"
+        val = dual[(ctrname, var1, var2)]
+        println("($(ctrname), $(var1), $(var2)) = $(val)")
+    end
+
+    # println("Primal solution")
+    # for ((blockname, var1, var2), val) in primal
+    # @printf("%15s %5s %5s %f\n", blockname, var1, var2, val)
+    # end
+
+    # println("Dual solution")
+    # for ((ctrname, var1, var2), val) in dual
+    # @printf("%15s %5s %5s %f\n", ctrname, var1, var2, val)
+    # end
+
+
 end
 
 main()

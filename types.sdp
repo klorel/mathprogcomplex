@@ -1,2 +1,4 @@
  # cstrname  var_type
+       ineq  SDP
+   ineq_rot  SDP
 moment_cstr  SDP

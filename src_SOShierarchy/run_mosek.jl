@@ -107,7 +107,11 @@ function get_bounds(problem::SDP_Problem; debug = false)
 end
 
 
-function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64}, dual::SortedDict{String, Float64}; debug = false, print_sol=false)
+function solve_mosek(problem::SDP_Problem; debug = false)
+  primal=SortedDict{Tuple{String,String,String}, Float64}()
+  dual=SortedDict{Tuple{String, String, String}, Float64}()
+
+
   num_block = length(problem.id_to_block)
   # println("num_block : ", num_block)
   barvardim = [ length(problem.id_to_block[block].var_to_id) for block in 1:num_block ]
@@ -182,52 +186,34 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
       @show prosta
       solsta = getsolsta(task,MSK_SOL_ITR)
       if solsta == MSK_SOL_STA_OPTIMAL || solsta == MSK_SOL_STA_NEAR_OPTIMAL
-          # Get primal solution
-          for (id, block) in problem.id_to_block
-            barx = getbarxj(task, MSK_SOL_ITR, id)
-            all_variables = ["" for kv in block.var_to_id]
-            for (var, varid) in block.var_to_id
-              all_variables[varid] = var
-            end
-            n = 0
-            for j in 1:length(all_variables)
-              for i in j:length(all_variables)
-                n+=1
-                # @printf("%15s%15s%15s%25.10f\n", id_block[2].name, all_variables[i], all_variables[j], barx[n])
-                primal[block.name, all_variables[i], all_variables[j]] = barx[n]
-              end
+        # Get primal solution
+        for (id, block) in problem.id_to_block
+          barx = getbarxj(task, MSK_SOL_ITR, id)
+          all_variables = ["" for kv in block.var_to_id]
+          for (var, varid) in block.var_to_id
+            all_variables[varid] = var
+          end
+          n = 0
+          for j in 1:length(all_variables)
+            for i in j:length(all_variables)
+              n+=1
+              # @printf("%15s%15s%15s%25.10f\n", id_block[2].name, all_variables[i], all_variables[j], barx[n])
+              primal[block.name, all_variables[i], all_variables[j]] = barx[n]
             end
           end
+        end
 
-          if print_sol
-            println("Primal solution")
-            for ((blockname, var1, var2), val) in primal
-              @printf("%15s %5s %5s %f\n", blockname, var1, var2, val)
-            end
+        # Get dual solution
+        for (blockid, block) in problem.id_to_block
+          bars = getbarsj(task, MSK_SOL_ITR, blockid)
+          id_to_var = OrderedDict([id=>var for (var,id) in block.var_to_id])
+          it = 0
+          for j=1:length(id_to_var), i=j:length(id_to_var)
+            it += 1
+            # println("($(block.name), $(id_to_var[i]), $(id_to_var[j])) = $(bars[it])")
+            dual[(block.name, id_to_var[i], id_to_var[j])] = bars[it]
           end
-
-          # X = Dict()
-          # for ((blockname, var1, var2), val) in primal
-          #   if !haskey(X, blockname)
-          #     n = length(problem.name_to_block[blockname].var_to_id)
-          #     X[blockname] = zeros(n, n)
-          #   end
-          #   X[blockname][problem.name_to_block[blockname].var_to_id[var1],
-          #     problem.name_to_block[blockname].var_to_id[var2]] = val
-          # end
-
-          # for (ctrname, mat) in X
-          #   println(ctrname)
-          #   print_cmat(mat)
-          # end
-
-          # Get dual solution
-          # for (ctrid, ctrname) in problem.id_to_ctr
-          #   bars = getbarsj(task, MSK_SOL_ITR, ctrid)
-          #   println("--> $ctrid, $ctrname")
-          #   println(bars)
-          # end
-
+        end
 
       elseif solsta == MSK_SOL_STA_DUAL_INFEAS_CER
           println("Primal or dual infeasibility.\n")
@@ -249,4 +235,6 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
       # end
 
   end
+
+  return primal, dual
 end
