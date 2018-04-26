@@ -148,16 +148,21 @@ end
 
 ## Exponent
 function powpoly(p::Polynomial, d::Int)
-    if length(p) != 1
-        error("^(::Polynomial, ::Int): Only supported for monomials ($(length(p))-monomial polynomial here).")
-    end
-    expo, λ = collect(p)[1]
+    if length(p) == 1
+        expo, λ = collect(p)[1]
 
-    expod = SortedDict{Variable, Degree}()
-    for (var, deg) in expo.expo
-        expod[var] = Degree(deg.explvar*d, deg.conjvar*d)
+        expod = SortedDict{Variable, Degree}()
+        for (var, deg) in expo.expo
+            expod[var] = Degree(deg.explvar*d, deg.conjvar*d)
+        end
+        return Polynomial(SortedDict{Exponent, Number}(Exponent(expod)=>λ^d))
+    else
+        t_poly = Polynomial(1)
+        for i=1:d
+            t_poly = product(t_poly, p)
+        end
+        return t_poly
     end
-    return Polynomial(SortedDict{Exponent, Number}(Exponent(expod)=>λ^d))
 end
 
 function ^(p::T, d::Int) where T<:AbstractPolynomial
