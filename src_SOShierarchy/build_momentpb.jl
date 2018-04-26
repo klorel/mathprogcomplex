@@ -1,7 +1,7 @@
 """
     mm = MomentMatrix(vars::SortedSet{Variable}, d, symmetries)
 
-    Build the moment matrix corresponding to the moment of degree up to `d` of the `vars` polynomial algebra. 
+    Build the moment matrix corresponding to the moment of degree up to `d` of the `vars` polynomial algebra.
     Only monomials featuring all `symmetries` appear in the moment matrix.
 """
 function MomentMatrix(relax_ctx, vars::SortedSet{Variable}, d::Int, symmetries::SortedSet{DataType})
