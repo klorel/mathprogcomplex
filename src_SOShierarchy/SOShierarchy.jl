@@ -21,22 +21,24 @@ end
 
 """
     MomentMatrix(mm, vars, order)
+
     Store a moment or localizing matrix of size `order`, corresponding to the `vars` variables in the `mm` dictionnary.
     **Note** that the matrix is indexed by a tuple of exponents, *the first of which contains only conjugated variables*, et second only real ones.
 """
 mutable struct MomentMatrix
-    mm::Dict{Tuple{Exponent, Exponent}, AbstractPolynomial}
-    vars::Set{Variable}
+    mm::SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}
+    vars::SortedSet{Variable}
     order::Int
 end
 
 """
     momentrel = MomentRelaxationPb(obj, cstrs)
+
     Store a Moment Relaxation problem.
 """
 struct MomentRelaxationPb
     objective::AbstractPolynomial
-    constraints::Dict{Tuple{String, String}, MomentMatrix}
+    constraints::SortedDict{Tuple{String, String}, MomentMatrix}
 end
 
 
@@ -51,7 +53,7 @@ end
 #     isexportready::Bool
 #     isconsistent::Bool
 
-#     SDPInstance() = new("", :Undef, :Undef,
+#     SDPInstance() = new("", :Undef, :Undef, 
 #                         SDPForm(), SortedDict{String, SDPForm}(),
 #                         false, false)
 # end
@@ -128,6 +130,7 @@ end
 
 """
     SparsityPattern
+
     Type for storing and working on sparsitty patterns.
 """
 type SparsityPattern end

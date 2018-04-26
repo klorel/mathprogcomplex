@@ -2,7 +2,7 @@
     moments_param = build_sparsity(relax_ctx, problem)
     Build the sparsitty pattern and variables decomposition for laying out the moment or SOS hierarchy
 """
-function build_sparsity(relax_ctx, problem, max_cliques::Dict{String, Set{Variable}})
+function build_sparsity(relax_ctx, problem, max_cliques::SortedDict{String, SortedSet{Variable}})
 
     if relax_ctx.issparse == false
         (length(max_cliques) == 1) || error("build_sparsity(): Relaxation is not sparse, one clique is expected (not $(length(max_cliques)))")
