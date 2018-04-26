@@ -45,37 +45,6 @@ function Point(vars::Array{Variable}, vals::Array{<:Number})
   return pt
 end
 
-function compute_degree(expo::Exponent)
-    expldeg = conjdeg = 0
-    for (var, deg) in expo.expo
-        expldeg = max(expldeg, deg.explvar)
-        conjdeg = max(conjdeg, deg.conjvar)
-    end
-    return Degree(expldeg, conjdeg)
-end
-
-function compute_degree(p::Polynomial)
-    expldeg = conjdeg = 0
-    for (expo, λ) in p
-        for (var, deg) in expo
-            expldeg = max(expldeg, deg.explvar)
-            conjdeg = max(conjdeg, deg.conjvar)
-        end
-    end
-    return Degree(expldeg, conjdeg)
-end
-
-function update_degree!(expo::Exponent)
-    updeg = compute_degree(expo)
-    expo.degree.explvar = updeg.explvar
-    expo.degree.conjvar = updeg.conjvar
-end
-
-function update_degree!(p::Polynomial)
-    updeg = compute_degree(p)
-    p.degree.explvar = updeg.explvar
-    p.degree.conjvar = updeg.conjvar
-end
 
 ## copy methods
 function copy(p::Polynomial)

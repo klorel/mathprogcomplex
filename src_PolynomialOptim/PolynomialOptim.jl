@@ -111,8 +111,8 @@ struct Exponent <: AbstractPolynomial
             (isreal(var) && degree.conjvar != 0) && error("Exponent(): Expected nul conj exponent for real variable $var (got $degree)")
             (isbool(var) && degree.explvar ∉ SortedSet([0,1])) && error("Exponent(): Expected boolean exponent for bool $var (got $degree)")
             if degree != Degree(0,0)
-                degexpl += degree.explvar
-                degconj += degree.conjvar
+                degexpl = max(degexpl, degree.explvar)
+                degconj = max(degconj, degree.conjvar)
             else
                 delete!(expo, var)
             end
