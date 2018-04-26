@@ -1,14 +1,21 @@
+using DataStructures
 include(joinpath(ROOT, "src_PolynomialOptim", "PolynomialOptim.jl"))
+
+## Symetries
+abstract type AbstractSymetry end
+type PhaseInvariance <: AbstractSymetry end
+
 
 
 mutable struct RelaxationContext
     ismultiordered
     issparse
-    leveragesymmetries      # Check if equations have certain type of symmetry, to set afterwards some moments to 0 for example
-    hierarchykind           # :Complex or :Real
-    renamevars              # Replace variables with by shorter named ones
+    symmetries::SortedSet{DataType} # ::SortedSet{DataType}
+    hierarchykind             # :Complex or :Real
+    renamevars                # Replace variables with by shorter named ones
     di
     ki
+    cstrtypes
 end
 
 
@@ -32,27 +39,90 @@ struct MomentRelaxationPb
     constraints::Dict{Tuple{String, String}, MomentMatrix}
 end
 
-# """
-#     MomentMatrixBasis(basis, expo2int, int2expo, msize)
 
-#     Store the matrix coefficients of the moment variable decomposition of the moment matrix.
+# mutable struct SDPInstance
+#     name
+#     sense::Symbol       # :min or :max
+#     kind::Symbol        # :Real or :Complex
 
-#     Arguments:
-#     - basis::Dict{Exponent, AbstractMatrix} : matrice correspondant au moment clé,
-#     - expo2int : carte donnant les coordonnées de l'exposant clé dans la matrice des moments initiale,
-#     - int2expo : carte donnant l'xposant correspondant aux coordonnées clé dans la matrice des moments initiale,
-#     - msize: taille de la matrice des moments initiale (ordre d-k).
-# """
-# mutable struct MomentMatrixBasis
-#     basis::Dict{Tuple{Exponent, Exponent}, AbstractMatrix} # Les exposants sont de degré inférieur à d
-#     expo2int::Dict{Exponent, Int}   # Carte de la matrice des coefficients d-ki
-#     int2expo::Dict{Int, Exponent}
-#     msize::Int                      # size of the matrix
+#     objective::SDPForm
+#     constraints::SortedDict{String, SDPForm}
+
+#     isexportready::Bool
+#     isconsistent::Bool
+
+#     SDPInstance() = new("", :Undef, :Undef,
+#                         SDPForm(), SortedDict{String, SDPForm}(),
+#                         false, false)
 # end
 
+# mutable struct SDPForm
+#     name::String,
+#     blocks::SortedDict{String, SDPBlock}
+#     lin::Polynomial
+#     cst::Number
+#     ub::Number
+#     lb::Number
 
-const SDPBody = Dict{Tuple{String, String, Exponent, Exponent}, Dict{Tuple{Exponent, Exponent}, Complex128}}
-const SDPRhs = Dict{Tuple{Exponent, Exponent}, Complex128}
+#     SDPForm() = new("", SortedDict{String, SDPBlock}(), Polynomial(), NaN, NaN, NaN)
+# end
+
+const SDPBlock = SortedDict{Tuple{Exponent, Exponent}, Number}
+
+const SDPBlocks = SortedDict{Tuple{Tuple{Exponent, Exponent}, String, Exponent, Exponent}, Number}
+# ((α, β), block_name, γ, δ) -> coeff
+
+const SDPLin = SortedDict{Tuple{Tuple{Exponent, Exponent}, Exponent}, Number}
+# ((α, β), var) -> coeff
+
+const SDPcst = SortedDict{Tuple{Exponent, Exponent}, Number}
+# (α, β) -> coeff
+
+mutable struct SDPInstance
+    blocks::SDPBlocks
+    lin::SDPLin
+    cst::SDPcst
+end
+
+
+type SDP_Instance
+  VAR_TYPES
+  BLOCKS
+  LINEAR
+  CONST
+end
+
+type SDP_Block
+  id::Int64
+  name::String
+  var_to_id::Dict{String, Int64}
+
+  SDP_Block(id::Int64, name::String) = new(id, name, Dict{String, Int64}())
+  SDP_Block() = new(-1, "", Dict{String, Int64}())
+end
+
+
+type SDP_Problem
+  name_to_block::SortedDict{String, SDP_Block}
+  id_to_block::SortedDict{Int64, SDP_Block}
+
+  name_to_ctr::SortedDict{String, Tuple{Int64, String, Float64, Float64}} # Id, type et bornes des contraintes
+  id_to_ctr::SortedDict{Int64, String}
+
+  matrices::SortedDict{Tuple{String, String, String, String}, Float64} # Matrices du corps des contraintes / objectif
+  linear::SortedDict{Tuple{String, String}, Float64} # Matrice portant les parties linéaires des contraintes
+  cst_ctr::SortedDict{String, Float64} # Constante du corp des contraintes
+
+
+  SDP_Problem() = new(SortedDict{String, SDP_Block}(),
+                      SortedDict{Int64, SDP_Block}(),
+                      SortedDict{String, Tuple{Int64, String, Float64, Float64}}(),
+                      SortedDict{Int64, String}(),
+                      SortedDict{Tuple{String, String, String, String}, Float64}(),
+                      SortedDict{Tuple{String, String}, Float64}(),
+                      SortedDict{String, Float64}()
+  )
+end
 
 """
     SparsityPattern
@@ -60,17 +130,18 @@ const SDPRhs = Dict{Tuple{Exponent, Exponent}, Complex128}
 """
 type SparsityPattern end
 
+include("build_relctx.jl")
+include("build_maxcliques.jl")
+include("build_momentpb.jl")
+include("build_SDPInstance.jl")
+include("build_SDP_Problem.jl")
 
-include("setproblem.jl")
-include("momentmatrix.jl")
-include("sparsity.jl")
 include("symmetries.jl")
-include("SDPcontainer.jl")
+include("export_SDPInstance.jl")
 
 include("example_problems.jl")
-# include("compute_Bi.jl")
-# include("build_SDP_SOS.jl")
-# include("export_JuMP.jl")
+include("run_mosek.jl")
+include("utils.jl")
 
 
 function print_cmat(mat::AbstractArray, round = 1e-3)

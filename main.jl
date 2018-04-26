@@ -6,49 +6,75 @@ function main()
 
     ########################################
     # Construction du problème type
-    # rawproblem = buildPOP_1v1c()
-    # rawproblem = buildPOPR_2v1c()
-    # rawproblem = buildPOP_1v2c()
-    # rawproblem = buildPOP_2v3c()
-    # rawproblem = buildPOP_WB2()
-    # rawproblem = buildPOP_WB2_expl()
+    # problem = buildPOP_1v1c()
+    # problem = buildPOPR_2v1c()
+    # problem = buildPOP_1v2c()
+    # problem = buildPOP_2v3c()
+    # problem = buildPOP_WB2()
+    # problem = buildPOP_WB2_expl()
 
     ########################################
     # Normalizing pb and setting relaxation order by constraint
-    # problem = normalize_problem(rawproblem)
     # relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
 
-    real_pb = true
-    if real_pb
-        rawproblem = buildPOPR_2v1c()
-        problem = normalize_problem(rawproblem)
-        relax_ctx = set_relaxation(problem, hierarchykind=:Real, d = 2)
+    pb_ind = 0
+    if pb_ind == 0
+        # Build the init problem and set relaxation parameters
+        # problem = buildPOPR_2v2cbis()
+        problem = buildPOPR_2v2c()
+        change_eq_to_ineq!(problem)
+
+        relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+                                            d = 1)
+                                            # symmetries = [PhaseInvariance])
+    elseif pb_ind == 1
+        # Build the init problem and set relaxation parameters
+        problem = buildPOP_WB2_expl()
+        relax_ctx = set_relaxation(problem; hierarchykind=:Complex,
+                                            d = 2,
+                                            symmetries = [PhaseInvariance])
+        relax_ctx.di[get_momentcstrname()] = 2
     else
-        rawproblem = buildPOP_WB2_expl()
-        problem = normalize_problem(rawproblem)
-        relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
-        relax_ctx.di["moment_cstr"] = 2
+        # WB2 problem converted to real
+        WB2_C = buildPOP_WB2_expl()
+        change_eq_to_ineq!(WB2_C)
+
+        problem = pb_cplx2real(WB2_C)
+
+        relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+                                            d = 2)
+                                            # symmetries = [PhaseInvariance])
     end
 
-    println("\n--------------------------------------------------------")
-    println("relax_ctx = $relax_ctx")
+    problem, relax_ctx = lasserre_ex1()
 
     println("\n--------------------------------------------------------")
-    println("problem = $problem")
+    println("problem = \n$problem")
+
+    println("\n--------------------------------------------------------")
+    println("relax_ctx = \n$relax_ctx")
 
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
     max_cliques = get_maxcliques(relax_ctx, problem)
-    # max_cliques["onemore"] = Set([first(max_cliques["oneclique"])])
 
     println("\n--------------------------------------------------------")
-    println("max cliques = $max_cliques")
+    println("max cliques =")
+    for (cliquename, vars) in max_cliques
+        print("$cliquename = ")
+        for var in vars print("$var, ") end
+        @printf("\b\b \n")
+    end
 
+    ########################################
+    # Compute moment matrices parameters: order et variables
     moments_params = build_sparsity(relax_ctx, problem, max_cliques)
     println("\n--------------------------------------------------------")
     println("moment params =")
     for (key, (val1, val2)) in moments_params
-        println("$key \t -> $val1, di-ki=$val2")
+        print("$key \t -> di-ki = $val2, \tcliques = ")
+        for clique in val1 print("$clique, ") end
+        @printf("\b\b \n")
     end
 
     ########################################
@@ -58,34 +84,33 @@ function main()
     println("\n--------------------------------------------------------")
     println("mmtrel_pb = $mmtrel_pb")
 
-
-    # B_i = compute_Bibycstr(problem, momentmatrices, max_cliques, cliquevarsbycstr, orderbyclique, relax_ctx)
-
-    # SDP_SOS = build_SDP_SOS(problem, max_cliques, B_i, cliquevarsbycstr, orderbyclique, relax_ctx)
-
     ########################################
-    # Calcul d'une solution par un solveur
-    # m, Zi, yα_re, yα_im, expo2int, int2expo = make_JuMPproblem(SDP_SOS, SCSSolver(max_iters=5000000, eps=1e-3, verbose=true), relax_ctx)
+    # Convert to a primal SDP problem
+    sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
+    println("\n--------------------------------------------------------")
+    println("sdpinstance = \n$sdpinstance")
+    export_SDP(relax_ctx, sdpinstance, pwd())
 
-    # println("-----> SDP_SOS problem size: ", Base.summarysize(m)/1024, " ko")
-    # println("-----> JuMP problem size: ", Base.summarysize(m)/1024, " ko")
+    sdp_instance = read_SDPInstance(pwd())
 
-    ########################################
-    # Résolution du SDP par un solveur
-    # println("-----> Starting solve")
-    # solve(m)
+    println("VAR_TYPES size:     $(size(sdp_instance.VAR_TYPES))")
+    println("BLOCKS size:        $(size(sdp_instance.BLOCKS))")
+    println("LINEAR size:        $(size(sdp_instance.LINEAR))")
+    println("CONST size:         $(size(sdp_instance.CONST))")
 
-    # println("\n-----> Objective value: ", getobjectivevalue(m), "\n")
+    sdp = SDP_Problem()
 
-    # # for (cstrname, mmb) in B_i
-    # #     println("$cstrname \t= ", getvalue(Zi[cstrname]), "\n")
-    # # end
+    set_constraints!(sdp, sdp_instance, debug=true)
+    set_blocks!(sdp, sdp_instance, debug=true)
+    set_matrices!(sdp, sdp_instance, debug=true)
+    set_linear!(sdp, sdp_instance, debug=true)
+    set_const!(sdp, sdp_instance, debug=true)
 
-    # println("\n\n----->Lagrange multipliers : yα =")
-    # yα = - getdual(yα_re) - im*getdual(yα_im)
-    # print_cmat(yα)
 
-    return
+    primal=SortedDict{Tuple{String,String,String}, Float64}()
+    dual=SortedDict{String, Float64}()
+
+    solve_mosek(sdp::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64}, dual::SortedDict{String, Float64}, debug=false)
 end
 
 main()

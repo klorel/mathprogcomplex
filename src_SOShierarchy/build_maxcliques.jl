@@ -2,16 +2,30 @@
     moments_param = build_sparsity(relax_ctx, problem)
     Build the sparsitty pattern and variables decomposition for laying out the moment or SOS hierarchy
 """
-function build_sparsity(relax_ctx, problem, max_cliques::Dict{String, Set{Variable}})
+function build_sparsity(relax_ctx, problem, max_cliques::SortedDict{String, SortedSet{Variable}})
 
     if relax_ctx.issparse == false
         (length(max_cliques) == 1) || error("build_sparsity(): Relaxation is not sparse, one clique is expected (not $(length(max_cliques)))")
 
-        moments_param = Dict{String, Tuple{Set{String}, Int}}()
-        for (cstr, pb) in problem.constraints
-            di, ki = relax_ctx.di[cstr], relax_ctx.ki[cstr]
-            moments_param[cstr] = (Set(["oneclique"]), di-ki)
+        # For each *problem* constraint, compute relevant variable sets and matrix order
+        moments_param = SortedDict{String, Tuple{SortedSet{String}, Int}}()
+        for (cstrname, cstr) in problem.constraints
+            cstrtype = get_cstrtype(cstr)
+            if cstrtype == :ineqdouble
+                cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
+                di_lo, ki_lo = relax_ctx.di[cstrname_lo], relax_ctx.ki[cstrname_lo]
+                di_up, ki_up = relax_ctx.di[cstrname_up], relax_ctx.ki[cstrname_up]
+                moments_param[cstrname_lo] = (SortedSet(["clique1"]), di_lo-ki_lo)
+                moments_param[cstrname_up] = (SortedSet(["clique1"]), di_up-ki_up)
+            else
+                di, ki = relax_ctx.di[get_cstrname(cstrname, cstrtype)], relax_ctx.ki[get_cstrname(cstrname, cstrtype)]
+                moments_param[get_cstrname(cstrname, cstrtype)] = (SortedSet(["clique1"]), di-ki)
+            end
         end
+
+        # Handle the moment constraint
+        di, ki = relax_ctx.di[get_momentcstrname()], relax_ctx.ki[get_momentcstrname()]
+        moments_param[get_momentcstrname()] = (SortedSet(["clique1"]), di-ki)
         return moments_param
 
     else
@@ -25,13 +39,27 @@ end
 
 function get_maxcliques(relax_ctx, problem)
     if !relax_ctx.issparse
-        vars = Set{Variable}([Variable(name, kind) for (name, kind) in problem.variables])
-        return Dict{String, Set{Variable}}("oneclique"=>vars)
+        vars = SortedSet{Variable}([Variable(name, kind) for (name, kind) in problem.variables])
+        return SortedDict{String, SortedSet{Variable}}("clique1"=>vars)
     else
         error("Sparse relaxation is not supported yet")
     end
 end
 
+"""
+    vars, blocname = collect_cliquesvars(clique_keys, max_cliques)
+    Collect variables of `cliques_keys` cliques, described in `max_cliques`
+"""
+function collect_cliquesvars(clique_keys, max_cliques)
+    # Collect variables involved in constraint
+    vars = SortedSet{Variable}()
+    blocname = ""
+    for clique_key in clique_keys
+        union!(vars, max_cliques[clique_key])
+        blocname = blocname*clique_key*"_"
+    end
+    return vars, blocname[1:end-1]
+end
 #################################################################################
 ## Old stuff
 
@@ -63,42 +91,42 @@ end
 
 """
     maxcliques = compute_maxcliques(sparsity_pattern)
-    Compute a `Array{Set{Variable}}` describing the maximum cliques on the provided sparsity_pattern.
+    Compute a `Array{SortedSet{Variable}}` describing the maximum cliques on the provided sparsity_pattern.
 """
 function compute_maxcliques(sparsity_pattern::SparsityPattern)
     println("\n=== compute_maxcliques(sparsity_pattern::SparsityPattern)")
-    println("Compute a `Array{Set{Variable}}` describing the maximum cliques on the provided sparsity_pattern.")
+    println("Compute a `Array{SortedSet{Variable}}` describing the maximum cliques on the provided sparsity_pattern.")
     println("-> Nb cliques / nb vertex:         xx / xx")
     println("-> Nb vertex by clique:            xx / xx (mean/std)")
-    maxcliques = Array{Set{Variable}}()
-    return maxcliques::Array{Set{Variable}}
+    maxcliques = Array{SortedSet{Variable}}()
+    return maxcliques::Array{SortedSet{Variable}}
 end
 
 
 """
     varsbycstr = compute_varsbycstr(problem)
-    Compute a `Dict{String, Set{Variable}}` providing the set of variables involved in each constraint.
+    Compute a `SortedDict{String, SortedSet{Variable}}` providing the set of variables involved in each constraint.
 """
 function compute_varsbycstr(problem::Problem)
     println("\n=== compute_varsbycstr(problem::Problem)")
-    println("Compute a `Dict{String, Set{Variable}}` providing the set of variables involved in each constraint.")
+    println("Compute a `SortedDict{String, SortedSet{Variable}}` providing the set of variables involved in each constraint.")
     println("-> Nb poly constraints:                xx")
     println("-> Nb variables by poly constraint:    xx / xx (mean/std)")
-    varsbycstr = Dict{String, Set{Variable}}()
-    return varsbycstr::Dict{String, Set{Variable}}
+    varsbycstr = SortedDict{String, SortedSet{Variable}}()
+    return varsbycstr::SortedDict{String, SortedSet{Variable}}
 end
 
 """
     cliquevarsbycstr = compute_varsbycstr(sparsity_pattern, max_cliques, varsbycstr)
-    Compute a `Dict{String, Set{Variable}}` providing the set of variables involved in the SDP localizing matrix corresponding to each constraint.
+    Compute a `SortedDict{String, SortedSet{Variable}}` providing the set of variables involved in the SDP localizing matrix corresponding to each constraint.
 """
 function compute_varsbycstr(sparsity_pattern, max_cliques, varsbycstr)
     println("\n=== compute_varsbycstr(sparsity_pattern, max_cliques, varsbycstr)")
-    println("Compute a `Dict{String, Set{Variable}}` providing the set of variables involved in the SDP localizing matrix corresponding to each constraint.")
+    println("Compute a `SortedDict{String, SortedSet{Variable}}` providing the set of variables involved in the SDP localizing matrix corresponding to each constraint.")
     println("-> Nb SDP constraints:                 xx")
     println("-> Nb variables by SDP constraint:     xx / xx (mean/std)")
-    cliquevarsbycstr = Dict{String, Set{Variable}}()
-    return cliquevarsbycstr::Dict{String, Set{Variable}}
+    cliquevarsbycstr = SortedDict{String, SortedSet{Variable}}()
+    return cliquevarsbycstr::SortedDict{String, SortedSet{Variable}}
 end
 
 """
@@ -110,6 +138,6 @@ function compute_cliqueorders(sparsity_pattern, varsbycstr, max_cliques, relax_c
     println("Compute a `Array{Int}` providing the relaxation order corresponding to each clique.")
     println("-> Nb cliques:                         xx")
     println("-> Relaxation order by clique:         xx / xx (mean/std)")
-    orderbyclique = Dict{Int, Int}()
-    return orderbyclique::Dict{Int, Int}
+    orderbyclique = SortedDict{Int, Int}()
+    return orderbyclique::SortedDict{Int, Int}
 end

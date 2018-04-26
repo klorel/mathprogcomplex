@@ -162,17 +162,12 @@ end
 
 
 ## Evaluate
+# NOTE: Point are sparse vectors, hence non referenced variables are assumed to be null.
 function evaluate(p::Polynomial, pt::Point)
     res=0
     expldeg = conjdeg = 0
     for (expo, λ) in p
         res += λ*evaluate(expo, pt)
-    end
-    typeof(res)<:Polynomial && update_degree!(res)
-
-    # Fully evaluated polynomial
-    if typeof(res) == Polynomial && res.degree == Degree(0,0)
-        return first(res)[2]
     end
     return res
 end
@@ -181,10 +176,8 @@ function evaluate(expo::Exponent, pt::Point)
     res=1
     for (var, deg) in expo.expo
         if haskey(pt, var)
-            res *= (evaluate(var, pt)^deg.explvar) * (conj(evaluate(var, pt))^deg.conjvar)
-        else
-            # res *= var^deg.explvar * conj(var)^deg.conjvar
-            res *= (evaluate(var, pt)^deg.explvar) * (conj(evaluate(var, pt))^deg.conjvar)
+            val = evaluate(var, pt)
+            res *= (val^deg.explvar) * (conj(val)^deg.conjvar)
         end
     end
     return res

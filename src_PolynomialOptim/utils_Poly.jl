@@ -55,20 +55,6 @@ function is_homogeneous(expo::Exponent, kind::Symbol)
 end
 
 """
-    make_homogeneous!(p, kind)
-
-    Remove in-place the non homogeneous (in the `is_homogeneous` sense) monomials of `p`.
-"""
-function make_homogeneous!(p::Polynomial, kind::Symbol)
-    for expo in keys(p)
-        if !is_homogeneous(expo, kind)
-            delete!(p.poly, expo)
-        end
-    end
-    update_degree!(p)
-end
-
-"""
     explsum, conjsum = get_sumdegs(expo)
 
     Compute `|α|`, `|β|` the sum of the real variables exponents and conjugated variables exponents.
@@ -80,4 +66,23 @@ function get_sumdegs(expo::Exponent)
         conjsum += deg.conjvar
     end
     return explsum, conjsum
+end
+
+"""
+    cstrtype = get_cstrtype(cstr::Constraint)
+
+    Return a cstraint type among `:eq`, `:ineqhi`, `:ineqlo`, `:ineqdouble`.
+"""
+function get_cstrtype(cstr::Constraint)
+    if cstr.lb == cstr.ub && isfinite(cstr.ub)
+        return :eq
+    elseif (cstr.lb == -Inf-im*Inf) && (cstr.ub != Inf+im*Inf)
+        return :ineqhi
+    elseif (cstr.lb != -Inf-im*Inf) && (cstr.ub == Inf+im*Inf)
+        return :ineqlo
+    elseif (cstr.lb != -Inf-im*Inf) && (cstr.ub != Inf+im*Inf)
+        return :ineqdouble
+    else
+        error("get_cstrtype(): unknown constraint type.\nConstraint is $cstr")
+    end
 end
