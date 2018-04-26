@@ -34,14 +34,25 @@ function get_cliques(pb_real::Problem)
             push!(generator_buses, bus_id)
         end
     end
-    println(generator_buses)
 
     for var in vars
-        scen, bus, _ = split(var[1],'_')
-        if bus ∈ generator_buses
-
-
-
+        splits = split(var[1],'_')
+        scen = splits[1]
+        bus_id = splits[2]
+        if bus_id ∈ generator_buses
+            clique ="C-bus-$bus_id)"
+            if !haskey(cliques, clique)
+                cliques[clique] = Set{Variable}()
+            end
+            push!(cliques[clique], Variable(var[1], var[2]))
+        else
+            clique ="C-$scen"
+            if !haskey(cliques, clique)
+                cliques[clique] = Set{Variable}()
+            end
+            push!(cliques[clique], Variable(var[1], var[2]))
+        end
+    end
     return cliques
 end
 
