@@ -87,16 +87,14 @@ end
 """
     problem, relax_ctx = lasserre_ex1()
 
-    From Lasserre2001, global minimum : -0.2428.
+    From Lasserre2001, global minimum : (3) -0.2428.
 """
 function lasserre_ex1()
     x1 = Variable("x1", Real)
     x2 = Variable("x2", Real)
     problem = Problem()
     add_variable!(problem, x1); add_variable!(problem, x2)
-    set_objective!(problem, (x1^2+1)*(x1^2+1) +
-                            (x2^2+1)*(x2^2+1) +
-                            (x1+x2+1)*(x1+x2+1))
+    set_objective!(problem, (x1^2+1)^2 + (x2^2+1)^2 + (x1+x2+1)^2)
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         d = 2)
@@ -113,10 +111,10 @@ function lasserre_ex2()
     x2 = Variable("x2", Real)
     problem = Problem()
     add_variable!(problem, x1); add_variable!(problem, x2)
-    set_objective!(problem, (x1^2+1)^2 + (x2^2+1)^2 -2*(x1^2+x2^2+1)^2)
+    set_objective!(problem, (x1^2+1)^2 + (x2^2+1)^2 -2*(x1+x2+1)^2)
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        d = 1)
+                                        d = 2)
     return problem, relax_ctx
 end
 
@@ -130,10 +128,10 @@ function lasserre_ex3()
     x2 = Variable("x2", Real)
     problem = Problem()
     add_variable!(problem, x1); add_variable!(problem, x2)
-    set_objective!(problem, (x1^2+1)^2 + (x2^2+1)^2 -2*(x1^2+x2^2+1)^2)
+    set_objective!(problem, x1^2 * x2^2 * (x1^2 + x2^2 - 1))
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        d = 1)
+                                        d = 2)
     return problem, relax_ctx
 end
 

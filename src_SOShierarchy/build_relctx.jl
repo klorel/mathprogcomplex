@@ -55,7 +55,7 @@ function set_relaxation(pb::Problem; ismultiordered=false,
 
     for (cstrname, cstr) in pb.constraints
         cur_order = haskey(di, cstrname) ? di[cstrname] : d
-        
+
         # Check provided di is suitable wrt constraint degree, add
         cstrtype = get_cstrtype(cstr)
         if cstrtype == :ineqdouble
@@ -78,6 +78,12 @@ function set_relaxation(pb::Problem; ismultiordered=false,
         di_relax[get_momentcstrname()] = d
     else
         di_relax[get_momentcstrname()] = maximum(values(di_relax))
+    end
+    # Objective polynomial must be representable by moment matrix
+    obj_degree = max(pb.objective.degree.explvar, pb.objective.degree.conjvar)
+    if obj_degree > di_relax[get_momentcstrname()]
+        warn("RelaxationContext(): Moment matrix order $(di_relax[get_momentcstrname()]) is lower than objective degree ($obj_degree). \nUsing value $obj_degree, hierarchy may be multiordered.")
+        di_relax[get_momentcstrname()] = ceil(obj_degree/2)
     end
 
     relax_ctx = RelaxationContext(ismultiordered, issparse, SortedSet{DataType}(), hierarchykind, renamevars, di_relax, ki, cstrtypes)

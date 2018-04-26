@@ -30,25 +30,22 @@ function get_triplets(problem::SDP_Problem; debug = false)
   nzc=0
   nza=0
   for ((objctr, block, var1, var2), coeff) in problem.matrices
-    print("$objctr, $block, $var1, $var2")
     sdp_block = problem.name_to_block[block]
     lower = min(sdp_block.var_to_id[var1], sdp_block.var_to_id[var2])
     upper = max(sdp_block.var_to_id[var1], sdp_block.var_to_id[var2])
     if objctr == problem.obj_name
-      println(" --> objective")
       nzc+=1
       barcj[nzc] = sdp_block.id
       barck[nzc] = upper
       barcl[nzc] = lower
-      barcjkl[nzc] = coeff # * (lower==upper? 1: 0.5)
+      barcjkl[nzc] = coeff
     else
-      println(" --> constraint")
       nza+=1
       barai[nza] = problem.name_to_ctr[objctr][1]
       baraj[nza] = sdp_block.id
       barak[nza] = upper
       baral[nza] = lower
-      baraijkl[nza] = coeff # * (lower==upper? 1: 0.5)
+      baraijkl[nza] = coeff
     end
   end
 
