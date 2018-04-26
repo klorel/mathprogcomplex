@@ -45,7 +45,7 @@ end
 function get_pbcstrname(cstrname::String)
     if ismatch(r".+(\_lo|\_hi|\_eq)", cstrname)
         return cstrname[1:end-3]
-    else 
+    else
         return cstrname
     end
 end
@@ -75,3 +75,6 @@ function change_eq_to_ineq!(problem::Problem)
         end
     end
 end
+
+## Mosek
+obj_key() = "1,1"

@@ -1,7 +1,5 @@
 using Mosek
 
-obj_key() = "1,1"
-
 printstream(msg::String) = print(msg)
 
 function get_triplets(problem::SDP_Problem; debug = false)
@@ -32,16 +30,19 @@ function get_triplets(problem::SDP_Problem; debug = false)
   nzc=0
   nza=0
   for ((objctr, block, var1, var2), coeff) in problem.matrices
+    print("$objctr, $block, $var1, $var2")
     sdp_block = problem.name_to_block[block]
     lower = min(sdp_block.var_to_id[var1], sdp_block.var_to_id[var2])
     upper = max(sdp_block.var_to_id[var1], sdp_block.var_to_id[var2])
-    if objctr == obj_key()
+    if objctr == problem.obj_name
+      println(" --> objective")
       nzc+=1
       barcj[nzc] = sdp_block.id
       barck[nzc] = upper
       barcl[nzc] = lower
       barcjkl[nzc] = coeff # * (lower==upper? 1: 0.5)
     else
+      println(" --> constraint")
       nza+=1
       barai[nza] = problem.name_to_ctr[objctr][1]
       baraj[nza] = sdp_block.id
@@ -52,7 +53,8 @@ function get_triplets(problem::SDP_Problem; debug = false)
   end
 
   if debug
-    warn("Reading SDP_Problem")
+    println("*********************************************************************************")
+    println("Debug -> Reading SDP_Problem")
     @printf("%5s  %5s  %5s  %s\n", "barcj", "barck", "barcl", "barcjkl")
     for i=1:length(barcj)
         @printf("%5i  %5i  %5i  %f\n", barcj[i], barck[i], barcl[i], barcjkl[i])
@@ -145,14 +147,18 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
       # Set contraints linear part
       # putaijlist(task, ai, aj, aij)
 
-      # Objective matrices
+      # Objective matrices and constant
       putbarcblocktriplet(task, length(barcj), barcj, barck, barcl, barcjkl)
+      if haskey(problem.cst_ctr, problem.obj_name)
+        putcfix(task, problem.cst_ctr[problem.obj_name])
+      end
 
       # putintparam(task, MSK_IPAR_INTPNT_SCALING, MSK_SCALING_NONE)
       # putintparam(task, MSK_IPAR_INTPNT_SCALING, MSK_SCALING_AGGRESSIVE)
 
       if debug
-        warn("Reading Mosek problem")
+        println("*********************************************************************************")
+        println("Debug -> Reading Mosek problem")
         num, subcj, subck, subcl, valcjkl = getbarcblocktriplet(task)
         @printf("%5s  %5s  %5s  %s\n", "subcj", "subck", "subcl", "valcjkl")
         for i=1:num
@@ -200,13 +206,28 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
             @printf("%15s %5s %5s %f\n", blockname, var1, var2, val)
           end
 
+          # X = Dict()
+          # for ((blockname, var1, var2), val) in primal
+          #   if !haskey(X, blockname)
+          #     n = length(problem.name_to_block[blockname].var_to_id)
+          #     X[blockname] = zeros(n, n)
+          #   end
+          #   X[blockname][problem.name_to_block[blockname].var_to_id[var1],
+          #     problem.name_to_block[blockname].var_to_id[var2]] = val
+          # end
+
+          # for (ctrname, mat) in X
+          #   println(ctrname)
+          #   print_cmat(mat)
+          # end
+
           # Get dual solution
           println("Dual solution")
-          for (ctrid, ctrname) in problem.id_to_ctr
-            bars = getbarsj(task, MSK_SOL_ITR, ctrid)
-            println("--> $ctrid, $ctrname")
-            println(bars)
-          end
+          # for (ctrid, ctrname) in problem.id_to_ctr
+          #   bars = getbarsj(task, MSK_SOL_ITR, ctrid)
+          #   println("--> $ctrid, $ctrname")
+          #   println(bars)
+          # end
 
 
       elseif solsta == MSK_SOL_STA_DUAL_INFEAS_CER

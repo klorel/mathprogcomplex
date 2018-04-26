@@ -19,7 +19,6 @@ function MomentMatrix(relax_ctx, vars::SortedSet{Variable}, d::Int, symmetries::
                 continue
             end
             if cexp ≥ rexp
-                println("Adding $cexp, $rexp")
                 mm[(cexp, rexp)] = cexp*rexp
             end
         end

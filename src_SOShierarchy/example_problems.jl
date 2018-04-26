@@ -94,9 +94,9 @@ function lasserre_ex1()
     x2 = Variable("x2", Real)
     problem = Problem()
     add_variable!(problem, x1); add_variable!(problem, x2)
-    set_objective!(problem, (x1^2+1)*(x1^2+1) + 
-                            (x2^2+1)*(x2^2+1) + 
-                            (x1^2+x2^2+1)*(x1^2+x2^2+1))
+    set_objective!(problem, (x1^2+1)*(x1^2+1) +
+                            (x2^2+1)*(x2^2+1) +
+                            (x1+x2+1)*(x1+x2+1))
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         d = 2)
@@ -114,7 +114,7 @@ function lasserre_ex2()
     problem = Problem()
     add_variable!(problem, x1); add_variable!(problem, x2)
     set_objective!(problem, (x1^2+1)^2 + (x2^2+1)^2 -2*(x1^2+x2^2+1)^2)
-    
+
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         d = 1)
     return problem, relax_ctx
@@ -131,7 +131,7 @@ function lasserre_ex3()
     problem = Problem()
     add_variable!(problem, x1); add_variable!(problem, x2)
     set_objective!(problem, (x1^2+1)^2 + (x2^2+1)^2 -2*(x1^2+x2^2+1)^2)
-    
+
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         d = 1)
     return problem, relax_ctx
@@ -152,7 +152,7 @@ function lasserre_ex5()
     add_constraint!(problem, "crt1", 1-(x1-1)^2 >> 0)
     add_constraint!(problem, "crt2", 1-(x1-x2)^2 >> 0)
     add_constraint!(problem, "crt3", 1-(x2-3)^2 >> 0)
-    
+
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         d = 2)
     return problem, relax_ctx

@@ -99,17 +99,18 @@ function main()
 
     sdp = SDP_Problem()
 
-    set_constraints!(sdp, sdp_instance, debug=true)
-    set_blocks!(sdp, sdp_instance, debug=true)
-    set_matrices!(sdp, sdp_instance, debug=true)
-    set_linear!(sdp, sdp_instance, debug=true)
-    set_const!(sdp, sdp_instance, debug=true)
+    set_constraints!(sdp, sdp_instance)
+    set_blocks!(sdp, sdp_instance)
+    set_matrices!(sdp, sdp_instance)
+    set_linear!(sdp, sdp_instance)
+    set_const!(sdp, sdp_instance)
 
+    println("SDP_Problem :\n$sdp")
 
     primal=SortedDict{Tuple{String,String,String}, Float64}()
     dual=SortedDict{String, Float64}()
 
-    solve_mosek(sdp::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64}, dual::SortedDict{String, Float64}, debug=false)
+    solve_mosek(sdp::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64}, dual::SortedDict{String, Float64}, debug=true)
 end
 
 main()
