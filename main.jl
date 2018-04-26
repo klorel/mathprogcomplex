@@ -17,36 +17,38 @@ function main()
     # Normalizing pb and setting relaxation order by constraint
     # relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
 
-    pb_ind = 0
-    if pb_ind == 0
-        # Build the init problem and set relaxation parameters
-        # problem = buildPOPR_2v2cbis()
-        problem = buildPOPR_2v2c()
-        change_eq_to_ineq!(problem)
+    # pb_ind = 2
+    # if pb_ind == 0
+    #     # Build the init problem and set relaxation parameters
+    #     # problem = buildPOPR_2v2cbis()
+    #     problem = buildPOPR_2v2c()
+    #     change_eq_to_ineq!(problem)
 
-        relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                            d = 1)
-                                            # symmetries = [PhaseInvariance])
-    elseif pb_ind == 1
-        # Build the init problem and set relaxation parameters
-        problem = buildPOP_WB2_expl()
-        relax_ctx = set_relaxation(problem; hierarchykind=:Complex,
-                                            d = 2,
-                                            symmetries = [PhaseInvariance])
-        relax_ctx.di[get_momentcstrname()] = 2
-    else
-        # WB2 problem converted to real
-        WB2_C = buildPOP_WB2_expl()
-        change_eq_to_ineq!(WB2_C)
+    #     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+    #                                         d = 1)
+    #                                         # symmetries = [PhaseInvariance])
+    # elseif pb_ind == 1
+    #     # Build the init problem and set relaxation parameters
+    #     problem = buildPOP_WB2_expl()
+    #     relax_ctx = set_relaxation(problem; hierarchykind=:Complex,
+    #                                         d = 2,
+    #                                         symmetries = [PhaseInvariance])
+    #     relax_ctx.di[get_momentcstrname()] = 2
+    # else
+    #     # WB2 problem converted to real
+    #     WB2_C = buildPOP_WB2_expl()
+    #     change_eq_to_ineq!(WB2_C)
 
-        problem = pb_cplx2real(WB2_C)
+    #     problem = pb_cplx2real(WB2_C)
 
-        relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                            d = 2)
-                                            # symmetries = [PhaseInvariance])
-    end
+    #     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+    #                                         d = 2)
+    #                                         # symmetries = [PhaseInvariance])
+    # end
 
-    problem, relax_ctx = lasserre_ex1()
+    # problem, relax_ctx = lasserre_ex1()
+    # problem, relax_ctx = lasserre_ex2()
+    problem, relax_ctx = lasserre_ex3()
 
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")
@@ -82,13 +84,13 @@ function main()
 
     mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, moments_params, max_cliques)
     println("\n--------------------------------------------------------")
-    println("mmtrel_pb = $mmtrel_pb")
+    # println("mmtrel_pb = $mmtrel_pb")
 
     ########################################
     # Convert to a primal SDP problem
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
     println("\n--------------------------------------------------------")
-    println("sdpinstance = \n$sdpinstance")
+    # println("sdpinstance = \n$sdpinstance")
     export_SDP(relax_ctx, sdpinstance, pwd())
 
     sdp_instance = read_SDPInstance(pwd())
@@ -106,12 +108,12 @@ function main()
     set_linear!(sdp, sdp_instance)
     set_const!(sdp, sdp_instance)
 
-    println("SDP_Problem :\n$sdp")
+    # println("SDP_Problem :\n$sdp")
 
     primal=SortedDict{Tuple{String,String,String}, Float64}()
     dual=SortedDict{String, Float64}()
 
-    solve_mosek(sdp::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64}, dual::SortedDict{String, Float64}, debug=true)
+    solve_mosek(sdp::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64}, dual::SortedDict{String, Float64}, debug=false)
 end
 
 main()
