@@ -23,9 +23,15 @@ Build `name_to_ctr` with explicit constraint parameters from instance with ==0 a
 """
 function set_constraints!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   # Collect constraints names
-  ctr_names = Set{String}([instance.BLOCKS[i, 1] for i=1:size(instance.BLOCKS, 1)])
+  ctr_names = SortedSet{String}([instance.BLOCKS[i, 1] for i=1:size(instance.BLOCKS, 1)])
   union!(ctr_names, [instance.LINEAR[i, 1] for i=1:size(instance.LINEAR, 1)])
   union!(ctr_names, [instance.CONST[i, 1] for i=1:size(instance.CONST, 1)])
+
+  if haskey(ctr_names, obj_key())
+    delete!(ctr_names, obj_key())
+  else
+    warn("No ctrkey matching objective key $(obj_key())")
+  end
 
   # Default contraint is EQ, == 0
   # TODO: is that ok ?
@@ -38,10 +44,7 @@ function set_constraints!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   end
 
   if debug
-    println("\nset_constraints!(): complete")
-    for (name, ctr) in sdp.name_to_ctr
-      println("  * $name \t $ctr")
-    end
+
   end
 end
 
@@ -74,10 +77,6 @@ function set_blocks!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   end
 
   if debug
-    println("\nset_blocks!(): complete")
-    for (cstr, block) in sdp.name_to_block
-        println("  b $cstr -> $block")
-    end
   end
 end
 
@@ -96,10 +95,6 @@ function set_matrices!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   end
 
   if debug
-    println("\nset_matrices!(): complete")
-      for (name, ctr) in sdp.matrices
-          println("  s $name \t $ctr")
-      end
   end
 end
 
@@ -110,10 +105,6 @@ function set_linear!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   end
 
   if debug
-    println("\nset_linear!(): complete")
-    for (name, ctr) in sdp.linear
-      println("  l $name \t $ctr")
-    end
   end
 end
 
@@ -126,10 +117,6 @@ function set_const!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   end
 
   if debug
-    println("\nset_const!(): complete")
-    for (name, ctr) in sdp.cst_ctr
-        println("  c $name \t $ctr")
-    end
   end
 end
 
@@ -141,10 +128,30 @@ function set_vartypes!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
     end
   end
   if debug
-    println("\nset_vartypes!(): complete")
     warn("TBD")
-    # for (name, ctr) in sdp.cst_ctr
-    #     println("  vt $name \t $ctr")
-    # end
+  end
+end
+
+function print(io::IO, sdp::SDP_Problem)
+  for (cstr, block) in sdp.name_to_block
+    println(io, "  b $cstr -> $block")
+  end
+
+  println(io, "  objkey $(obj_key())")
+
+  for (name, ctr) in sdp.name_to_ctr
+    println(io, "  * $name \t $ctr")
+  end
+
+  for (name, mat) in sdp.matrices
+    println(io, "  s $name \t $mat")
+  end
+
+  for (name, lin) in sdp.linear
+    println(io, "  l $name \t $lin")
+  end
+
+  for (name, cst) in sdp.cst_ctr
+    println(io, "  c $name \t $cst")
   end
 end

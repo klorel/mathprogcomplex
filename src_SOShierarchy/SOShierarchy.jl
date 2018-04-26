@@ -110,6 +110,7 @@ type SDP_Problem
 
   name_to_ctr::SortedDict{String, Tuple{Int64, String, Float64, Float64}} # Id, type et bornes des contraintes
   id_to_ctr::SortedDict{Int64, String}
+  obj_name::String
 
   matrices::SortedDict{Tuple{String, String, String, String}, Float64} # Matrices du corps des contraintes / objectif
   linear::SortedDict{Tuple{String, String}, Float64} # Matrice portant les parties linéaires des contraintes
@@ -120,6 +121,7 @@ type SDP_Problem
                       SortedDict{Int64, SDP_Block}(),
                       SortedDict{String, Tuple{Int64, String, Float64, Float64}}(),
                       SortedDict{Int64, String}(),
+                      obj_key(),
                       SortedDict{Tuple{String, String, String, String}, Float64}(),
                       SortedDict{Tuple{String, String}, Float64}(),
                       SortedDict{String, Float64}()
