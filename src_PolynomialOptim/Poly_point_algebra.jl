@@ -4,7 +4,7 @@
   Sparsely add `val` to the `var` coordinate of `pt`.
 """
 function add_coord!(pt::Point, var::Variable, val::Number)
-  return add_to_dict!(pt.coords, var, val)
+  return add_to_dict!(pt.coords, var, val, isdense=pt.isdense)
 end
 
 ## Overloads for transparent iteration on `coords` attribute

@@ -61,7 +61,7 @@ function Base.print(io::IO, pb::Problem)
   println(io, "\n▶ objective: ", pb.objective)
   println(io, "▶ constraints: ")
   for (cstrName, cstr) in pb.constraints
-    @printf(io, "%10s: ", cstrName)
+    @printf(io, " → %10s: ", cstrName)
     println(io, cstr)
   end
 end
