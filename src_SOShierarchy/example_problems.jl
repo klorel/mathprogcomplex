@@ -1,5 +1,10 @@
 include(joinpath(ROOT, "src_PowSysMod", "PowSysMod_body.jl"))
 
+
+############################
+### Geometric problems
+############################
+
 function buildPOP_1v1c()
     z = Variable("z", Complex)
     problem = Problem()
@@ -52,72 +57,99 @@ function buildPOP_EllJoszMolc()
     return problem
 end
 
-function buildPOP_WB2()
+############################
+### OPF problems
+############################
+
+function buildPOP_WB2(; v2max = 0.976)
     OPFpbs = load_OPFproblems(MatpowerInput, joinpath("..", "data", "data_Matpower", "matpower", "WB2.m"))
-    return build_globalpb!(OPFpbs)
-end
+    problem_c = build_globalpb!(OPFpbs)
 
-function buildPOP_WB2_expl()
-    z1 = Variable("z1", Complex)
-    z2 = Variable("z2", Complex)
-    problem = Problem()
-    add_variable!(problem, z1); add_variable!(problem, z2);
-    set_objective!(problem, 8*abs2(z2-z1))
-    add_constraint!(problem, "VOLTM1", 0.9025 << abs2(z1) << 1.1025)
-    add_constraint!(problem, "VOLTM2", 0.9025 << abs2(z2) << 1.0568)
+    ## Converting to real ineq. only problem
+    change_eq_to_ineq!(problem_c)
+    problem = pb_cplx2real(problem_c)
 
-    add_constraint!(problem, "BAL1", ((2+10im)*z1*conj(z2) + (2-10im)*z2*conj(z1) - 4*abs2(z2)) == 350)
-    add_constraint!(problem, "BAL2", ((-10+2im)*z1*conj(z2) + (-10-2im)*z2*conj(z1) + 20*abs2(z2)) == -350)
+    ## Fixing volt phase of last bus to 0
+    lastctr = problem.constraints["BaseCase_2_Volt_VOLTM_Re"]
+    rm_constraint!(problem, "BaseCase_2_Volt_VOLTM_Re")
+
+    ## Setting imag part to 0
+    pt = Point(SortedDict(Variable("BaseCase_2_VOLT_Im", Real)=>0.0), isdense=true)
+    infer_problem!(problem, pt)
+
+    add_constraint!(problem, "BaseCase_2_Volt_VOLTM", sqrt(lastctr.lb) << Variable("BaseCase_2_VOLT_Re", Real) << v2max)
+    problem.constraints["BaseCase_2_Volt_VOLTM"].ub = v2max
     return problem
 end
 
-function buildPOP_WB2R_expl()
-    x1 = Variable("x1", Real)
-    x2 = Variable("x2", Real)
-    x3 = Variable("x3", Real)
-    x4 = Variable("x4", Real)
-    problem = Problem()
-    add_variable!(problem, x1); add_variable!(problem, x2);
-    add_variable!(problem, x3); add_variable!(problem, x4);
-    set_objective!(problem, 8*(x1-x2)^2 + 8*(x3-x4)^2)
-    add_constraint!(problem, "VOLTM1", 0.9025 << (x1+x3)^2 << 1.1025)
-    add_constraint!(problem, "VOLTM2", 0.9025 << (x2+x4)^2 << 1.0568)
-
-    eps = 0
-
-    add_constraint!(problem, "BAL1_hi", (  4*x1*x2 + 4*x3*x4 + 20*x1*x4 -20*x3*x2 - 4*x2^2 + 4*x4^2) << (350 + eps))
-    add_constraint!(problem, "BAL1_lo", (  4*x1*x2 + 4*x3*x4 + 20*x1*x4 -20*x3*x2 - 4*x2^2 + 4*x4^2) >> (350 - eps))
-    add_constraint!(problem, "BAL2_hi", (-20*x1*x2 -20*x3*x4 +  4*x1*x4 - 4*x3*x2 +20*x2^2 +20*x4^2) << (-350 + eps))
-    add_constraint!(problem, "BAL2_lo", (-20*x1*x2 -20*x3*x4 +  4*x1*x4 - 4*x3*x2 +20*x2^2 +20*x4^2) >> (-350 - eps))
+function buildPOP_WB5(; v5max = 1.05)
+    OPFpbs = load_OPFproblems(MatpowerInput, joinpath("..", "data", "data_Matpower", "matpower", "WB5.m"))
+    problem = build_globalpb!(OPFpbs)
+    problem.constraints["BaseCase_5_Volt_VOLTM"].ub = v2max
     return problem
 end
 
-function buildPOPR_2v2cbis()
-    x1 = Variable("x1", Real)
-    x2 = Variable("x2", Real)
-    problem = Problem()
-    add_variable!(problem, x1); add_variable!(problem, x2)
-    set_objective!(problem, -x2)
-    add_constraint!(problem, "eq", (x1-0.5*x2) == 0)
-    add_constraint!(problem, "ineq1", (x1 + 1) >> 0)
-    add_constraint!(problem, "ineq2", (x1 + x2) << 0)
-    add_constraint!(problem, "ineq_bnd", (x1^2 + x2^2) << 1)
-    return problem
-end
+# function buildPOP_WB2_expl()
+#     z1 = Variable("z1", Complex)
+#     z2 = Variable("z2", Complex)
+#     problem = Problem()
+#     add_variable!(problem, z1); add_variable!(problem, z2);
+#     set_objective!(problem, 8*abs2(z2-z1))
+#     add_constraint!(problem, "VOLTM1", 0.9025 << abs2(z1) << 1.1025)
+#     add_constraint!(problem, "VOLTM2", 0.9025 << abs2(z2) << 1.0568)
 
-function buildPOPR_2v2c()
-    x1 = Variable("x1", Real)
-    x2 = Variable("x2", Real)
-    problem = Problem()
-    add_variable!(problem, x1); add_variable!(problem, x2)
-    set_objective!(problem, -1*x1 - x2)
-    add_constraint!(problem, "ineq1", -1 << x1 << 1)
-    add_constraint!(problem, "ineq2", -1 << x2 << 1)
-    add_constraint!(problem, "eq_up", (x1-2*x2) << 0)
-    add_constraint!(problem, "eq_lo", (x1-2*x2) >> 0)
-    # add_constraint!(problem, "eq", (x1-2*x2) == 0)
-    return problem
-end
+#     add_constraint!(problem, "BAL1", ((2+10im)*z1*conj(z2) + (2-10im)*z2*conj(z1) - 4*abs2(z2)) == 350)
+#     add_constraint!(problem, "BAL2", ((-10+2im)*z1*conj(z2) + (-10-2im)*z2*conj(z1) + 20*abs2(z2)) == -350)
+#     return problem
+# end
+
+# function buildPOP_WB2R_expl()
+#     x1 = Variable("x1", Real)
+#     x2 = Variable("x2", Real)
+#     x3 = Variable("x3", Real)
+#     x4 = Variable("x4", Real)
+#     problem = Problem()
+#     add_variable!(problem, x1); add_variable!(problem, x2);
+#     add_variable!(problem, x3); add_variable!(problem, x4);
+#     set_objective!(problem, 8*(x1-x2)^2 + 8*(x3-x4)^2)
+#     add_constraint!(problem, "VOLTM1", 0.9025 << (x1+x3)^2 << 1.1025)
+#     add_constraint!(problem, "VOLTM2", 0.9025 << (x2+x4)^2 << 1.0568)
+
+#     eps = 0
+
+#     add_constraint!(problem, "BAL1_hi", (  4*x1*x2 + 4*x3*x4 + 20*x1*x4 -20*x3*x2 - 4*x2^2 + 4*x4^2) << (350 + eps))
+#     add_constraint!(problem, "BAL1_lo", (  4*x1*x2 + 4*x3*x4 + 20*x1*x4 -20*x3*x2 - 4*x2^2 + 4*x4^2) >> (350 - eps))
+#     add_constraint!(problem, "BAL2_hi", (-20*x1*x2 -20*x3*x4 +  4*x1*x4 - 4*x3*x2 +20*x2^2 +20*x4^2) << (-350 + eps))
+#     add_constraint!(problem, "BAL2_lo", (-20*x1*x2 -20*x3*x4 +  4*x1*x4 - 4*x3*x2 +20*x2^2 +20*x4^2) >> (-350 - eps))
+#     return problem
+# end
+
+# function buildPOPR_2v2cbis()
+#     x1 = Variable("x1", Real)
+#     x2 = Variable("x2", Real)
+#     problem = Problem()
+#     add_variable!(problem, x1); add_variable!(problem, x2)
+#     set_objective!(problem, -x2)
+#     add_constraint!(problem, "eq", (x1-0.5*x2) == 0)
+#     add_constraint!(problem, "ineq1", (x1 + 1) >> 0)
+#     add_constraint!(problem, "ineq2", (x1 + x2) << 0)
+#     add_constraint!(problem, "ineq_bnd", (x1^2 + x2^2) << 1)
+#     return problem
+# end
+
+# function buildPOPR_2v2c()
+#     x1 = Variable("x1", Real)
+#     x2 = Variable("x2", Real)
+#     problem = Problem()
+#     add_variable!(problem, x1); add_variable!(problem, x2)
+#     set_objective!(problem, -1*x1 - x2)
+#     add_constraint!(problem, "ineq1", -1 << x1 << 1)
+#     add_constraint!(problem, "ineq2", -1 << x2 << 1)
+#     add_constraint!(problem, "eq_up", (x1-2*x2) << 0)
+#     add_constraint!(problem, "eq_lo", (x1-2*x2) >> 0)
+#     # add_constraint!(problem, "eq", (x1-2*x2) == 0)
+#     return problem
+# end
 
 """
     problem, relax_ctx = lasserre_ex1()

@@ -163,25 +163,17 @@ function solve_mosek(problem::SDP_Problem; debug = false)
       MSK_DPAR_INTPNT_TOL_PFEAS
       MSK_DPAR_INTPNT_TOL_REL_GAP
 
-      println("MSK_DPAR_INTPNT_TOL_DFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_TOL_DFEAS))")
-      println("MSK_DPAR_INTPNT_TOL_INFEAS,   $(getdouparam(task, MSK_DPAR_INTPNT_TOL_INFEAS))")
-      println("MSK_DPAR_INTPNT_TOL_MU_RED,   $(getdouparam(task, MSK_DPAR_INTPNT_TOL_MU_RED))")
-      println("MSK_DPAR_INTPNT_TOL_PFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_TOL_PFEAS))")
-      println("MSK_DPAR_INTPNT_TOL_REL_GAP,  $(getdouparam(task, MSK_DPAR_INTPNT_TOL_REL_GAP))")
+      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_DFEAS, 1e-15)
+      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_INFEAS, 1e-15)
+      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_MU_RED, 1e-15)
+      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_PFEAS, 1e-15)
+      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_REL_GAP, 1e-14)
 
-      println("setting...")
-
-      putdouparam(task, MSK_DPAR_INTPNT_TOL_DFEAS, 1e-15)
-      putdouparam(task, MSK_DPAR_INTPNT_TOL_INFEAS, 1e-15)
-      putdouparam(task, MSK_DPAR_INTPNT_TOL_MU_RED, 1e-15)
-      putdouparam(task, MSK_DPAR_INTPNT_TOL_PFEAS, 1e-15)
-      putdouparam(task, MSK_DPAR_INTPNT_TOL_REL_GAP, 1e-14)
-
-      println("MSK_DPAR_INTPNT_TOL_DFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_TOL_DFEAS))")
-      println("MSK_DPAR_INTPNT_TOL_INFEAS,   $(getdouparam(task, MSK_DPAR_INTPNT_TOL_INFEAS))")
-      println("MSK_DPAR_INTPNT_TOL_MU_RED,   $(getdouparam(task, MSK_DPAR_INTPNT_TOL_MU_RED))")
-      println("MSK_DPAR_INTPNT_TOL_PFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_TOL_PFEAS))")
-      println("MSK_DPAR_INTPNT_TOL_REL_GAP,  $(getdouparam(task, MSK_DPAR_INTPNT_TOL_REL_GAP))")
+      println("MSK_DPAR_INTPNT_CO_TOL_DFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_DFEAS))")
+      println("MSK_DPAR_INTPNT_CO_TOL_INFEAS,   $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_INFEAS))")
+      println("MSK_DPAR_INTPNT_CO_TOL_MU_RED,   $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_MU_RED))")
+      println("MSK_DPAR_INTPNT_CO_TOL_PFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_PFEAS))")
+      println("MSK_DPAR_INTPNT_CO_TOL_REL_GAP,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_REL_GAP))")
 
       if debug
         println("*********************************************************************************")

@@ -53,14 +53,14 @@ function main()
 
     # problem = buildPOP_1v2()
 
-    OPFpbs = load_OPFproblems(MatpowerInput, joinpath("..", "data", "data_Matpower", "matpower", "WB2.m"))
-    pb_c = build_globalpb!(OPFpbs)
+    pb_c = buildPOP_WB2(v2max=0.976)
     change_eq_to_ineq!(pb_c)
 
     problem = pb_cplx2real(pb_c)
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        d = 2)
+                                        d = 4,
+                                        symmetries = [PhaseInvariance])
 
 
     println("\n--------------------------------------------------------")
@@ -73,13 +73,13 @@ function main()
     # Construction du sparsity pattern, extension chordale, cliques maximales.
     max_cliques = get_maxcliques(relax_ctx, problem)
 
-    println("\n--------------------------------------------------------")
-    println("max cliques =")
-    for (cliquename, vars) in max_cliques
-        print("$cliquename = ")
-        for var in vars print("$var, ") end
-        @printf("\b\b \n")
-    end
+    # println("\n--------------------------------------------------------")
+    # println("max cliques =")
+    # for (cliquename, vars) in max_cliques
+    #     print("$cliquename = ")
+    #     for var in vars print("$var, ") end
+    #     @printf("\b\b \n")
+    # end
 
     ########################################
     # Compute moment matrices parameters: order et variables
@@ -97,12 +97,12 @@ function main()
 
     mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, moments_params, max_cliques)
     println("\n--------------------------------------------------------")
-    # println("mmtrel_pb = $mmtrel_pb")
+    println("mmtrel_pb = $mmtrel_pb")
 
     ########################################
     # Convert to a primal SDP problem
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
-    println("\n--------------------------------------------------------")
+    # println("\n--------------------------------------------------------")
     # println("sdpinstance = \n$sdpinstance")
     export_SDP(relax_ctx, sdpinstance, pwd())
 
