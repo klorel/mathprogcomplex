@@ -25,10 +25,12 @@ function buildPOP_1v2()
     x2 = Variable("x2", Real)
     problem = Problem()
     add_variable!(problem, x1); add_variable!(problem, x2)
-    set_objective!(problem, 1.0*x2 + 3)
+    set_objective!(problem, -1.0*x1)
     add_constraint!(problem, "ineq", (x1^2+x2^2) << 1)
-    θ = π/3
-    add_constraint!(problem, "ineq_rot", (cos(θ)*x1+sin(θ)*x2) >> 0)
+    θ1 = π/3
+    add_constraint!(problem, "ineq_rot1", (cos(θ1)*x1+sin(θ1)*x2) >> 0)
+    θ2 = -π/3
+    add_constraint!(problem, "ineq_rot2", (cos(θ2)*x1+sin(θ2)*x2) >> 0)
     return problem
 end
 
@@ -51,7 +53,7 @@ function buildPOP_EllJoszMolc()
 end
 
 function buildPOP_WB2()
-    OPFpbs = load_OPFproblems(MatpowerInput, joinpath("data_Matpower", "matpower", "WB2.m"))
+    OPFpbs = load_OPFproblems(MatpowerInput, joinpath("..", "data", "data_Matpower", "matpower", "WB2.m"))
     return build_globalpb!(OPFpbs)
 end
 

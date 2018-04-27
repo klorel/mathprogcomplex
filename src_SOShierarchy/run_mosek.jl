@@ -157,6 +157,32 @@ function solve_mosek(problem::SDP_Problem; debug = false)
       # putintparam(task, MSK_IPAR_INTPNT_SCALING, MSK_SCALING_NONE)
       # putintparam(task, MSK_IPAR_INTPNT_SCALING, MSK_SCALING_AGGRESSIVE)
 
+      MSK_DPAR_INTPNT_TOL_DFEAS
+      MSK_DPAR_INTPNT_TOL_INFEAS
+      MSK_DPAR_INTPNT_TOL_MU_RED
+      MSK_DPAR_INTPNT_TOL_PFEAS
+      MSK_DPAR_INTPNT_TOL_REL_GAP
+
+      println("MSK_DPAR_INTPNT_TOL_DFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_TOL_DFEAS))")
+      println("MSK_DPAR_INTPNT_TOL_INFEAS,   $(getdouparam(task, MSK_DPAR_INTPNT_TOL_INFEAS))")
+      println("MSK_DPAR_INTPNT_TOL_MU_RED,   $(getdouparam(task, MSK_DPAR_INTPNT_TOL_MU_RED))")
+      println("MSK_DPAR_INTPNT_TOL_PFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_TOL_PFEAS))")
+      println("MSK_DPAR_INTPNT_TOL_REL_GAP,  $(getdouparam(task, MSK_DPAR_INTPNT_TOL_REL_GAP))")
+
+      println("setting...")
+
+      putdouparam(task, MSK_DPAR_INTPNT_TOL_DFEAS, 1e-15)
+      putdouparam(task, MSK_DPAR_INTPNT_TOL_INFEAS, 1e-15)
+      putdouparam(task, MSK_DPAR_INTPNT_TOL_MU_RED, 1e-15)
+      putdouparam(task, MSK_DPAR_INTPNT_TOL_PFEAS, 1e-15)
+      putdouparam(task, MSK_DPAR_INTPNT_TOL_REL_GAP, 1e-14)
+
+      println("MSK_DPAR_INTPNT_TOL_DFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_TOL_DFEAS))")
+      println("MSK_DPAR_INTPNT_TOL_INFEAS,   $(getdouparam(task, MSK_DPAR_INTPNT_TOL_INFEAS))")
+      println("MSK_DPAR_INTPNT_TOL_MU_RED,   $(getdouparam(task, MSK_DPAR_INTPNT_TOL_MU_RED))")
+      println("MSK_DPAR_INTPNT_TOL_PFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_TOL_PFEAS))")
+      println("MSK_DPAR_INTPNT_TOL_REL_GAP,  $(getdouparam(task, MSK_DPAR_INTPNT_TOL_REL_GAP))")
+
       if debug
         println("*********************************************************************************")
         println("Debug -> Reading Mosek problem")
