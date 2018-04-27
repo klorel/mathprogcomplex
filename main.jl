@@ -53,7 +53,7 @@ function main()
 
     # problem = buildPOP_1v2()
 
-    pb_c = buildPOP_WB2(v2max=0.976)
+    pb_c = buildPOP_WB2(v2max=0.983)
     change_eq_to_ineq!(pb_c)
 
     problem = pb_cplx2real(pb_c)
@@ -104,8 +104,8 @@ function main()
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
     # println("\n--------------------------------------------------------")
     # println("sdpinstance = \n$sdpinstance")
-    export_SDP(relax_ctx, sdpinstance, pwd())
 
+    export_SDP(relax_ctx, sdpinstance, pwd())
     sdp_instance = read_SDPInstance(pwd())
 
     println("VAR_TYPES size:     $(size(sdp_instance.VAR_TYPES))")
@@ -121,29 +121,26 @@ function main()
     set_linear!(sdp, sdp_instance)
     set_const!(sdp, sdp_instance)
 
+    primal = SortedDict{Tuple{String,String,String}, Float64}()
+    dual = SortedDict{Tuple{String, String, String}, Float64}()
 
-    primal, dual = solve_mosek(sdp::SDP_Problem; debug=false)
+    primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual)
 
     # println("Primal solution")
     # for ((blockname, var1, var2), val) in primal
     # @printf("%15s %5s %5s %f\n", blockname, var1, var2, val)
     # end
 
-    println("\nDual solution NEGATED")
-    for var in problem.variables
-        ctrname = get_momentcstrname()
-        var1 = var[1]
-        var2 = "1"
-        val = dual[(ctrname, var1, var2)]
-        println("($(ctrname), $(var1), $(var2)) = $(-val)")
-    end
-
-    # println("Dual solution")
-    # for ((ctrname, var1, var2), val) in dual
-    # @printf("%15s %5s %5s %f\n", ctrname, var1, var2, val)
+    # println("\nDual solution NEGATED")
+    # for var in problem.variables
+    #     ctrname = get_momentcstrname()
+    #     var1 = var[1]
+    #     var2 = "1"
+    #     val = dual[(ctrname, var1, var2)]
+    #     println("($(ctrname), $(var1), $(var2)) = $(-val)")
     # end
 
-
+    println("Objectives : $primobj, $dualobj")
 end
 
 main()

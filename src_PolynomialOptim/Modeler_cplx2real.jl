@@ -56,10 +56,7 @@ function infer_problem!(pb::Problem, pt::Point)
   end
 
   for (ctrname, ctr) in pb.constraints
-    println("---- ctr $ctrname")
-    println("    $(pb.constraints[ctrname])")
     pb.constraints[ctrname].p = evaluate(ctr.p, pt, partial=true)
-    println("    $(pb.constraints[ctrname])")
     if isa(ctr.p, Number)
       ctr.p ≤ ctr.ub || warn("infer_problem!(): Constraint $ctrname has body $(ctr.p) with bounds ($(ctr.lb), $(ctr.ub).\nProblem may be infeasable.")
       ctr.lb ≤ ctr.p || warn("infer_problem!(): Constraint $ctrname has body $(ctr.p) with bounds ($(ctr.lb), $(ctr.ub).\nProblem may be infeasable.")

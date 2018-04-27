@@ -107,10 +107,13 @@ function get_bounds(problem::SDP_Problem; debug = false)
 end
 
 
-function solve_mosek(problem::SDP_Problem; debug = false)
-  primal=SortedDict{Tuple{String,String,String}, Float64}()
-  dual=SortedDict{Tuple{String, String, String}, Float64}()
-
+function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64},
+                                       dual::SortedDict{Tuple{String, String, String}, Float64};
+                                       debug = false)
+  empty!(primal)
+  empty!(dual)
+  primobj = NaN
+  dualobj = NaN
 
   num_block = length(problem.id_to_block)
   # println("num_block : ", num_block)
@@ -122,9 +125,7 @@ function solve_mosek(problem::SDP_Problem; debug = false)
   println("numcon = ",   numcon)
 
   barcj, barck, barcl, barcjkl , barai, baraj, barak, baral, baraijkl = get_triplets(problem, debug=debug)
-  # println(bkc)
-  # println(blc)
-  # println(buc)
+
   # Create a task object and attach log stream printer
   maketask() do task
       putstreamfunc(task,MSK_STREAM_LOG,printstream)
@@ -157,17 +158,11 @@ function solve_mosek(problem::SDP_Problem; debug = false)
       # putintparam(task, MSK_IPAR_INTPNT_SCALING, MSK_SCALING_NONE)
       # putintparam(task, MSK_IPAR_INTPNT_SCALING, MSK_SCALING_AGGRESSIVE)
 
-      MSK_DPAR_INTPNT_TOL_DFEAS
-      MSK_DPAR_INTPNT_TOL_INFEAS
-      MSK_DPAR_INTPNT_TOL_MU_RED
-      MSK_DPAR_INTPNT_TOL_PFEAS
-      MSK_DPAR_INTPNT_TOL_REL_GAP
-
-      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_DFEAS, 1e-15)
-      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_INFEAS, 1e-15)
-      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_MU_RED, 1e-15)
-      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_PFEAS, 1e-15)
-      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_REL_GAP, 1e-14)
+      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_DFEAS, 1e-12)
+      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_INFEAS, 1e-12)
+      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_MU_RED, 1e-12)
+      # putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_PFEAS, 1e-12)
+      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_REL_GAP, 1e-1)
 
       println("MSK_DPAR_INTPNT_CO_TOL_DFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_DFEAS))")
       println("MSK_DPAR_INTPNT_CO_TOL_INFEAS,   $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_INFEAS))")
@@ -201,9 +196,12 @@ function solve_mosek(problem::SDP_Problem; debug = false)
 
       # Get status information about the solution
       prosta = getprosta(task,MSK_SOL_ITR)
-      @show prosta
       solsta = getsolsta(task,MSK_SOL_ITR)
       if solsta == MSK_SOL_STA_OPTIMAL || solsta == MSK_SOL_STA_NEAR_OPTIMAL
+        # Get objective
+        primobj = getprimalobj(task, MSK_SOL_ITR)
+        dualobj = getdualobj(task, MSK_SOL_ITR)
+
         # Get primal solution
         for (id, block) in problem.id_to_block
           barx = getbarxj(task, MSK_SOL_ITR, id)
@@ -247,12 +245,7 @@ function solve_mosek(problem::SDP_Problem; debug = false)
           println("Other solution status")
       end
 
-      # if solsta != MSK_SOL_STA_OPTIMAL && solsta != MSK_SOL_STA_NEAR_OPTIMAL
-      #   analyzeproblem(task, MSK_STREAM_WRN)
-      #   analyzesolution(task, MSK_STREAM_LOG, MSK_SOL_ITR)
-      # end
-
   end
 
-  return primal, dual
+  return primobj, dualobj
 end
