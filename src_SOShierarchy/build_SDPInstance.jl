@@ -25,7 +25,8 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
                 key = ((α, β), block_name, γ, δ)
 
                 @assert !haskey(sdpblocks, key)
-                sdpblocks[key] = λ
+                # Constraints are fα - ∑ Bi.Zi = 0
+                sdpblocks[key] = -λ
             end
         end
     end
@@ -35,7 +36,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
     ##        - enforce clique coupling constraints
 
     ## Build constants dict
-    for (expo, λ) in mmtrelax_pb.objective
+    for (expo, fαβ) in mmtrelax_pb.objective
         # Determine which moment to affect the current coefficient.
         α, β = split_expo(relaxctx, expo)
 
@@ -43,7 +44,8 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
             sdpcst[(α, β)] = 0.0
         end
 
-        sdpcst[(α, β)] -= λ #Considered as the constant of the constraint body
+        # Constraints are fα - ∑ Bi.Zi = 0
+        sdpcst[(α, β)] += fαβ
     end
 
     return SDPInstance(sdpblocks, sdplin, sdpcst)

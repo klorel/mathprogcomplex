@@ -38,7 +38,7 @@ function get_triplets(problem::SDP_Problem; debug = false)
       barcj[nzc] = sdp_block.id
       barck[nzc] = upper
       barcl[nzc] = lower
-      barcjkl[nzc] = -coeff
+      barcjkl[nzc] = coeff
     else
       nza+=1
       barai[nza] = problem.name_to_ctr[objctr][1]
@@ -151,7 +151,7 @@ function solve_mosek(problem::SDP_Problem; debug = false)
       # Objective matrices and constant
       putbarcblocktriplet(task, length(barcj), barcj, barck, barcl, barcjkl)
       if haskey(problem.cst_ctr, problem.obj_name)
-        putcfix(task, -problem.cst_ctr[problem.obj_name])
+        putcfix(task, problem.cst_ctr[problem.obj_name])
       end
 
       # putintparam(task, MSK_IPAR_INTPNT_SCALING, MSK_SCALING_NONE)

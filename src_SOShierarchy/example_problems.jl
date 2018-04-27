@@ -15,8 +15,8 @@ function buildPOP_1v2c()
     add_variable!(problem, z)
     set_objective!(problem, imag(z))
     add_constraint!(problem, "ineq", abs2(z) << 1)
-    theta = π/3
-    add_constraint!(problem, "ineq_rot", real(z*exp(-im*theta)) >> 0)
+    θ = π/3
+    add_constraint!(problem, "ineq_rot", real(z*exp(-im*θ)) >> 0)
     return problem
 end
 
@@ -25,10 +25,10 @@ function buildPOP_1v2()
     x2 = Variable("x2", Real)
     problem = Problem()
     add_variable!(problem, x1); add_variable!(problem, x2)
-    set_objective!(problem, 1.0*x2)
+    set_objective!(problem, 1.0*x2 + 3)
     add_constraint!(problem, "ineq", (x1^2+x2^2) << 1)
-    theta = π/3
-    add_constraint!(problem, "ineq_rot", (cos(theta)*x1+sin(theta)*x2) >> 0)
+    θ = π/3
+    add_constraint!(problem, "ineq_rot", (cos(θ)*x1+sin(θ)*x2) >> 0)
     return problem
 end
 

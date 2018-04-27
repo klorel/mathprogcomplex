@@ -114,7 +114,7 @@ function main()
     # Convert to a primal SDP problem
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
     println("\n--------------------------------------------------------")
-    # println("sdpinstance = \n$sdpinstance")
+    println("sdpinstance = \n$sdpinstance")
     export_SDP(relax_ctx, sdpinstance, pwd())
 
     sdp_instance = read_SDPInstance(pwd())
