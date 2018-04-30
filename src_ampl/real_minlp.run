@@ -26,6 +26,23 @@ param FEASTOL := 1e-6;
 param OPTTOL  := 1e-3;
 param FEASTOLABS := 1e-0;
 param OPTTOLABS  := 1e-0;
+param SCALE default 0;
+
+param scaling default 1;
+if scaling==1 then {let SCALE:=2;}
+
+param scale_from_phase1 default 0;
+param scale_x_with_bounds default 1;
+param scale_x_y default 1;
+
+param scale_y_value := 1e+0;
+param scale_x_value := 1e-1;
+
+
+display scaling;
+display scale_from_phase1;
+display scale_x_with_bounds;
+display scale_x_y;
 
 param TIME_BEGIN;
 let TIME_BEGIN := time();
@@ -43,7 +60,7 @@ model;
 
 
 option solver knitroampl;
-option knitro_options ('outlev=3 maxit=600 scale=2 feastol='&FEASTOL&' opttol='&OPTTOL&' feastolabs='&FEASTOLABS&' opttolabs='&OPTTOLABS&' bar_initpt=2 presolve=0 honorbnds=0');
+option knitro_options ('outlev=3 maxit=600 scale='&SCALE&' feastol='&FEASTOL&' opttol='&OPTTOL&' feastolabs='&FEASTOLABS&' opttolabs='&OPTTOLABS&' bar_initpt=2 presolve=0 honorbnds=0');
 
 
 ###
@@ -57,14 +74,21 @@ if STRATEGY_INITPOINT == GOC_POINT then{
 	let{(VAR_TYPE, REAL, name, NONE) in KEYS} x[name] := 1.1;
 	let{(VAR_TYPE, BOOL, name, NONE) in KEYS} y[name] := 0.0;
 };
-let{varname in BINARY_VARIABLES} y[varname].xscalefactor   := 1e+0;
-let{(VAR_TYPE, REAL, name, NONE) in KEYS} x[name].xscalefactor := 1e-1;
-option presolve 10;
-	#display{i in REAL_VARIABLES: x[i].lb2 != -Infinity and x[i].ub2 != Infinity}(x[i].lb2, x[i].ub2);
-let{i in REAL_VARIABLES: x[i].lb2 != -Infinity and x[i].ub2 != Infinity} x[i].xscalefactor := (x[i].ub2-x[i].lb2);
+
+if scale_x_y == 1 then {
+	display scale_x_value;
+	display scale_y_value;
+	let{varname in BINARY_VARIABLES} y[varname].xscalefactor   := scale_y_value;
+	let{(VAR_TYPE, REAL, name, NONE) in KEYS} x[name].xscalefactor := scale_x_value ;
+}
+
+if scale_x_with_bounds == 1 then {
+	option presolve 10;
+		#display{i in REAL_VARIABLES: x[i].lb2 != -Infinity and x[i].ub2 != Infinity}(x[i].lb2, x[i].ub2);
+	let{i in REAL_VARIABLES: x[i].lb2 != -Infinity and x[i].ub2 != Infinity} x[i].xscalefactor := (x[i].ub2-x[i].lb2);
+}
 option presolve 0;
 
-# let{(VAR_TYPE, BOOL, name, NONE) in KEYS} y[name].xscalefactor := 1e+0;
 
 option presolve 0;
 if STRATEGY_INITPOINT == GOC_POINT and card({i in 1.._ncons: _con[i].slack<-1e-5})>1 then{
@@ -92,18 +116,21 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	/* write gphase1; */
 	solve;
 
-	let{i in 1.._ncons} _con[i].cscalefactor := if abs(_con[i])>1e-5 then 1/abs(_con[i]) else 1;
-	#let{i in 1.._nvars} _var[i].xscalefactor := if abs(_var[i])>1e-5 then abs(_var[i]) else 1;
+if scale_from_phase1 == 1 then {
+		let{i in 1.._ncons} _con[i].cscalefactor := if abs(_con[i])>1e-5 then 1/abs(_con[i]) else 1;
+		#let{i in 1.._nvars} _var[i].xscalefactor := if abs(_var[i])>1e-5 then abs(_var[i]) else 1;
 
-	let{(VAR_TYPE, REAL, name, NONE) in KEYS} x[name].xscalefactor := if abs(x[name])>1e-5 then abs(x[name]) else 1;
+		let{(VAR_TYPE, REAL, name, NONE) in KEYS} x[name].xscalefactor := if abs(x[name])>1e-5 then abs(x[name]) else 1;
+	}
 
 
 	close knitro_info.csv;
 	printf "%s;%f\n", "Time resolution Phase 1 ", time()-TIME_BEGIN > knitro_info.csv;
 	printf "%s;%f\n", "solve_result_num Phase 1", solve_result_num >> knitro_info.csv;
 	printf "%s;%f\n", "opterror Phase 1", CRITERION.opterror >> knitro_info.csv;
-	close knitro_info.csv;
 
+	close knitro_info.csv;printf{i in 1.._ncons: _con[i].slack / max(1, abs(_con[i].body))<-1e-6}"violation on %50s : %10.6E, %10.6E\n", _conname [i], _con[i].slack, _con[i].body;
+/*
 	if card({i in 1.._ncons: _con[i].slack<-1e-6})>1 then{
 		printf "---\nListing the constraints violated by relaxation solution point\n---\n";
 		printf "%60s%15s%15s%15s%15s\n", "NAME", "LB", "BODY", "UB", "SLACK";
@@ -114,12 +141,12 @@ if OPTIMIZATION_CHOICE == MPEC then {
 			_con[i].ub,
 			_con[i].slack;
 		printf "---\n";
-	}
-	display abs(min(0, min{i in 1.._ncons} _con[i].slack));
-	display abs(min(0, min{i in 1.._nvars} _var[i].slack));
+	} */
+	/* display abs(min(0, min{i in 1.._ncons} _con[i].slack));
+	display abs(min(0, min{i in 1.._nvars} _var[i].slack)); */
 	option presolve 0;
 	#exit;
-	option knitro_options ('outlev=3 maxit=600 scale=2 feastol='&FEASTOL&' opttol='&OPTTOL&' feastolabs='&FEASTOLABS&' opttolabs='&OPTTOLABS&' bar_initpt=2 presolve=0 honorbnds=0');
+	option knitro_options ('outlev=3 maxit=600 scale='&SCALE&' feastol='&FEASTOL&' opttol='&OPTTOL&' feastolabs='&FEASTOLABS&' opttolabs='&OPTTOLABS&' bar_initpt=2 presolve=0 honorbnds=0');
 
 	printf"Binary variables max dist to 1, phase 1\n";
 	display max{varname in BINARY_VARIABLES}min(
@@ -127,9 +154,9 @@ if OPTIMIZATION_CHOICE == MPEC then {
 		1-y[varname]
 		);
 
-	display card(BINARY_VARIABLES);
+	/* display card(BINARY_VARIABLES);
 	display BINARY_VARIABLES;
-	display y;
+	display y;  */
 
 	# second phase reformulating binary constraints into MPEC and starting from the previous KKT solution
 	let{varname in BINARY_VARIABLES} y[varname].intvarstrategy := 2;
@@ -139,8 +166,7 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	#display{i in REAL_VARIABLES: x[i].lb2 != -Infinity and x[i].ub2 != Infinity}(x[i].lb2, x[i].ub2);
 	#let{i in REAL_VARIABLES: x[i].lb2 != -Infinity and x[i].ub2 != Infinity} x[i].xscalefactor := (x[i].ub2-x[i].lb2)*1e-2;
 	option presolve 0;
-	#exit;
-	/* write gphase2; */
+
 	solve;
 
 
@@ -161,8 +187,8 @@ if OPTIMIZATION_CHOICE == MPEC then {
 		);
 
 	display card(BINARY_VARIABLES);
-	display BINARY_VARIABLES;
-	display y;
+	/* display BINARY_VARIABLES;
+	display y; */
 	let{varname in BINARY_VARIABLES} y[varname] := if y[varname] > 0.5 then 1 else 0;
 
 	display{i in 1.._ncons: _con[i].slack<-1e-6}(_conname [i], _con[i].slack);
@@ -178,11 +204,6 @@ if OPTIMIZATION_CHOICE == MPEC then {
 #	printf{i in 1.._ncons: _con[i].slack / (if abs(_con[i])==0 then 1 else _con[i]) <-1e-6}"violation on %50s : %10.6E\n", _conname [i], _con[i].slack;
  	printf{i in 1.._ncons: _con[i].slack / max(1, abs(_con[i].body))<-1e-6}"violation on %50s : %10.6E, %10.6E\n", _conname [i], _con[i].slack, _con[i].body;
  	#expand{i in 1.._ncons: _con[i].slack<-1e-6}_con[i];
-
- 	expand constraint['Scen1_2_Gen1_BinDef-lower_Re'];
- 	fix;
- 	display y['BinVolt_2_Scen1_eq_BaseCase'];
-	display y['BinVolt_2_Scen1_inf_BaseCase'];
 
 };
 

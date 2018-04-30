@@ -72,6 +72,7 @@ function run_knitro(pb_path::String, src_ampl_path::String)
     end
 
     cd(root)
+    return outlog
 end
 
 """
