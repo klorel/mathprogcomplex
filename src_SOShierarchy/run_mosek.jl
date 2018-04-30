@@ -109,7 +109,8 @@ end
 
 function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64},
                                        dual::SortedDict{Tuple{String, String, String}, Float64};
-                                       debug = false)
+                                       debug = false,
+                                       logname = "")
   empty!(primal)
   empty!(dual)
   primobj = NaN
@@ -128,7 +129,11 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
 
   # Create a task object and attach log stream printer
   maketask() do task
-      putstreamfunc(task,MSK_STREAM_LOG,printstream)
+      if logname != ""
+        linkfiletostream(task, MSK_STREAM_LOG, logname, 0)
+      else
+        putstreamfunc(task,MSK_STREAM_LOG,printstream)
+      end
 
       # Append matrix variables of sizes in 'BARVARDIM'.
       # The variables will initially be fixed at zero.
@@ -158,11 +163,11 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
       # putintparam(task, MSK_IPAR_INTPNT_SCALING, MSK_SCALING_NONE)
       # putintparam(task, MSK_IPAR_INTPNT_SCALING, MSK_SCALING_AGGRESSIVE)
 
-      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_DFEAS, 1e-12)
-      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_INFEAS, 1e-12)
-      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_MU_RED, 1e-12)
+      # putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_DFEAS, 1e-12)
+      # putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_INFEAS, 1e-12)
+      # putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_MU_RED, 1e-12)
       # putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_PFEAS, 1e-12)
-      putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_REL_GAP, 1e-1)
+      # putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_REL_GAP, 1e-1)
 
       println("MSK_DPAR_INTPNT_CO_TOL_DFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_DFEAS))")
       println("MSK_DPAR_INTPNT_CO_TOL_INFEAS,   $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_INFEAS))")
