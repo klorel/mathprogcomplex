@@ -11,56 +11,20 @@ function main()
     # problem = buildPOP_1v2c()
     # problem = buildPOP_2v3c()
     # problem = buildPOP_WB2()
-    # problem = buildPOP_WB2_expl()
-
-    ########################################
-    # Normalizing pb and setting relaxation order by constraint
-    # relax_ctx = set_relaxation(problem, hierarchykind=:Complex, d = 1)
-
-    # pb_ind = 2
-    # if pb_ind == 0
-    #     # Build the init problem and set relaxation parameters
-    #     # problem = buildPOPR_2v2cbis()
-    #     problem = buildPOPR_2v2c()
-    #     change_eq_to_ineq!(problem)
-
-    #     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-    #                                         d = 1)
-    #                                         # symmetries = [PhaseInvariance])
-    # elseif pb_ind == 1
-    #     # Build the init problem and set relaxation parameters
-    #     problem = buildPOP_WB2_expl()
-    #     relax_ctx = set_relaxation(problem; hierarchykind=:Complex,
-    #                                         d = 2,
-    #                                         symmetries = [PhaseInvariance])
-    #     relax_ctx.di[get_momentcstrname()] = 2
-    # else
-    #     # WB2 problem converted to real
-    #     WB2_C = buildPOP_WB2_expl()
-    #     change_eq_to_ineq!(WB2_C)
-
-    #     problem = pb_cplx2real(WB2_C)
-
-    #     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-    #                                         d = 2)
-    #                                         # symmetries = [PhaseInvariance])
-    # end
 
     # problem, relax_ctx = lasserre_ex1()
     # problem, relax_ctx = lasserre_ex2()
     # problem, relax_ctx = lasserre_ex3()
     # problem, relax_ctx = lasserre_ex5(d=4)
 
-    # problem = buildPOP_1v2()
+    problem = buildPOP_1v2()
 
-    pb_c = buildPOP_WB2(v2max=0.983)
-    change_eq_to_ineq!(pb_c)
-
-    problem = pb_cplx2real(pb_c)
+    # pb_c = buildPOP_WB2(v2max=0.983)
+    # change_eq_to_ineq!(pb_c)
+    # problem = pb_cplx2real(pb_c)
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        d = 4,
-                                        symmetries = [PhaseInvariance])
+                                        d = 2)
 
 
     println("\n--------------------------------------------------------")
@@ -73,13 +37,13 @@ function main()
     # Construction du sparsity pattern, extension chordale, cliques maximales.
     max_cliques = get_maxcliques(relax_ctx, problem)
 
-    # println("\n--------------------------------------------------------")
-    # println("max cliques =")
-    # for (cliquename, vars) in max_cliques
-    #     print("$cliquename = ")
-    #     for var in vars print("$var, ") end
-    #     @printf("\b\b \n")
-    # end
+    println("\n--------------------------------------------------------")
+    println("max cliques =")
+    for (cliquename, vars) in max_cliques
+        print("$cliquename = ")
+        for var in vars print("$var, ") end
+        @printf("\b\b \n")
+    end
 
     ########################################
     # Compute moment matrices parameters: order et variables
@@ -102,8 +66,8 @@ function main()
     ########################################
     # Convert to a primal SDP problem
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
-    # println("\n--------------------------------------------------------")
-    # println("sdpinstance = \n$sdpinstance")
+    println("\n--------------------------------------------------------")
+    println("sdpinstance = \n$sdpinstance")
 
     export_SDP(relax_ctx, sdpinstance, pwd())
     sdp_instance = read_SDPInstance(pwd())
@@ -117,30 +81,34 @@ function main()
 
     set_constraints!(sdp, sdp_instance)
     set_blocks!(sdp, sdp_instance)
+    set_vartypes!(sdp, sdp_instance)
+
     set_matrices!(sdp, sdp_instance)
     set_linear!(sdp, sdp_instance)
     set_const!(sdp, sdp_instance)
 
-    primal = SortedDict{Tuple{String,String,String}, Float64}()
-    dual = SortedDict{Tuple{String, String, String}, Float64}()
+    println(sdp)
 
-    primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual)
+    # primal = SortedDict{Tuple{String,String,String}, Float64}()
+    # dual = SortedDict{Tuple{String, String, String}, Float64}()
 
-    # println("Primal solution")
-    # for ((blockname, var1, var2), val) in primal
-    # @printf("%15s %5s %5s %f\n", blockname, var1, var2, val)
-    # end
+    # primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual)
 
-    # println("\nDual solution NEGATED")
-    # for var in problem.variables
-    #     ctrname = get_momentcstrname()
-    #     var1 = var[1]
-    #     var2 = "1"
-    #     val = dual[(ctrname, var1, var2)]
-    #     println("($(ctrname), $(var1), $(var2)) = $(-val)")
-    # end
+    # # println("Primal solution")
+    # # for ((blockname, var1, var2), val) in primal
+    # # @printf("%15s %5s %5s %f\n", blockname, var1, var2, val)
+    # # end
 
-    println("Objectives : $primobj, $dualobj")
+    # # println("\nDual solution NEGATED")
+    # # for var in problem.variables
+    # #     ctrname = get_momentcstrname()
+    # #     var1 = var[1]
+    # #     var2 = "1"
+    # #     val = dual[(ctrname, var1, var2)]
+    # #     println("($(ctrname), $(var1), $(var2)) = $(-val)")
+    # # end
+
+    # println("Objectives : $primobj, $dualobj")
 end
 
 main()

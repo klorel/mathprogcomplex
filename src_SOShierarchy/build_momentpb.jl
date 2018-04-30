@@ -4,7 +4,7 @@
     Build the moment matrix corresponding to the moment of degree up to `d` of the `vars` polynomial algebra.
     Only monomials featuring all `symmetries` appear in the moment matrix.
 """
-function MomentMatrix(relax_ctx, vars::SortedSet{Variable}, d::Int, symmetries::SortedSet{DataType})
+function MomentMatrix(relax_ctx, vars::SortedSet{Variable}, d::Int, symmetries::SortedSet{DataType}, matrixkind::Symbol)
     mm = SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
     realexpos = compute_exponents(vars, d)
     conjexpos = compute_exponents(vars, d, compute_conj=true)
@@ -23,17 +23,18 @@ function MomentMatrix(relax_ctx, vars::SortedSet{Variable}, d::Int, symmetries::
             end
         end
     end
-    return MomentMatrix(mm, SortedSet(vars), d)
+    return MomentMatrix(mm, SortedSet(vars), d, matrixkind)
 end
 
 function copy(mm::MomentMatrix)
-    return MomentMatrix(copy(mm.mm), mm.vars, mm.order)
+    return MomentMatrix(copy(mm.mm), mm.vars, mm.order, mm.matrixkind)
 end
 
 function print(io::IO, mm::MomentMatrix)
     for (key, val) in mm.mm
         println(io, "($(key[1]), $(key[2])) ⟶  $val")
     end
+    print(io, " $(mm.matrixkind)")
 end
 
 
@@ -74,7 +75,7 @@ function evaluate(mm::MomentMatrix, pt::Point)
             mm_eval[key] = res
         end
     end
-    return MomentMatrix(mm_eval, setdiff(mm.vars, SortedSet(keys(pt))), mm.order)
+    return MomentMatrix(mm_eval, setdiff(mm.vars, SortedSet(keys(pt))), mm.order, mm.matrixkind)
 end
 
 
@@ -93,8 +94,8 @@ function MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String,
     # NOTE: sparsity work tbd here : several moment matrices ?
     clique_keys, order = moment_param[get_momentcstrname()]
     vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
-    
-    momentmatrices[(get_momentcstrname(), cliquename)] = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries)
+
+    momentmatrices[(get_momentcstrname(), cliquename)] = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries, :SDP)
 
     ## Build localizing matrices
     for (cstrname, cstr) in problem.constraints
@@ -102,12 +103,12 @@ function MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String,
         cstrtype = get_cstrtype(cstr)
         if cstrtype == :ineqdouble
             cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
-            
+
             # Deal with lower inequality
             clique_keys, order = moment_param[cstrname_lo]
             vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
-            
-            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries)
+
+            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries, relax_ctx.cstrtypes[cstrname])
             momentmatrices[(cstrname_lo, cliquename)] = mmt * (cstr.p - cstr.lb)
 
             # Deal with upper inequality, no recomputing of variables or moment matrix if possible
@@ -116,20 +117,20 @@ function MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String,
                 warn("clique keys different from lower and upper side of double constraint")
                 vars, cliquename = collect_cliquesvars(clique_keys_up, max_cliques)
 
-                mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries)
+                mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries, relax_ctx.cstrtypes[cstrname])
             elseif order_up != order
                 warn("order different from lower and upper side of double constraint")
-                mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries)
+                mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries, relax_ctx.cstrtypes[cstrname])
             end
-            
+
             momentmatrices[(cstrname_up, cliquename)] = mmt * (cstr.ub - cstr.p)
 
         else
             # either cstrtype == :ineqlo, :ineqhi, :eq
             clique_keys, order = moment_param[get_cstrname(cstrname, cstrtype)]
             vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
-            
-            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries)
+
+            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries, relax_ctx.cstrtypes[get_cstrname(cstrname, cstrtype)])
             momentmatrices[(get_cstrname(cstrname, cstrtype), cliquename)] = mmt * get_normalizedpoly(cstr, cstrtype)
         end
     end
@@ -144,7 +145,7 @@ function print(io::IO, momentrelax::MomentRelaxationPb)
     println(io, "▶ Objective: ", momentrelax.objective)
     println(io, "▶ Constraints:")
     for ((cstrname, blocname), mmtmat) in momentrelax.constraints
-        println(io, "--> $cstrname, $blocname")
+        println(io, " → $cstrname, $blocname")
         println(io, mmtmat)
     end
 end

@@ -30,7 +30,7 @@ function get_triplets(problem::SDP_Problem; debug = false)
   nzc=0
   nza=0
   for ((objctr, block, var1, var2), coeff) in problem.matrices
-    sdp_block = problem.name_to_block[block]
+    sdp_block = problem.name_to_sdpblock[block]
     lower = min(sdp_block.var_to_id[var1], sdp_block.var_to_id[var2])
     upper = max(sdp_block.var_to_id[var1], sdp_block.var_to_id[var2])
     if objctr == problem.obj_name
@@ -116,9 +116,9 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
   primobj = NaN
   dualobj = NaN
 
-  num_block = length(problem.id_to_block)
+  num_block = length(problem.id_to_sdpblock)
   # println("num_block : ", num_block)
-  barvardim = [ length(problem.id_to_block[block].var_to_id) for block in 1:num_block ]
+  barvardim = [ length(problem.id_to_sdpblock[block].var_to_id) for block in 1:num_block ]
   vardim = 0
   # println(barvardim)
   println("num_block = ",   num_block)
@@ -211,7 +211,7 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
         dualobj = getdualobj(task, MSK_SOL_ITR)
 
         # Get primal solution
-        for (id, block) in problem.id_to_block
+        for (id, block) in problem.id_to_sdpblock
           barx = getbarxj(task, MSK_SOL_ITR, id)
           all_variables = ["" for kv in block.var_to_id]
           for (var, varid) in block.var_to_id
@@ -228,7 +228,7 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
         end
 
         # Get dual solution
-        for (blockid, block) in problem.id_to_block
+        for (blockid, block) in problem.id_to_sdpblock
           bars = getbarsj(task, MSK_SOL_ITR, blockid)
           id_to_var = OrderedDict([id=>var for (var,id) in block.var_to_id])
           it = 0

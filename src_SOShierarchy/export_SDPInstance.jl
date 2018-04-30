@@ -32,7 +32,7 @@ function export_SDP(relax_ctx, sdp::SDPInstance, path)
 
     # Export bloc types
     types_file = joinpath(path, "types.sdp")
-    !isfile(types_file) || rm(cst_file)
+    !isfile(types_file) || rm(types_file)
 
     ftypes = open(types_file, "a")
     cstrlen = maximum(x->length(x), keys(relax_ctx.cstrtypes))
