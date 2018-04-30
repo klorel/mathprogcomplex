@@ -169,14 +169,16 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
       # putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_PFEAS, 1e-12)
       # putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_REL_GAP, 1e-1)
 
-      println("MSK_DPAR_INTPNT_CO_TOL_DFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_DFEAS))")
-      println("MSK_DPAR_INTPNT_CO_TOL_INFEAS,   $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_INFEAS))")
-      println("MSK_DPAR_INTPNT_CO_TOL_MU_RED,   $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_MU_RED))")
-      println("MSK_DPAR_INTPNT_CO_TOL_PFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_PFEAS))")
-      println("MSK_DPAR_INTPNT_CO_TOL_REL_GAP,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_REL_GAP))")
 
       if debug
         println("*********************************************************************************")
+        println("Debug -> Reading Mosek params")
+        println("MSK_DPAR_INTPNT_CO_TOL_DFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_DFEAS))")
+        println("MSK_DPAR_INTPNT_CO_TOL_INFEAS,   $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_INFEAS))")
+        println("MSK_DPAR_INTPNT_CO_TOL_MU_RED,   $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_MU_RED))")
+        println("MSK_DPAR_INTPNT_CO_TOL_PFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_PFEAS))")
+        println("MSK_DPAR_INTPNT_CO_TOL_REL_GAP,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_REL_GAP))")
+
         println("Debug -> Reading Mosek problem")
         num, subcj, subck, subcl, valcjkl = getbarcblocktriplet(task)
         @printf("%5s  %5s  %5s  %s\n", "subcj", "subck", "subcl", "valcjkl")
@@ -194,6 +196,7 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
         @show boundkeys
         @show lbs
         @show ubs
+        println("*********************************************************************************")
       end
 
       optimize(task)

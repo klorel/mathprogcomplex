@@ -42,35 +42,6 @@ struct MomentRelaxationPb
 end
 
 
-# mutable struct SDPInstance
-#     name
-#     sense::Symbol       # :min or :max
-#     kind::Symbol        # :Real or :Complex
-
-#     objective::SDPForm
-#     constraints::SortedDict{String, SDPForm}
-
-#     isexportready::Bool
-#     isconsistent::Bool
-
-#     SDPInstance() = new("", :Undef, :Undef, 
-#                         SDPForm(), SortedDict{String, SDPForm}(),
-#                         false, false)
-# end
-
-# mutable struct SDPForm
-#     name::String,
-#     blocks::SortedDict{String, SDPBlock}
-#     lin::Polynomial
-#     cst::Number
-#     ub::Number
-#     lb::Number
-
-#     SDPForm() = new("", SortedDict{String, SDPBlock}(), Polynomial(), NaN, NaN, NaN)
-# end
-
-const SDPBlock = SortedDict{Tuple{Exponent, Exponent}, Number}
-
 const SDPBlocks = SortedDict{Tuple{Tuple{Exponent, Exponent}, String, Exponent, Exponent}, Number}
 # ((α, β), block_name, γ, δ) -> coeff
 
@@ -143,6 +114,7 @@ include("build_SDP_Problem.jl")
 
 include("symmetries.jl")
 include("export_SDPInstance.jl")
+include("run_hierarchy.jl")
 
 include("example_problems.jl")
 include("run_mosek.jl")

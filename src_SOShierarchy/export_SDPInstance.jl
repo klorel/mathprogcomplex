@@ -3,13 +3,11 @@ function export_SDP(relax_ctx, sdp::SDPInstance, path)
         error("export_SDP(): Only real hierarchy for now... C -> R conversion still to be done")
     end
 
-    
-
     # Export blocks of constraints
     blocks_file = joinpath(path, "blocks.sdp")
     !isfile(blocks_file) || rm(blocks_file)
 
-    fblocks = open(blocks_file, "w")
+    fblocks = open(blocks_file, "a")
     print(fblocks, sdp.blocks)
     close(fblocks)
 
@@ -18,7 +16,7 @@ function export_SDP(relax_ctx, sdp::SDPInstance, path)
     !isfile(lin_file) || rm(lin_file)
 
     if length(sdp.lin) > 0
-        flin = open(lin_file, "w")
+        flin = open(lin_file, "a")
         print(flin, sdp.lin)
         close(flin)
     end
@@ -27,13 +25,16 @@ function export_SDP(relax_ctx, sdp::SDPInstance, path)
     cst_file = joinpath(path, "const.sdp")
     !isfile(cst_file) || rm(cst_file)
 
-    cst = open(cst_file, "w")
+    cst = open(cst_file, "a")
     print(cst, sdp.cst)
     close(cst)
 
 
     # Export bloc types
-    ftypes = open("types.sdp", "w")
+    types_file = joinpath(path, "types.sdp")
+    !isfile(types_file) || rm(cst_file)
+
+    ftypes = open(types_file, "a")
     cstrlen = maximum(x->length(x), keys(relax_ctx.cstrtypes))
     cstrlen = max(cstrlen, length("# cstrname"))
     print_string(ftypes, "# cstrname", cstrlen)

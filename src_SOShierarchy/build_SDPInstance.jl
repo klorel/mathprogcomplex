@@ -6,7 +6,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
 
     ## Build blocks dict
     for ((cstrname, cliquename), mmt) in mmtrelax_pb.constraints
-        
+
         for ((γ, δ), poly) in mmt.mm
             for (expo, λ) in poly
                 # Check the current monomial has correct degree
@@ -60,12 +60,12 @@ end
 """
 function split_expo(relaxctx::RelaxationContext, expo::Exponent)
     α, β = Exponent(), Exponent()
-    
+
     for (var, deg) in expo
         add_expod!(α, Exponent(SortedDict(var=>Degree(0, deg.conjvar))))
         add_expod!(β, Exponent(SortedDict(var=>Degree(deg.explvar, 0))))
     end
-    
+
     if (relaxctx.hierarchykind == :Real) && (α.degree != Degree(0,0))
         error("split_expo(): Inconsistent degree $α, $β found for $(relaxctx.hierarchykind) hierarchy.")
     end
