@@ -114,11 +114,9 @@ end
 function read_knitro_info_csvfile(filepath::String)
   lines = readdlm(joinpath(filepath, "knitro_info.csv"), ';')
   solve_result_1 = lines[2,2]
-  opterror1 = lines[3,2]
-  solve_result_2 = lines[5,2]
-  opterror2 = lines[6,2]
-  solve_result_3 = lines[8,2]
-  opterror3 = lines[9,2]
+  solve_result_2 = lines[4,2]
+  solve_result_3 = lines[6,2]
+  scaling = lines[7,2]
 
-  return solve_result_1, opterror1, solve_result_2, opterror2, solve_result_3, opterror3
+  return solve_result_1, solve_result_2, solve_result_3, scaling
 end

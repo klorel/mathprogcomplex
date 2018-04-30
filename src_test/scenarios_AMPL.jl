@@ -30,7 +30,7 @@ function solve_GOC_via_AMPL(data_path, folder, scenario)
     _, t_knitro, _ = @timed outlog = run_knitro(amplexportpath, joinpath(pwd(),"..","src_ampl"))
     pt_knitro, _ = read_Knitro_output(amplexportpath, pb_global_real)
 
-    solve_result_1, opterror1, solve_result_2, opterror2, solve_result_3, opterror3 = read_knitro_info_csvfile(amplexportpath)
+    solve_result_1, solve_result_2, solve_result_3, scaling = read_knitro_info_csvfile(amplexportpath)
 
     outpath = joinpath(pwd(),"..","solutions", "$folder")
     isdir(outpath) || mkpath(outpath)
@@ -56,7 +56,7 @@ function solve_GOC_via_AMPL(data_path, folder, scenario)
     nb_it, feaserror, opterror = parse_log(knitro_log_path)
 
 
-    return scenario => (solve_result_1, solve_result_2, solve_result_3, (feas,ctr), min_slack, nb_it, feaserror, opterror, infeas_ctr_knitro)
+    return scenario => (solve_result_1, solve_result_2, solve_result_3, (feas,ctr), min_slack, feaserror, opterror, infeas_ctr_knitro, nb_it, scaling)
 end
 
 function read_args(ARGS)
@@ -74,8 +74,7 @@ end
 data_path, folder = read_args(ARGS)
 folder_path = joinpath(data_path, folder)
 
-# scenarios = sort(filter(x->!ismatch(r"\.", x), readdir(folder_path)), by=x->parse(split(x, "_")[2]))
-scenarios = ["scenario_2", "scenario_3","scenario_4", "scenario_10", "scenario_18", "scenario_61"]
+# scenarios = ["scenario_2", "scenario_3","scenario_4", "scenario_10", "scenario_18", "scenario_61"]
 scenarios = sort(filter(x->!ismatch(r"\.", x), readdir(folder_path)), by=x->parse(split(x, "_")[2]))
 # println(scenarios)
 nb_scenarios = length(scenarios)
@@ -85,6 +84,13 @@ println("----------> Start para jobs")
 
 # r = build_and_solve_GOC(folder, scenarios[1])
 results = pmap(solve_GOC_via_AMPL, [data_path for i=1:length(scenarios)], [folder for i=1:length(scenarios)], scenarios)
+
+scaling = 0
+for (scenario, data) in results
+    scaling = Int64(data[10])
+    break;
+end
+println("scaling option: ",scaling)
 
 println("----------> para jobs done\n")
 println("######################################################################################")
@@ -126,9 +132,7 @@ ctrtypes = [("BALANCE", "Re"),
 
 write(f2, "Scenario;BALANCE,Re;BALANCE,Im;$(get_VoltM_cstrname()),Re;$(get_GenBounds_cstrname()),Re;$(get_GenBounds_cstrname()),Im;$(get_NullImpVolt_cstrname()),Re;$(get_VoltBinDef_upper()),Re;$(get_VoltBinDef_lower()),Re;$(get_VoltBinDef_complement()),Re;$(get_CC_active_cstrname()),Re;$(get_CC_reactiveupper_cstrname()),Re;$(get_CC_reactivelower_cstrname()),Re;$(get_Smax_orig_cstrname()),Re;$(get_Smax_dest_cstrname()), Re\n")
 
-filename = joinpath("..","knitro_runs","nb_iter_$(folder)_$(date).csv")
-f3 = open(filename, "w")
-write(f3, "scenario; Number of iterations phase 1 ; Number of iterations phase 2; Number of iterations phase 3\n")
+
 
 nb_scenarios_with_pb = 0
 for (scenario, data) in results
@@ -141,11 +145,11 @@ for (scenario, data) in results
     solve_result_3 = data[3]
     feas,ctr1 = data[4]
     min_slack,ctr2 = data[5]
-    opterrors = data[8]
+    opterrors = data[7]
     opterror1 = opterrors[1]
     opterror2 = opterrors[2]
     opterror3 = opterrors[3]
-    infeas_ctr_knitro = data[9]
+    infeas_ctr_knitro = data[8]
 
     if solve_result_1!=0 || solve_result_2!=0 || solve_result_3!=0 || feas > 1e-6 || min_slack > 1e-6
         nb_scenarios_with_pb +=1
@@ -164,11 +168,9 @@ for (scenario, data) in results
     end
     write(f2, "\n")
 
-    nb_iters = data[6]
-    write(f3, "$scenario;$(nb_iters[1]);$(nb_iters[2]);$(nb_iters[3])\n")
 end
 close(f2)
-close(f3)
+
 if nb_scenarios_with_pb > 0
     println("\nNB OF SCENARIOS NOT FEASIBLE : $nb_scenarios_with_pb/$nb_scenarios. \nSee results_$folder.csv in knitro_runs for more details")
     write(f, "\n ; NB OF SCENARIOS NOT FEASIBLE;$nb_scenarios_with_pb/$nb_scenarios\n")
@@ -181,3 +183,22 @@ else
     write(f, "\n ; NB OF SCENARIOS NOT FEASIBLE;0\n")
 end
 close(f)
+
+
+nb_iters1 = [ data[9][1] for (scenario, data) in results]
+nb_iters2 = [ data[9][2] for (scenario, data) in results]
+nb_iters3 = [ data[9][3] for (scenario, data) in results]
+iters1 = sort(nb_iters1, rev=true)
+iters2 = sort(nb_iters2, rev=true)
+iters3 = sort(nb_iters3, rev=true)
+filename = joinpath("..","knitro_runs","scaling$(scaling)_nb_iter_$(folder).csv")
+f3 = open(filename, "w")
+write(f3,  "Phase 1 scaling $scaling; Phase 2 scaling $scaling; Phase 3 scaling $scaling\n")
+for i in 1:nb_scenarios
+    nb1 = iters1[i]
+    nb2 = iters2[i]
+    nb3 = iters3[i]
+    write(f3, "$nb1; $nb2; $nb3\n")
+end
+
+close(f3)
