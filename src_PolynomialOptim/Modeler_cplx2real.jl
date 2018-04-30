@@ -42,3 +42,24 @@ function pb_cplx2real(pb_C::Problem)
   end
   return pb
 end
+
+
+function infer_problem!(pb::Problem, pt::Point)
+  pb.objective = evaluate(pb.objective, pt, partial=true)
+
+  println(pt)
+
+  for var in keys(pt)
+    if haskey(pb.variables, var.name)
+      delete!(pb.variables, var.name)
+    end
+  end
+
+  for (ctrname, ctr) in pb.constraints
+    pb.constraints[ctrname].p = evaluate(ctr.p, pt, partial=true)
+    if isa(ctr.p, Number)
+      ctr.p ≤ ctr.ub || warn("infer_problem!(): Constraint $ctrname has body $(ctr.p) with bounds ($(ctr.lb), $(ctr.ub).\nProblem may be infeasable.")
+      ctr.lb ≤ ctr.p || warn("infer_problem!(): Constraint $ctrname has body $(ctr.p) with bounds ($(ctr.lb), $(ctr.ub).\nProblem may be infeasable.")
+    end
+  end
+end

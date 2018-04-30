@@ -48,7 +48,20 @@ function main()
 
     # problem, relax_ctx = lasserre_ex1()
     # problem, relax_ctx = lasserre_ex2()
-    problem, relax_ctx = lasserre_ex3()
+    # problem, relax_ctx = lasserre_ex3()
+    # problem, relax_ctx = lasserre_ex5(d=4)
+
+    # problem = buildPOP_1v2()
+
+    pb_c = buildPOP_WB2(v2max=0.983)
+    change_eq_to_ineq!(pb_c)
+
+    problem = pb_cplx2real(pb_c)
+
+    relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+                                        d = 4,
+                                        symmetries = [PhaseInvariance])
+
 
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")
@@ -60,13 +73,13 @@ function main()
     # Construction du sparsity pattern, extension chordale, cliques maximales.
     max_cliques = get_maxcliques(relax_ctx, problem)
 
-    println("\n--------------------------------------------------------")
-    println("max cliques =")
-    for (cliquename, vars) in max_cliques
-        print("$cliquename = ")
-        for var in vars print("$var, ") end
-        @printf("\b\b \n")
-    end
+    # println("\n--------------------------------------------------------")
+    # println("max cliques =")
+    # for (cliquename, vars) in max_cliques
+    #     print("$cliquename = ")
+    #     for var in vars print("$var, ") end
+    #     @printf("\b\b \n")
+    # end
 
     ########################################
     # Compute moment matrices parameters: order et variables
@@ -84,15 +97,15 @@ function main()
 
     mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, moments_params, max_cliques)
     println("\n--------------------------------------------------------")
-    # println("mmtrel_pb = $mmtrel_pb")
+    println("mmtrel_pb = $mmtrel_pb")
 
     ########################################
     # Convert to a primal SDP problem
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
-    println("\n--------------------------------------------------------")
+    # println("\n--------------------------------------------------------")
     # println("sdpinstance = \n$sdpinstance")
-    export_SDP(relax_ctx, sdpinstance, pwd())
 
+    export_SDP(relax_ctx, sdpinstance, pwd())
     sdp_instance = read_SDPInstance(pwd())
 
     println("VAR_TYPES size:     $(size(sdp_instance.VAR_TYPES))")
@@ -108,12 +121,26 @@ function main()
     set_linear!(sdp, sdp_instance)
     set_const!(sdp, sdp_instance)
 
-    # println("SDP_Problem :\n$sdp")
+    primal = SortedDict{Tuple{String,String,String}, Float64}()
+    dual = SortedDict{Tuple{String, String, String}, Float64}()
 
-    primal=SortedDict{Tuple{String,String,String}, Float64}()
-    dual=SortedDict{String, Float64}()
+    primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual)
 
-    solve_mosek(sdp::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64}, dual::SortedDict{String, Float64}, debug=false)
+    # println("Primal solution")
+    # for ((blockname, var1, var2), val) in primal
+    # @printf("%15s %5s %5s %f\n", blockname, var1, var2, val)
+    # end
+
+    # println("\nDual solution NEGATED")
+    # for var in problem.variables
+    #     ctrname = get_momentcstrname()
+    #     var1 = var[1]
+    #     var2 = "1"
+    #     val = dual[(ctrname, var1, var2)]
+    #     println("($(ctrname), $(var1), $(var2)) = $(-val)")
+    # end
+
+    println("Objectives : $primobj, $dualobj")
 end
 
 main()

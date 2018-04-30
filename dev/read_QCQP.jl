@@ -1,11 +1,13 @@
 include(joinpath(ROOT,"..","src_PowSysMod", "PowSysMod_body.jl"))
 
-function add_to_dict!(dict, key, val)
-  if !haskey(dict, key)
-    dict[key] = 0
-  end
-  dict[key] += val
-end
+## This should be useless.
+# TODO: remove
+# function add_to_dict!(dict, key, val)
+#   if !haskey(dict, key)
+#     dict[key] = 0
+#   end
+#   dict[key] += val
+# end
 
 
 """

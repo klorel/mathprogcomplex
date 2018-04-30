@@ -3,17 +3,17 @@
 ##################################
 
 """
-    add_to_dict!(dict::SortedDict{Any, V}, key, val::V) where V<:Number
+    add_to_dict!(dict::SortedDict{Any, V}, key, val::V; isdense=false) where V<:Number
 
-    *Sparsely* add `val` to the `key` entry of `dict` dictionnary. That is creates
-    the entry if needed, deletes it if the resulting value is null.
+    *Sparsely* add `val` to the `key` entry of `dict` dictionnary (if not `isdense`). 
+    That is creates the entry if needed, deletes it if the resulting value is null.
 """
-function add_to_dict!(dict::SortedDict{U, Number}, key::U, val::T) where T<:Number where U
+function add_to_dict!(dict::SortedDict{U, Number}, key::U, val::T; isdense = false) where T<:Number where U
     if !haskey(dict, key)
         dict[key] = 0
     end
     dict[key] += val
-    if dict[key] == 0
+    if dict[key] == 0 && !isdense
         delete!(dict, key)
     end
 end
@@ -132,11 +132,11 @@ end
 
 ## Evaluate
 # NOTE: Point are sparse vectors, hence non referenced variables are assumed to be null.
-function evaluate(p::Polynomial, pt::Point)
+function evaluate(p::Polynomial, pt::Point; partial=false)
     res=0
     expldeg = conjdeg = 0
     for (expo, λ) in p
-        res += λ*evaluate(expo, pt)
+        res += λ*evaluate(expo, pt; partial=partial)
     end
     typeof(res)<:Polynomial && update_degree!(res)
 
@@ -147,22 +147,17 @@ function evaluate(p::Polynomial, pt::Point)
     return res
 end
 
-function evaluate(expo::Exponent, pt::Point)
+function evaluate(expo::Exponent, pt::Point; partial=false)
     res=1
     for (var, deg) in expo.expo
-        if haskey(pt, var)
-            res *= (evaluate(var, pt)^deg.explvar) * (conj(evaluate(var, pt))^deg.conjvar)
-        else
-            # res *= var^deg.explvar * conj(var)^deg.conjvar
-            res *= (evaluate(var, pt)^deg.explvar) * (conj(evaluate(var, pt))^deg.conjvar)
-        end
+        res *= (evaluate(var, pt; partial=partial)^deg.explvar) * (conj(evaluate(var, pt; partial=partial))^deg.conjvar)
     end
     return res
 end
 
-function evaluate(x::Variable, pt::Point)
+function evaluate(x::Variable, pt::Point; partial=false)
     if !haskey(pt, x)
-        return 0
+        return partial ? x : 0.0
     elseif x.kind<:Complex
         return pt[x]
     else
