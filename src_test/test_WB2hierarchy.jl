@@ -2,7 +2,7 @@ ROOT = pwd()
 include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
 
 
-function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext)
+function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logname)
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
     max_cliques = get_maxcliques(relax_ctx, problem)
@@ -35,7 +35,8 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext)
     primal = SortedDict{Tuple{String,String,String}, Float64}()
     dual = SortedDict{Tuple{String, String, String}, Float64}()
 
-    primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual)
+    primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual; logname = logname)
+
     return primobj, dualobj
 end
 
@@ -62,7 +63,7 @@ function main()
             relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                                 d = d)
 
-            primobj, dualobj = run_hierarchy(problem, relax_ctx)
+            primobj, dualobj = run_hierarchy(problem, relax_ctx, "Mosek_WB2_v2max_$(v2max)_(d)_$(d).log")
             primobjectives[(v2max, d)] = primobj
         end
     end
