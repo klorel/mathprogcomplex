@@ -3,6 +3,7 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath)
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
     max_cliques = get_maxcliques(relax_ctx, problem)
+    # max_cliques = get_WB5cliques(relax_ctx, problem)
 
     ########################################
     # Compute moment matrices parameters: order et variables

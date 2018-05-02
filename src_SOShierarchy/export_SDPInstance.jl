@@ -35,13 +35,13 @@ function export_SDP(relax_ctx, sdp::SDPInstance, path)
     !isfile(types_file) || rm(types_file)
 
     ftypes = open(types_file, "a")
-    cstrlen = maximum(x->length(x), keys(relax_ctx.cstrtypes))
-    cstrlen = max(cstrlen, length("# cstrname"))
+    cstrlen = maximum(x->length(x), keys(sdp.block_to_vartype))
+    cstrlen = max(cstrlen, length("# blockvarname"))
     print_string(ftypes, "# cstrname", cstrlen)
     println(ftypes, " var_type")
-    for (cstrname, cstrtype) in relax_ctx.cstrtypes
-        print_string(ftypes, cstrname, cstrlen)
-        println(ftypes, " $(string(cstrtype))")
+    for (blockname, vartype) in sdp.block_to_vartype
+        print_string(ftypes, blockname, cstrlen)
+        println(ftypes, " $(string(vartype))")
     end
     close(ftypes)
 end

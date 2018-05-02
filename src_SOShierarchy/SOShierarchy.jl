@@ -89,6 +89,7 @@ const SDPcst = SortedDict{Tuple{Exponent, Exponent}, Number}
 # (α, β) -> coeff
 
 mutable struct SDPInstance
+    block_to_vartype::SortedDict{String, Symbol}  # Either :SDP, :Sym
     blocks::SDPBlocks
     lin::SDPLin
     cst::SDPcst

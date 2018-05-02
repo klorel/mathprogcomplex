@@ -93,11 +93,12 @@ function set_blocks!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   for i in 1:size(instance.BLOCKS, 1)
     block_name, var1, var2 = instance.BLOCKS[i, 2:4]
 
-    # TODO fix locality issue...
-    if sdp.block_to_kind == :SDP
+    if sdp.block_to_kind[block_name] == :SDP
       cur_blockvar = sdp.name_to_sdpblock[block_name]
-    elseif sdp.block_to_kind == :Sym
+    elseif sdp.block_to_kind[block_name] == :Sym
       cur_blockvar = sdp.name_to_sdpblock[block_name]
+    else
+      error("set_blocks!(): Unknown block_kind $(sdp.block_to_kind) for i=$i")
     end
 
     # Adding vars to SDP block
@@ -120,13 +121,13 @@ function set_matrices!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
 
     # Sort variables for triangular matrix storage
     var1, var2 = min(var1, var2), max(var1, var2)
-    if sdp.name_to_sdpblock[block_name].block_kind == :SDP
+    if sdp.name_to_sdpblock[block_name].varkind == :SDP
       if !haskey(sdp.matrices, (ctr_name, block_name, var1, var2))
         sdp.matrices[(ctr_name, block_name, var1, var2)] = parse(coeff)
       else
         warn("set_matrices!(): sdp.matrices already has key ($ctr_name, $block_name, $var1, $var2) with val $(sdp.matrices[(ctr_name, block_name, var1, var2)]), $(prase(coeff))")
       end
-    elseif sdp.name_to_sdpblock[block_name].block_kind == :Sym
+    elseif sdp.name_to_sdpblock[block_name].varkind == :Sym
       sdp.linear[(ctr_name, block_name, var1, var2)] = parse(coeff)
     else
       error("set_matrices!(): Unhandled matrix var type $(sdp.name_to_sdpblock[block_name].kind)")

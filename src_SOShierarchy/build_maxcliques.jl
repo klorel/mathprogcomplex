@@ -4,31 +4,6 @@
 """
 function build_sparsity(relax_ctx, problem, max_cliques::SortedDict{String, SortedSet{Variable}})
 
-    # if relax_ctx.issparse == false
-    #     (length(max_cliques) == 1) || error("build_sparsity(): Relaxation is not sparse, one clique is expected (not $(length(max_cliques)))")
-
-    #     # For each *problem* constraint, compute relevant variable sets and matrix order
-    #     localizingmat_param = SortedDict{String, Tuple{SortedSet{String}, Int}}()
-    #     for (cstrname, cstr) in problem.constraints
-    #         cstrtype = get_cstrtype(cstr)
-    #         if cstrtype == :ineqdouble
-    #             cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
-    #             di_lo, ki_lo = relax_ctx.di[cstrname_lo], relax_ctx.ki[cstrname_lo]
-    #             di_up, ki_up = relax_ctx.di[cstrname_up], relax_ctx.ki[cstrname_up]
-    #             localizingmat_param[cstrname_lo] = (SortedSet(["clique1"]), di_lo-ki_lo)
-    #             localizingmat_param[cstrname_up] = (SortedSet(["clique1"]), di_up-ki_up)
-    #         else
-    #             di, ki = relax_ctx.di[get_cstrname(cstrname, cstrtype)], relax_ctx.ki[get_cstrname(cstrname, cstrtype)]
-    #             localizingmat_param[get_cstrname(cstrname, cstrtype)] = (SortedSet(["clique1"]), di-ki)
-    #         end
-    #     end
-
-    #     # Handle the moment constraint
-    #     momentmat_param = SortedDict{String, Int}()
-    #     di = relax_ctx.di[get_momentcstrname()]
-    #     momentmat_param["clique1"] = di
-
-    # else
     ((relax_ctx.issparse == false) && (length(max_cliques) > 1)) && error("build_sparsity(): Relaxation is not sparse, one clique is expected (not $(length(max_cliques)))")
     localizingmat_param = SortedDict{String, Tuple{SortedSet{String}, Int}}()
     for (ctrname, ctr) in problem.constraints
@@ -61,7 +36,6 @@ function build_sparsity(relax_ctx, problem, max_cliques::SortedDict{String, Sort
         end
         momentmat_param[cliquename] = cur_d
     end
-    # end
 
     return momentmat_param, localizingmat_param
 end
@@ -89,8 +63,6 @@ end
 """
 function get_locctrcliques(p::Polynomial, max_cliques::SortedDict{String, SortedSet{Variable}})
     ctrvars = get_variables(p)
-    println("----- p")
-    @show ctrvars
 
     # Build constraint variables to cliques dict
     var_to_cliques = SortedDict{Variable, SortedSet{String}}()
@@ -108,7 +80,6 @@ function get_locctrcliques(p::Polynomial, max_cliques::SortedDict{String, Sorted
     i = 0
     while keepon
         i += 1
-        println("it $i")
         # Find which variables appear in one clique only, remove them from unaffected_vars
         for var in unaffected_vars
             cliques = var_to_cliques[var]
@@ -127,14 +98,9 @@ function get_locctrcliques(p::Polynomial, max_cliques::SortedDict{String, Sorted
             end
         end
 
-        @show def_cliques
-        @show unaffected_vars
-        @show var_to_cliques
-
         # Hopefully all variables are treated that way. Else repeat this process by choosing a clique. Again, which one ?
         if length(unaffected_vars) != 0
             warn("get_locctrcliques(): length(unaffected_vars) = $(length(unaffected_vars))")
-            println("Unaffected vars : $unaffected_vars")
             cliques_from_unaffvar = SortedDict{String, Int}()
             for var in unaffected_vars
                 for clique in var_to_cliques[var]
@@ -142,9 +108,6 @@ function get_locctrcliques(p::Polynomial, max_cliques::SortedDict{String, Sorted
                     cliques_from_unaffvar[clique] += 1
                 end
             end
-            fst = first(cliques_from_unaffvar)
-            println(fst)
-            @show fst
             cur_clique, cur_pop = first(cliques_from_unaffvar)[1], first(cliques_from_unaffvar)[2]
             for (clique, pop) in cliques_from_unaffvar
                 if pop > cur_pop
@@ -152,8 +115,6 @@ function get_locctrcliques(p::Polynomial, max_cliques::SortedDict{String, Sorted
                     cur_pop = pop
                 end
             end
-            println("Related cliques : $cliques_from_unaffvar")
-            println("Adding $cur_clique,  pop is $cur_pop")
             insert!(def_cliques, cur_clique)
         else
             keepon = false

@@ -17,11 +17,10 @@ function main()
     # problem, relax_ctx = lasserre_ex3()
     # problem, relax_ctx = lasserre_ex5(d=4)
 
-    problem = buildPOP_1v2()
+    # problem = buildPOP_1v2()
 
-    # pb_c = buildPOP_WB2(v2max=0.983)
-    # change_eq_to_ineq!(pb_c)
-    # problem = pb_cplx2real(pb_c)
+    problem = buildPOP_WB2(v2max=0.983)
+    # problem = buildPOP_WB5()
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         d = 2)
@@ -36,6 +35,8 @@ function main()
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
     max_cliques = get_maxcliques(relax_ctx, problem)
+    # max_cliques = get_WB5cliques(relax_ctx, problem)
+    # relax_ctx.issparse = true
 
     println("\n--------------------------------------------------------")
     println("max cliques =")
@@ -46,20 +47,22 @@ function main()
     end
 
     ########################################
-    # Compute moment matrices parameters: order et variables
-    moments_params = build_sparsity(relax_ctx, problem, max_cliques)
+    # Compute moment and localizing matrices parameters: order et variables
+    momentmat_param, localizingmat_param = build_sparsity(relax_ctx, problem, max_cliques)
     println("\n--------------------------------------------------------")
     println("moment params =")
-    for (key, (val1, val2)) in moments_params
-        print("$key \t -> di-ki = $val2, \tcliques = ")
+    for (cliquename, dcl) in momentmat_param
+        println("Moment matrix, $cliquename \t -> dcl = $dcl")
+    end
+    for (key, (val1, val2)) in localizingmat_param
+        @printf("%15s \t -> di-ki = %i, \tcliques = ", key, val2)
         for clique in val1 print("$clique, ") end
         @printf("\b\b \n")
     end
 
     ########################################
     # Calcul des matrices de moment
-
-    mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, moments_params, max_cliques)
+    mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
     println("\n--------------------------------------------------------")
     println("mmtrel_pb = $mmtrel_pb")
 
@@ -80,14 +83,14 @@ function main()
     sdp = SDP_Problem()
 
     set_constraints!(sdp, sdp_instance)
-    set_blocks!(sdp, sdp_instance)
     set_vartypes!(sdp, sdp_instance)
+    set_blocks!(sdp, sdp_instance)
 
     set_matrices!(sdp, sdp_instance)
     set_linear!(sdp, sdp_instance)
     set_const!(sdp, sdp_instance)
 
-    println(sdp)
+    # println(sdp)
 
     # primal = SortedDict{Tuple{String,String,String}, Float64}()
     # dual = SortedDict{Tuple{String, String, String}, Float64}()
