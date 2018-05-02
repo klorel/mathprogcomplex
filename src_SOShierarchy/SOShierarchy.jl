@@ -40,6 +40,7 @@ end
 struct MomentRelaxationPb
     objective::AbstractPolynomial
     constraints::SortedDict{Tuple{String, String}, MomentMatrix}
+    vars_overlap::SortedDict{Variable, SortedSet{String}}
 end
 
 

@@ -135,8 +135,32 @@ function MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String,
         end
     end
 
+    ## Locate clique overlapping variables
+    vars_overlap = SortedDict{Variable, SortedSet{String}}()
 
-    return MomentRelaxationPb(problem.objective, momentmatrices)
+    # Collect all variables
+    variables = SortedSet{Variable}()
+    for (clique, clvars) in max_cliques
+        union!(variables, clvars)
+    end
+
+    # Collect cliques by variable
+    for var in variables
+        for (clique, clique_vars) in max_cliques
+            if var in clique_vars
+                haskey(vars_overlap, var) || (vars_overlap[var] = SortedSet{String}())
+
+                insert!(vars_overlap[var], clique)
+            end
+        end
+    end
+
+    # Delete variables appearing in one clique only
+    for (var, cliques) in vars_overlap
+        length(cliques) > 1 || delete!(vars_overlap, var)
+    end
+
+    return MomentRelaxationPb(problem.objective, momentmatrices, vars_overlap)
 end
 
 
@@ -147,5 +171,15 @@ function print(io::IO, momentrelax::MomentRelaxationPb)
     for ((cstrname, blocname), mmtmat) in momentrelax.constraints
         println(io, " → $cstrname, $blocname")
         println(io, mmtmat)
+    end
+    println(io, "▶ Variables clique overlap:")
+    if length(momentrelax.vars_overlap) > 0
+        for (var, cliquenames) in momentrelax.vars_overlap
+            print(io, " → $var : ")
+            for clique in cliquenames print(io, "$clique, ") end
+            @printf(io, "\b\b \n")
+        end
+    else
+        println("  None")
     end
 end
