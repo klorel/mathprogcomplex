@@ -110,10 +110,12 @@ function constraint(element::T, bus::String, elemid::String, elem_formulation::S
         ## Definition of binary variables, upper constraint
         ccname_bindef_upper = get_VoltBinDef_upper()
         cstrs[ccname_bindef_upper] = (abs2(Volt_bc) - abs2(Volt_sc) - (Vbc_inf_Vsc * (-ϵ) + (1-Vbc_inf_Vsc+Veq) * M - 2*M*Veq)) << 0
+        # cstrs[ccname_bindef_upper] = (abs2(Volt_bc) - abs2(Volt_sc) - (Vbc_inf_Vsc * (-ϵ) + (1-Vbc_inf_Vsc) * M - M*(1-Vbc_inf_Vsc - Vsc_inf_Vbc))) << 0
         ## Definition of binary variables, lower constraint
         ccname_bindef_lower = get_VoltBinDef_lower()
         ##TODO: verify big M constraints
         cstrs[ccname_bindef_lower] = (abs2(Volt_bc) - abs2(Volt_sc) - (Vsc_inf_Vbc * ϵ + (1-Vsc_inf_Vbc+Veq) * (-M) + 2*M*Veq)) >> 0
+        # cstrs[ccname_bindef_lower] = (abs2(Volt_bc) - abs2(Volt_sc) - (Vsc_inf_Vbc * ϵ + (1-Vsc_inf_Vbc) * (-M) + M*(1-Vbc_inf_Vsc - Vsc_inf_Vbc))) >> 0
         ####
         # If Vsc < Vbc, lhs = abs2(Volt_bc) - abs2(Volt_sc) > 0
         ## If Vbc_inf_Vsc = 1, positive lhs < -ϵ => upper constraint not satisfied => NOT POSSIBLE

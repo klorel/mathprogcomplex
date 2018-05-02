@@ -28,7 +28,7 @@ param scale_from_phase1 default 0;
 param scale_x_with_bounds default 0;
 param scale_x_y default 0;
 
-param scaling default 1; ##0: no scaling, 1: scaling x with bounds, 2: scaling only from phase 1, 3: scaling before and from phase1 */
+param scaling default 2; ##0: no scaling, 1: scaling x with bounds, 2: scaling only from phase 1, 3: scaling before and from phase1 */
 
 
 if scaling==0 then {let SCALE:=0;}

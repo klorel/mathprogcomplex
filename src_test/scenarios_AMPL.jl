@@ -74,8 +74,8 @@ end
 data_path, folder = read_args(ARGS)
 folder_path = joinpath(data_path, folder)
 
-scenarios = ["scenario_$i" for i in 51:100]
-# scenarios = sort(filter(x->!ismatch(r"\.", x), readdir(folder_path)), by=x->parse(split(x, "_")[2]))
+# scenarios = ["scenario_$i" for i in 77:100]
+scenarios = sort(filter(x->!ismatch(r"\.", x), readdir(folder_path)), by=x->parse(split(x, "_")[2]))
 # println(scenarios)
 nb_scenarios = length(scenarios)
 
@@ -105,13 +105,13 @@ solve_result_num_msg[410] = "Iteration limit reached. Current point is infeasibl
 nb_scenarios_per_num = Dict( i => (0,0) for i in keys(solve_result_num_msg))
 
 date = Dates.format(now(), "yy_u_dd_HH_MM_SS")
-filename = joinpath("..","knitro_runs","scaling$(scaling)_results_$(folder).csv")
+filename = joinpath("..","knitro_runs","results","scaling$(scaling)_results_$(folder).csv")
 touch(filename)
 
 f = open(filename, "w")
 
 write(f, "Scenario;solve_result_1; solve_result_2; solve_result_3;max relative slack from knitro point; ctr associated; max relative slack from txt files; ctr associated; opterror1 ; opterror2;opterror3\n")
-filename = joinpath("..","knitro_runs","scalig$(scaling)_infeas_by_ctr_$(folder).csv")
+filename = joinpath("..","knitro_runs","results","scaling$(scaling)_infeas_by_ctr_$(folder).csv")
 f2 = open(filename, "w")
 
 ctrtypes = [("BALANCE", "Re"),
@@ -191,7 +191,7 @@ nb_iters3 = [ parse(Int64, data[9][3]) for (scenario, data) in results]
 iters1 = sort(nb_iters1, rev=true)
 iters2 = sort(nb_iters2, rev=true)
 iters3 = sort(nb_iters3, rev=true)
-filename = joinpath("..","knitro_runs","scaling$(scaling)_nb_iter_$(folder).csv")
+filename = joinpath("..","knitro_runs","results","scaling$(scaling)_nb_iter_$(folder).csv")
 f3 = open(filename, "w")
 write(f3,  "Phase 1 scaling $scaling; Phase 2 scaling $scaling; Phase 3 scaling $scaling\n")
 for i in 1:nb_scenarios
