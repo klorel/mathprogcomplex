@@ -42,7 +42,7 @@ if scaling==2 then {
 	let scale_from_phase1 := 1;
 	let scale_x_with_bounds := 0;
 }
-if scaling==2 then {
+if scaling==3 then {
 	let SCALE:=2;
 	let scale_from_phase1 := 1;
 	let scale_x_with_bounds := 1;
@@ -50,7 +50,7 @@ if scaling==2 then {
 
 
 
-param scale_y_value := 1e+0;
+param scale_y_value := 1e+1;
 param scale_x_value := 1e-1;
 
 
