@@ -6,11 +6,11 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath)
 
     ########################################
     # Compute moment matrices parameters: order et variables
-    moments_params = build_sparsity(relax_ctx, problem, max_cliques)
+    momentmat_param, localizingmat_param = build_sparsity(relax_ctx, problem, max_cliques)
 
     ########################################
     # Calcul des matrices de moment
-    mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, moments_params, max_cliques)
+    mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
 
     ########################################
     # Convert to a primal SDP problem
@@ -24,7 +24,9 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath)
     sdp = SDP_Problem()
 
     set_constraints!(sdp, sdp_instance)
+    set_vartypes!(sdp, sdp_instance)
     set_blocks!(sdp, sdp_instance)
+
     set_matrices!(sdp, sdp_instance)
     set_linear!(sdp, sdp_instance)
     set_const!(sdp, sdp_instance)

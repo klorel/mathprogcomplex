@@ -84,7 +84,7 @@ end
 
     Compute the `momentrelaxation` of `problem` corresponding to the clique decomposition `max_cliques` and parameters `moment_param`.
 """
-function MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{SortedSet{String}, Int}}, max_cliques::SortedDict{String, SortedSet{Variable}})
+function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{String, Int}, localizingmat_param::SortedDict{String, Tuple{SortedSet{String}, Int}}, max_cliques::SortedDict{String, SortedSet{Variable}})
     println("\n=== MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{SortedSet{String}, Int}}, max_cliques::SortedDict{String, SortedSet{Variable}})")
     println("Compute the moment and localizing matrices associated with the problem constraints and clique decomposition and return a MomentRelaxationPb object.")
 
@@ -92,10 +92,10 @@ function MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String,
 
     ## Build moment matrix
     # NOTE: sparsity work tbd here : several moment matrices ?
-    clique_keys, order = moment_param[get_momentcstrname()]
-    vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
-
-    momentmatrices[(get_momentcstrname(), cliquename)] = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries, :SDP)
+    for (cliquename, vars) in max_cliques
+        dcl = momentmat_param[cliquename]
+        momentmatrices[(get_momentcstrname(), cliquename)] = MomentMatrix(relax_ctx, vars, dcl, relax_ctx.symmetries, :SDP)
+    end
 
     ## Build localizing matrices
     for (cstrname, cstr) in problem.constraints
@@ -105,29 +105,29 @@ function MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String,
             cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
 
             # Deal with lower inequality
-            clique_keys, order = moment_param[cstrname_lo]
+            clique_keys, order = localizingmat_param[cstrname_lo]
             vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
 
-            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries, relax_ctx.cstrtypes[cstrname])
+            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries, relax_ctx.cstrtypes[cstrname_lo])
             momentmatrices[(cstrname_lo, cliquename)] = mmt * (cstr.p - cstr.lb)
 
             # Deal with upper inequality, no recomputing of variables or moment matrix if possible
-            clique_keys_up, order_up = moment_param[cstrname_up]
+            clique_keys_up, order_up = localizingmat_param[cstrname_up]
             if collect(clique_keys) != collect(clique_keys_up)
                 warn("clique keys different from lower and upper side of double constraint")
                 vars, cliquename = collect_cliquesvars(clique_keys_up, max_cliques)
 
-                mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries, relax_ctx.cstrtypes[cstrname])
+                mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries, relax_ctx.cstrtypes[cstrname_hi])
             elseif order_up != order
                 warn("order different from lower and upper side of double constraint")
-                mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries, relax_ctx.cstrtypes[cstrname])
+                mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries, relax_ctx.cstrtypes[cstrname_hi])
             end
 
             momentmatrices[(cstrname_up, cliquename)] = mmt * (cstr.ub - cstr.p)
 
         else
             # either cstrtype == :ineqlo, :ineqhi, :eq
-            clique_keys, order = moment_param[get_cstrname(cstrname, cstrtype)]
+            clique_keys, order = localizingmat_param[get_cstrname(cstrname, cstrtype)]
             vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
 
             mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries, relax_ctx.cstrtypes[get_cstrname(cstrname, cstrtype)])
@@ -180,6 +180,6 @@ function print(io::IO, momentrelax::MomentRelaxationPb)
             @printf(io, "\b\b \n")
         end
     else
-        println("  None")
+        println(io, "  None")
     end
 end
