@@ -2,7 +2,7 @@ using Mosek
 
 printstream(msg::String) = print(msg)
 
-function get_triplets(problem::SDP_Problem; debug = false)
+function get_SDPtriplets(problem::SDP_Problem; debug = false)
 
   nzc = 0
   nza = 0
@@ -65,6 +65,51 @@ function get_triplets(problem::SDP_Problem; debug = false)
   return barcj, barck, barcl, barcjkl, barai, baraj, barak, baral, baraijkl
 end
 
+function get_linterms(problem; debug=debug)
+  # TODO add linear variables and constraints
+
+  nza, nzc = 0, 0
+  for ((objctr, block, var1, var2), coeff) in problem.lin_matsym
+    if objctr == problem.obj_name
+      nzc += 1
+    else
+      nza += 1
+    end
+  end
+
+  ai = zeros(Int32, nza)
+  aj = zeros(Int32, nza)
+  aij = zeros(Float64, nza)
+  cj = zeros(Int32, nzc)
+  cjval = zeros(Float64, nzc)
+
+  nza, nzc = 0, 0
+  for ((ctrname, blockname, var1, var2), coeff) in problem.lin_matsym
+    if ctrname == problem.obj_name
+      nzc += 1
+      cj[nzc]= problem.name_to_symblock[blockname].varpairs_to_id[(var1, var2)]
+      cjval[nzc] = coeff * (var1!=var2 ? 2 : 1)
+    else
+      nza += 1
+      ai[nza] = problem.name_to_ctr[ctrname][1]
+      aj[nza] = problem.name_to_symblock[blockname].varpairs_to_id[(var1, var2)]
+      aij[nza] = coeff * (var1!=var2 ? 2 : 1)
+    end
+  end
+
+  if debug
+    warn("--- cj :")
+    for i=1:length(cj)
+      @printf("%i  %f\n", cj[i], cjval[i])
+    end
+    warn("--- a :")
+    for i=1:length(aj)
+      @printf("%i  %i  %f\n", ai[i], aj[i], aij[i])
+    end
+  end
+  return cj, cjval, ai, aj, aij
+end
+
 function get_bounds(problem::SDP_Problem; debug = false)
   numcon=length(problem.name_to_ctr)
   MOSEK_KIND = Dict(["EQ"=>MSK_BK_FX, "GEQ"=>MSK_BK_LO, "LEQ"=>MSK_BK_UP, "RNG"=>MSK_BK_RA])
@@ -108,24 +153,27 @@ end
 
 
 function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64},
-                                       dual::SortedDict{Tuple{String, String, String}, Float64};
-                                       debug = false,
-                                       logname = "")
+                                           dual::SortedDict{Tuple{String, String, String}, Float64};
+                                           debug = false,
+                                           logname = "")
   empty!(primal)
   empty!(dual)
   primobj = NaN
   dualobj = NaN
 
-  num_block = length(problem.id_to_sdpblock)
-  # println("num_block : ", num_block)
-  barvardim = [ length(problem.id_to_sdpblock[block].var_to_id) for block in 1:num_block ]
-  vardim = 0
-  # println(barvardim)
-  println("num_block = ",   num_block)
+  nbarvar = length(problem.id_to_sdpblock)
+  println("nbarvar = ",   nbarvar)
+
+  barvardim = [ length(problem.id_to_sdpblock[block].var_to_id) for block in 1:nbarvar ]
+
+  vardim = problem.n_scalvarsym
+
   numcon, bkc, blc, buc = get_bounds(problem)
   println("numcon = ",   numcon)
 
-  barcj, barck, barcl, barcjkl , barai, baraj, barak, baral, baraijkl = get_triplets(problem, debug=debug)
+  barcj, barck, barcl, barcjkl , barai, baraj, barak, baral, baraijkl = get_SDPtriplets(problem, debug=debug)
+
+  cj, cjval, ai, aj, aij = get_linterms(problem, debug=debug)
 
   # Create a task object and attach log stream printer
   maketask() do task
@@ -135,10 +183,11 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
         putstreamfunc(task,MSK_STREAM_LOG,printstream)
       end
 
-      # Append matrix variables of sizes in 'BARVARDIM'.
+      # Append SDP matrix variables and scalar variables.
       # The variables will initially be fixed at zero.
       appendbarvars(task,barvardim)
       appendvars(task, vardim)
+
       # Append 'numcon' empty constraints.
       # The constraints will initially have no bounds.
       appendcons(task,numcon)
@@ -148,14 +197,15 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
       # Minimize
       putobjsense(task,MSK_OBJECTIVE_SENSE_MAXIMIZE)
 
-      # Set constraints matrices
+      # Set constraints SDP vars coeffs
       putbarablocktriplet(task, length(barai), barai, baraj, barak, baral, baraijkl)
 
-      # Set contraints linear part
-      # putaijlist(task, ai, aj, aij)
+      # Set contraints Sym vars coeffs as linear part
+      putaijlist(task, ai, aj, aij)
 
       # Objective matrices and constant
       putbarcblocktriplet(task, length(barcj), barcj, barck, barcl, barcjkl)
+      putclist(task, cj, cjval)
       if haskey(problem.cst_ctr, problem.obj_name)
         putcfix(task, problem.cst_ctr[problem.obj_name])
       end

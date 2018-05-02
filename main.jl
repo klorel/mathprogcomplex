@@ -19,11 +19,11 @@ function main()
 
     # problem = buildPOP_1v2()
 
-    problem = buildPOP_WB2(v2max=0.983)
+    problem = buildPOP_WB2(v2max=0.983, rmineqs=false)
     # problem = buildPOP_WB5()
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        d = 2)
+                                        d = 4)
 
 
     println("\n--------------------------------------------------------")
@@ -61,16 +61,16 @@ function main()
     end
 
     ########################################
-    # Calcul des matrices de moment
+    # Build the moment relaxation problem
     mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
-    println("\n--------------------------------------------------------")
-    println("mmtrel_pb = $mmtrel_pb")
+    # println("\n--------------------------------------------------------")
+    # println("mmtrel_pb = $mmtrel_pb")
 
     ########################################
     # Convert to a primal SDP problem
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
-    println("\n--------------------------------------------------------")
-    println("sdpinstance = \n$sdpinstance")
+    # println("\n--------------------------------------------------------")
+    # println("sdpinstance = \n$sdpinstance")
 
     export_SDP(relax_ctx, sdpinstance, pwd())
     sdp_instance = read_SDPInstance(pwd())
@@ -86,16 +86,39 @@ function main()
     set_vartypes!(sdp, sdp_instance)
     set_blocks!(sdp, sdp_instance)
 
+    # warn("sdpvars : ")
+    # for (blockname, block) in sdp.name_to_sdpblock
+    #     println("$blockname \t $block")
+    # end
+
+    # warn("symvars : ")
+    # for (blockname, block) in sdp.name_to_symblock
+    #     println("$blockname \t $block")
+    # end
+    # @show sdp.n_scalvarsym
+
+
     set_matrices!(sdp, sdp_instance)
+
+    # warn("sdp.matrices")
+    # for ((ctrname, blockname, var1, var2), coeff) in sdp.matrices
+    #     @printf("%45s %30s %20s %20s -> %f\n", ctrname, blockname, var1, var2, coeff)
+    # end
+
+    # warn("sdp.lin_matsym")
+    # for ((ctrname, blockname, var1, var2), coeff) in sdp.lin_matsym
+    #     @printf("%45s %30s %20s %20s -> %f\n", ctrname, blockname, var1, var2, coeff)
+    # end
+
     set_linear!(sdp, sdp_instance)
     set_const!(sdp, sdp_instance)
 
-    # println(sdp)
+    println(sdp)
 
-    # primal = SortedDict{Tuple{String,String,String}, Float64}()
-    # dual = SortedDict{Tuple{String, String, String}, Float64}()
+    primal = SortedDict{Tuple{String,String,String}, Float64}()
+    dual = SortedDict{Tuple{String, String, String}, Float64}()
 
-    # primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual)
+    primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual)
 
     # # println("Primal solution")
     # # for ((blockname, var1, var2), val) in primal

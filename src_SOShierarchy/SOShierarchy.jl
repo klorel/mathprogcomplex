@@ -45,39 +45,6 @@ end
 
 
 
-# type MatVar
-#   name::String
-#   kind::Symbol # Either :SDP or :Sym
-# end
-
-# mutable struct SDPInstance_
-#     sdpkind::Symbol # Either :Complex or :Real
-
-#     name_to_sdpblock::Dict{String, MatVar}
-#     id_to_sdpblock::Dict{Int64, MatVar}
-
-#     name_to_ctr::SortedDict{Tuple{Exponent, Exponent}, Tuple{Int64, String, Float64, Float64}} # Id, type et bornes des contraintes
-#     id_to_ctr::SortedDict{Int64, Tuple{Exponent, Exponent}}
-#     obj_name::String
-
-#     matrices::SortedDict{Tuple{Tuple{Exponent, Exponent}, String, Exponent, Exponent}, Number}
-#     # ((α, β), block_name, γ, δ) -> coeff
-#     lin::SortedDict{Tuple{Tuple{Exponent, Exponent}, Exponent}, Number}
-#     # ((α, β), var) -> coeff
-#     cst_ctr::SortedDict{Tuple{Exponent, Exponent}, Number}
-#     # (α, β) -> coeff
-
-#     SDPInstance() = new(:None,
-#                         Dict{String, MatVar}(),
-#                         Dict{Int64, MatVar}(),
-#                         SortedDict{Tuple{Exponent, Exponent}, Tuple{Int64, String, Float64, Float64}}(), # Id, type et bornes des contraintes
-#                         SortedDict{Int64, Tuple{Exponent, Exponent}}(),
-#                         "",
-#                         SortedDict{Tuple{Tuple{Exponent, Exponent}, String, Exponent, Exponent}, Number}(),
-#                         SortedDict{Tuple{Tuple{Exponent, Exponent}, Exponent}, Number}(),
-#                         SortedDict{Tuple{Exponent, Exponent}, Number}()
-#                         )
-# end
 
 const SDPBlocks = SortedDict{Tuple{Tuple{Exponent, Exponent}, String, Exponent, Exponent}, Number}
 # ((α, β), block_name, γ, δ) -> coeff
@@ -103,47 +70,54 @@ type SDP_Instance
   CONST
 end
 
-type Var_Block
+
+type SDP_Block
   id::Int64
   name::String
   var_to_id::SortedDict{String, Int64}
-  varkind::Symbol
 
-  Var_Block(id::Int64, name::String, varkind) = new(id, name, SortedDict{String, Int64}(), varkind)
+  SDP_Block(id::Int64, name::String) = new(id, name, SortedDict{String, Int64}())
 end
 
+type Sym_Block
+  id::Int64
+  name::String
+  varpairs_to_id::SortedDict{Tuple{String, String}, Int64}
+
+  Sym_Block(id::Int64, name::String) = new(id, name, SortedDict{Tuple{String, String}, Int64}())
+end
 
 type SDP_Problem
-  # Matrix variables
-  block_to_kind::SortedDict{String, Symbol}
-
   # SDP vars
-  name_to_sdpblock::SortedDict{String, Var_Block}
-  id_to_sdpblock::SortedDict{Int64, Var_Block}
+  name_to_sdpblock::SortedDict{String, SDP_Block}
+  id_to_sdpblock::SortedDict{Int64, SDP_Block}
 
-  # Free vars
-  name_to_symblock::SortedDict{String, Var_Block}
-  id_to_symblock::SortedDict{Int64, Var_Block}
+  # Symmetric vars
+  name_to_symblock::SortedDict{String, Sym_Block}
+  id_to_symblock::SortedDict{Int64, Sym_Block}
+  n_scalvarsym::Int
 
   name_to_ctr::SortedDict{String, Tuple{Int64, String, Float64, Float64}} # Id, type et bornes des contraintes
   id_to_ctr::SortedDict{Int64, String}
   obj_name::String
 
-  matrices::SortedDict{Tuple{String, String, String, String}, Float64} # Matrices du corps des contraintes / objectif
+  matrices::SortedDict{Tuple{String, String, String, String}, Float64} # Matrices SDP du corps des contraintes / objectif
+  lin_matsym::SortedDict{Tuple{String, String, String, String}, Float64} # Matrices Sym du corps des contraintes / objectif
   linear::SortedDict{Tuple{String, String, String, String}, Float64} # Matrice portant les parties linéaires des contraintes
   cst_ctr::SortedDict{String, Float64} # Constante du corp des contraintes
 
   scalar_vars_sym::Dict{Tuple{String, String, String}, Int64}
   scalar_vars_ctr::Dict{Tuple{String, String}, Int64}
 
-  SDP_Problem() = new(SortedDict{String, Symbol}(),
-                      SortedDict{String, Var_Block}(),
-                      SortedDict{Int64, Var_Block}(),
-                      SortedDict{String, Var_Block}(),
-                      SortedDict{Int64, Var_Block}(),
+  SDP_Problem() = new(SortedDict{String, SDP_Block}(),
+                      SortedDict{Int64, SDP_Block}(),
+                      SortedDict{String, Sym_Block}(),
+                      SortedDict{Int64, Sym_Block}(),
+                      -1,
                       SortedDict{String, Tuple{Int64, String, Float64, Float64}}(),
                       SortedDict{Int64, String}(),
                       obj_key(),
+                      SortedDict{Tuple{String, String, String, String}, Float64}(),
                       SortedDict{Tuple{String, String, String, String}, Float64}(),
                       SortedDict{Tuple{String, String, String, String}, Float64}(),
                       SortedDict{String, Float64}(),

@@ -54,25 +54,21 @@ set_vartypes!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
 Input all matrix varibales structural information regarding name and kind in the appropriate attributes of `SDP_Problem`.
 """
 function set_vartypes!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
-  println("set_vartypes!()")
-
   n_sdp, n_sym = 0, 0
   for i=1:size(instance.VAR_TYPES, 1)
     (block_name, block_type) = instance.VAR_TYPES[i, :]
 
     if block_type == "SDP"
-      sdp.block_to_kind[block_name] = :SDP
       n_sdp += 1
-      block = Var_Block(n_sdp, block_name, :SDP)
+      block = SDP_Block(n_sdp, block_name)
       sdp.name_to_sdpblock[block_name] = block
       sdp.id_to_sdpblock[n_sdp] = block
 
     elseif block_type == "Sym"
-      sdp.block_to_kind[block_name] = :Sym
       n_sym += 1
-      block = Var_Block(n_sym, block_name, :Sym)
-      sdp.name_to_symblock[block_name]
-      sdp.id_to_symblock[block_name]
+      block = Sym_Block(n_sym, block_name)
+      sdp.name_to_symblock[block_name] = block
+      sdp.id_to_symblock[n_sym] = block
     else
       error("set_vartypes()!: Unknown blockvar type")
     end
@@ -93,23 +89,39 @@ function set_blocks!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   for i in 1:size(instance.BLOCKS, 1)
     block_name, var1, var2 = instance.BLOCKS[i, 2:4]
 
-    if sdp.block_to_kind[block_name] == :SDP
+    if haskey(sdp.name_to_sdpblock, block_name)
       cur_blockvar = sdp.name_to_sdpblock[block_name]
-    elseif sdp.block_to_kind[block_name] == :Sym
-      cur_blockvar = sdp.name_to_sdpblock[block_name]
+
+      # Adding vars and ids to SDP block
+      if !haskey(cur_blockvar.var_to_id, var1)
+        cur_blockvar.var_to_id[var1] = length(cur_blockvar.var_to_id) + 1
+      end
+      if !haskey(cur_blockvar.var_to_id, var2)
+        cur_blockvar.var_to_id[var2] = length(cur_blockvar.var_to_id) + 1
+      end
+    elseif haskey(sdp.name_to_symblock, block_name)
+      cur_blockvar = sdp.name_to_symblock[block_name]
+
+      # Adding var pair to SDP block
+      sortedtuple = max(var1, var2), min(var1, var2)
+      if !haskey(cur_blockvar.varpairs_to_id, sortedtuple)
+        cur_blockvar.varpairs_to_id[sortedtuple] = -1
+      end
     else
       error("set_blocks!(): Unknown block_kind $(sdp.block_to_kind) for i=$i")
     end
+  end
 
-    # Adding vars to SDP block
-    if !haskey(cur_blockvar.var_to_id, var1)
-      cur_blockvar.var_to_id[var1] = length(cur_blockvar.var_to_id) + 1
-    end
-    if !haskey(cur_blockvar.var_to_id, var2)
-      cur_blockvar.var_to_id[var2] = length(cur_blockvar.var_to_id) + 1
+  # Associating id to each variable pair
+  n_sym = 0
+  for (blockname, block) in sdp.name_to_symblock
+    for varpair in keys(block.varpairs_to_id)
+      n_sym += 1
+      block.varpairs_to_id[varpair] = n_sym
     end
   end
 
+  sdp.n_scalvarsym = n_sym
   if debug
   end
 end
@@ -121,22 +133,30 @@ function set_matrices!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
 
     # Sort variables for triangular matrix storage
     var1, var2 = min(var1, var2), max(var1, var2)
-    if sdp.name_to_sdpblock[block_name].varkind == :SDP
+
+    if haskey(sdp.name_to_sdpblock, block_name)
       if !haskey(sdp.matrices, (ctr_name, block_name, var1, var2))
         sdp.matrices[(ctr_name, block_name, var1, var2)] = parse(coeff)
       else
         warn("set_matrices!(): sdp.matrices already has key ($ctr_name, $block_name, $var1, $var2) with val $(sdp.matrices[(ctr_name, block_name, var1, var2)]), $(prase(coeff))")
       end
-    elseif sdp.name_to_sdpblock[block_name].varkind == :Sym
-      sdp.linear[(ctr_name, block_name, var1, var2)] = parse(coeff)
+
+    elseif haskey(sdp.name_to_symblock, block_name)
+      if !haskey(sdp.matrices, (ctr_name, block_name, var1, var2))
+        sdp.lin_matsym[(ctr_name, block_name, var1, var2)] = parse(coeff)
+      else
+        warn("set_matrices!(): sdp.matrices already has key ($ctr_name, $block_name, $var1, $var2) with val $(sdp.matrices[(ctr_name, block_name, var1, var2)]), $(prase(coeff))")
+      end
+
     else
-      error("set_matrices!(): Unhandled matrix var type $(sdp.name_to_sdpblock[block_name].kind)")
+      error("set_matrices!(): Unhandled matrix var $block_name")
     end
   end
 
   if debug
   end
 end
+
 
 function set_linear!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   # TODO
@@ -161,10 +181,6 @@ function set_const!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
 end
 
 function print(io::IO, sdp::SDP_Problem)
-  for (block, kind) in sdp.block_to_kind
-    println(io, "  kind  : $block, $kind")
-  end
-
   for (cstr, block) in sdp.name_to_sdpblock
     println(io, "  sdp   : $cstr -> $block")
   end

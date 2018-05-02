@@ -33,8 +33,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
     end
 
     # Build linear dict
-    ## TODO : - enforce free symmetric matrices
-    ##        - enforce clique coupling constraints
+    ## TODO : enforce clique coupling constraints
 
     ## Build constants dict
     for (expo, fαβ) in mmtrelax_pb.objective
@@ -51,75 +50,6 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
 
     return SDPInstance(block_to_vartype, sdpblocks, sdplin, sdpcst)
 end
-
-# function build_SDPInstance_WIP(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxationPb)
-#     sdpinst = SDPInstance()
-
-#     ## Build matrices dict
-#     for ((cstrname, cliquename), mmt) in mmtrelax_pb.constraints
-
-#         for ((γ, δ), poly) in mmt.mm
-#             for (expo, λ) in poly
-#                 # Check the current monomial has correct degree
-#                 if (relaxctx.hierarchykind==:Complex) && ((expo.degree.explvar > relaxctx.di[cstrname]) || (expo.degree.conjvar > relaxctx.di[cstrname]))
-#                     warn("convertMMtobase(): Found exponent pair of degree $(expo.degree) > $(relaxctx.di[cstrname]) for Complex hierarchy.\n($(expo), at $((γ, δ)) of MM matrix)")
-#                 elseif (relaxctx.hierarchykind==:Real) && ((expo.degree.explvar > 2*relaxctx.di[cstrname]) || (expo.degree.conjvar != 0))
-#                     warn("convertMMtobase(): Found exponent pair of degree $(expo.degree) > 2*$(relaxctx.di[cstrname]) for Real hierarchy.\n($(expo), at $((γ, δ)) of MM matrix)")
-#                 end
-#                 !isnan(λ) || warn("convertMMtobase(): isNaN ! constraint $cstrname - clique $blocname - mm entry $((γ, δ)) - moment $(expo)")
-
-#                 # Determine which moment to affect the current coefficient.
-#                 α, β = split_expo(relaxctx, expo)
-#                 block_name = get_blockname(cstrname, cliquename, mmtrelax_pb)
-
-#                 # Add the current coeff to the SDP problem
-#                 key = ((α, β), block_name, γ, δ)
-
-#                 @assert !haskey(sdpinst.matrices, key)
-#                 # Constraints are fα - ∑ Bi.Zi = 0
-#                 sdpinst.matrices[key] = -λ
-#             end
-#         end
-#     end
-
-#     # Build linear dict
-#     ## TODO : - enforce free symmetric matrices
-#     ##        - enforce clique coupling constraints
-
-#     ## Build constants dict
-#     for (expo, fαβ) in mmtrelax_pb.objective
-#         # Determine which moment to affect the current coefficient.
-#         α, β = split_expo(relaxctx, expo)
-
-#         if !haskey(sdpinst.cst_ctr, (α, β))
-#             sdpinst.cst_ctr[(α, β)] = 0.0
-#         end
-
-#         # Constraints are fα - ∑ Bi.Zi = 0
-#         sdpinst.cst_ctr[(α, β)] += fαβ
-#     end
-
-#     ## Build contraints
-#     n=0
-#     for k in keys(matrices)
-#         n+=1
-#         ctrkey = k[1]
-#         sdpinst.name_to_ctr[ctrkey] = (n, "EQ", 0, 0)
-#         sdpinst.id_to_ctr[n] = ctr_key
-#     end
-#     sdpinst.obj_name = obj_name()
-
-#     ## Variable types
-#     for (cstrname, cstrtype) in relax_ctx.cstrtypes
-#         print_string(ftypes, cstrname, cstrlen)
-#         println(ftypes, " $(string(cstrtype))")
-#     end
-
-#     ## SDP problem kind
-#     sdpinst.sdpkind = relax_ctx.hierarchykind
-
-#     return SDPInstance(matrices, sdplin, cst_ctr)
-# end
 
 
 """

@@ -61,12 +61,12 @@ end
 ### OPF problems
 ############################
 
-function buildPOP_WB2(; v2max = 0.976)
+function buildPOP_WB2(; v2max = 0.976, rmineqs = false)
     OPFpbs = load_OPFproblems(MatpowerInput, joinpath("..", "data", "data_Matpower", "matpower", "WB2.m"))
     problem_c = build_globalpb!(OPFpbs)
 
     ## Converting to real ineq. only problem
-    change_eq_to_ineq!(problem_c)
+    !rmineqs || change_eq_to_ineq!(problem_c)
     problem = pb_cplx2real(problem_c)
 
     ## Fixing volt phase of last bus to 0
