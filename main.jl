@@ -25,7 +25,7 @@ function main()
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         d = 2,
-                                        issparse=true)
+                                        issparse=false)
 
 
     println("\n--------------------------------------------------------")
@@ -64,7 +64,7 @@ function main()
 
     ########################################
     # Build the moment relaxation problem
-    mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques; verbose=true)
+    mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques; verbose=false)
     # println("\n--------------------------------------------------------")
     # println("mmtrel_pb = $mmtrel_pb")
 
@@ -131,7 +131,7 @@ function main()
     primal = SortedDict{Tuple{String,String,String}, Float64}()
     dual = SortedDict{Tuple{String, String, String}, Float64}()
 
-    primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual, debug=true)
+    primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual, debug=false)
 
     # println("Primal solution")
     # for ((blockname, var1, var2), val) in primal

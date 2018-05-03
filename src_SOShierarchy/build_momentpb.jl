@@ -183,7 +183,7 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
             verbose && print("Building localizing matrix: constraint $(get_cstrname(cstrname, cstrtype)) - $cliquename, $(length(vars)) variables : building moment matrix... ")
             mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries, relax_ctx.cstrtypes[get_cstrname(cstrname, cstrtype)])
             verbose && println("computing product with polynomial...")
-            warn("Variables are $vars")
+            # warn("Variables are $vars")
             momentmatrices[(get_cstrname(cstrname, cstrtype), cliquename)] = mmt * get_normalizedpoly(cstr, cstrtype)
         end
     end
