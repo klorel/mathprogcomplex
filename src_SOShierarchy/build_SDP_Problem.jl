@@ -103,7 +103,7 @@ function set_blocks!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
       cur_blockvar = sdp.name_to_symblock[block_name]
 
       # Adding var pair to SDP block
-      sortedtuple = max(var1, var2), min(var1, var2)
+      sortedtuple = min(var1, var2), max(var1, var2)
       if !haskey(cur_blockvar.varpairs_to_id, sortedtuple)
         cur_blockvar.varpairs_to_id[sortedtuple] = -1
       end

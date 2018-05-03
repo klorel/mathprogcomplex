@@ -110,7 +110,7 @@ function get_linterms(problem; debug=debug)
   return cj, cjval, ai, aj, aij
 end
 
-function get_bounds(problem::SDP_Problem; debug = false)
+function get_ctrbounds(problem::SDP_Problem; debug = false)
   numcon=length(problem.name_to_ctr)
   MOSEK_KIND = Dict(["EQ"=>MSK_BK_FX, "GEQ"=>MSK_BK_LO, "LEQ"=>MSK_BK_UP, "RNG"=>MSK_BK_RA])
   bkc = Boundkey[ Mosek.Boundkey(1)  for kv in problem.name_to_ctr]
@@ -138,11 +138,11 @@ function get_bounds(problem::SDP_Problem; debug = false)
       blc[id_ctr] = lb - cst
       buc[id_ctr] = ub - cst
     else
-      error("get_bounds() : Unknown constraint kind $(ctr[2]) $(bkc[id_ctr]) $(MSK_BK_FX[1])")
+      error("get_ctrbounds() : Unknown constraint kind $(ctr[2]) $(bkc[id_ctr]) $(MSK_BK_FX[1])")
     end
   end
   if debug
-    warn("get_bounds(): done")
+    warn("get_ctrbounds(): done")
     @show numcon
     @show bkc
     @show blc
@@ -151,6 +151,18 @@ function get_bounds(problem::SDP_Problem; debug = false)
   return numcon, bkc, blc, buc
 end
 
+function get_varbounds(problem::SDP_Problem)
+  MSK_INFINITY = 1.0e30
+
+  varnum = problem.n_scalvarsym
+
+  sub = [i for i in 1:varnum]
+  bkx = [MSK_BK_FR for i in 1:varnum]
+  blx = [-MSK_INFINITY for i in 1:varnum]
+  bux = [MSK_INFINITY for i in 1:varnum]
+
+  return sub, bkx, blx, bux
+end
 
 function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64},
                                            dual::SortedDict{Tuple{String, String, String}, Float64};
@@ -166,10 +178,12 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
 
   barvardim = [ length(problem.id_to_sdpblock[block].var_to_id) for block in 1:nbarvar ]
 
-  vardim = problem.n_scalvarsym
+  numvar = problem.n_scalvarsym
 
-  numcon, bkc, blc, buc = get_bounds(problem)
+  numcon, bkc, blc, buc = get_ctrbounds(problem)
+  sub, bkx, blx, bux = get_varbounds(problem)
   println("numcon = ",   numcon)
+  println("numvar = ",   numvar)
 
   barcj, barck, barcl, barcjkl , barai, baraj, barak, baral, baraijkl = get_SDPtriplets(problem, debug=debug)
 
@@ -186,7 +200,9 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
       # Append SDP matrix variables and scalar variables.
       # The variables will initially be fixed at zero.
       appendbarvars(task,barvardim)
-      appendvars(task, vardim)
+      appendvars(task, numvar)
+
+      putvarboundlist(task, sub, bkx, blx, bux)
 
       # Append 'numcon' empty constraints.
       # The constraints will initially have no bounds.

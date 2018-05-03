@@ -104,7 +104,7 @@ type SDP_Problem
   matrices::SortedDict{Tuple{String, String, String, String}, Float64} # Matrices SDP du corps des contraintes / objectif
   lin_matsym::SortedDict{Tuple{String, String, String, String}, Float64} # Matrices Sym du corps des contraintes / objectif
   linear::SortedDict{Tuple{String, String, String, String}, Float64} # Matrice portant les parties linéaires des contraintes
-  cst_ctr::SortedDict{String, Float64} # Constante du corp des contraintes
+  cst_ctr::SortedDict{String, Float64} # Constante du corps des contraintes
 
   scalar_vars_sym::Dict{Tuple{String, String, String}, Int64}
   scalar_vars_ctr::Dict{Tuple{String, String}, Int64}

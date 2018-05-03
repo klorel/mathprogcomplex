@@ -82,14 +82,14 @@ function buildPOP_WB2(; v2max = 0.976, rmineqs = false)
     return problem
 end
 
-function buildPOP_WB5(; q5min = 1.05)
+function buildPOP_WB5(; q5min = 1.05, rmineqs = false)
     OPFpbs = load_OPFproblems(MatpowerInput, joinpath("..", "data", "data_Matpower", "matpower", "WB5.m"))
     Sgen = OPFpbs["BaseCase"].ds.bus["BUS_5"]["Gen_1"].power_min
     OPFpbs["BaseCase"].ds.bus["BUS_5"]["Gen_1"].power_min = real(Sgen) + im*q5min
     problem_c = build_globalpb!(OPFpbs)
 
     ## Converting to real ineq. only problem
-    change_eq_to_ineq!(problem_c)
+    !rmineqs || change_eq_to_ineq!(problem_c)
     return pb_cplx2real(problem_c)
 end
 
