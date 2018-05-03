@@ -2,11 +2,13 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
     sdpblocks = SDPBlocks()
     sdplin = SDPLin()
     sdpcst = SDPcst()
-
+    block_to_vartype = SortedDict{String, Symbol}()
 
     ## Build blocks dict
     for ((cstrname, cliquename), mmt) in mmtrelax_pb.constraints
-        
+        block_name = get_blockname(cstrname, cliquename, mmtrelax_pb)
+        block_to_vartype[block_name] = mmt.matrixkind
+
         for ((γ, δ), poly) in mmt.mm
             for (expo, λ) in poly
                 # Check the current monomial has correct degree
@@ -19,7 +21,6 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
 
                 # Determine which moment to affect the current coefficient.
                 α, β = split_expo(relaxctx, expo)
-                block_name = get_blockname(cstrname, cliquename, mmtrelax_pb)
 
                 # Add the current coeff to the SDP problem
                 key = ((α, β), block_name, γ, δ)
@@ -32,8 +33,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
     end
 
     # Build linear dict
-    ## TODO : - enforce free symmetric matrices
-    ##        - enforce clique coupling constraints
+    ## TODO : enforce clique coupling constraints
 
     ## Build constants dict
     for (expo, fαβ) in mmtrelax_pb.objective
@@ -48,7 +48,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
         sdpcst[(α, β)] += fαβ
     end
 
-    return SDPInstance(sdpblocks, sdplin, sdpcst)
+    return SDPInstance(block_to_vartype, sdpblocks, sdplin, sdpcst)
 end
 
 
@@ -60,12 +60,12 @@ end
 """
 function split_expo(relaxctx::RelaxationContext, expo::Exponent)
     α, β = Exponent(), Exponent()
-    
+
     for (var, deg) in expo
         add_expod!(α, Exponent(SortedDict(var=>Degree(0, deg.conjvar))))
         add_expod!(β, Exponent(SortedDict(var=>Degree(deg.explvar, 0))))
     end
-    
+
     if (relaxctx.hierarchykind == :Real) && (α.degree != Degree(0,0))
         error("split_expo(): Inconsistent degree $α, $β found for $(relaxctx.hierarchykind) hierarchy.")
     end
@@ -80,6 +80,10 @@ function print(io::IO, sdpinst::SDPInstance)
     length(sdpinst.lin) == 0 ? println("") : print(io, sdpinst.lin)
     println(io, " -- const part:")
     print(io, sdpinst.cst)
+    println(io, " -- mat var types:")
+    for (blockname, blocktype) in sdpinst.block_to_vartype
+        println(io, "   $blockname  \t $blocktype")
+    end
 end
 
 function print(io::IO, sdpblocks::SDPBlocks)

@@ -1,79 +1,77 @@
 ROOT = pwd()
 include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
 
+function print_primobj(primobjectives, sols)
+    @printf("%15s  %6s  %15s  %15s  | %15s  %20s  %15s\n", "q5min", "d", "objective", "CJ obj", "elapsed time", "tot. bytes alloc (MB)", "gctime")
+    for ((v2max, d), (cur_obj, t, bytes, gctime)) in primobjectives
+        target_obj = -1
+        if d == 2
+            target_obj = sols[v2max][3] # Rank relaxation value
+        elseif d == 2*sols[v2max][1]
+            target_obj = sols[v2max][2] # Optimal value
+        end
 
-function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logname)
-    ########################################
-    # Construction du sparsity pattern, extension chordale, cliques maximales.
-    max_cliques = get_maxcliques(relax_ctx, problem)
+        if target_obj!=-1 && !isapprox(cur_obj, target_obj, atol=1e-2)
+            warn("Test WB2: (v2max, d) = ($v2max, $d) found objective is $cur_obj, expected $target_obj.")
+        end
 
-    ########################################
-    # Compute moment matrices parameters: order et variables
-    moments_params = build_sparsity(relax_ctx, problem, max_cliques)
-
-    ########################################
-    # Calcul des matrices de moment
-    mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, moments_params, max_cliques)
-
-    ########################################
-    # Convert to a primal SDP problem
-    sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
-
-    export_SDP(relax_ctx, sdpinstance, pwd())
-    sdp_instance = read_SDPInstance(pwd())
-
-    ########################################
-    # Build Mosek-like structure for SDP problem
-    sdp = SDP_Problem()
-
-    set_constraints!(sdp, sdp_instance)
-    set_blocks!(sdp, sdp_instance)
-    set_matrices!(sdp, sdp_instance)
-    set_linear!(sdp, sdp_instance)
-    set_const!(sdp, sdp_instance)
-
-    primal = SortedDict{Tuple{String,String,String}, Float64}()
-    dual = SortedDict{Tuple{String, String, String}, Float64}()
-
-    primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual; logname = logname)
-
-    return primobj, dualobj
+        @printf("%15f  %6i  %15f  %15f  | %15f  %20f  %15f\n", v2max, d, cur_obj, target_obj!=-1?abs(cur_obj-target_obj):NaN, t, bytes, gctime)
+    end
 end
 
-
 function main()
+    sols = SortedDict(0.976 => (2, 905.76, 905.76),
+                      0.983 => (2, 905.73, 903.12),
+                      0.989 => (2, 905.73, 900.84),
+                      0.996 => (2, 905.73, 898.17),
+                      1.002 => (2, 905.73, 895.86),
+                      1.009 => (2, 905.73, 893.16),
+                      1.015 => (2, 905.73, 890.82),
+                      1.022 => (3, 905.73, 888.08),
+                      1.028 => (3, 905.73, 885.71),
+                      1.035 => (2, 882.97, 882.97))
 
-    params = SortedSet([(0.976, 2),
-                        (0.983, 2),
-                        (0.989, 2),
-                        (0.996, 2),
-                        (1.002, 2),
-                        (1.009, 2),
-                        (1.015, 2),
-                        (1.022, 3),
-                        (1.028, 3),
-                        (1.035, 2)])
+    primobjectives_noeqs = SortedDict()
+    for (v2max, vals) in sols
+        dmax = vals[1]
 
-    primobjectives = SortedDict()
-
-    for (v2max, dmax) in params
-        problem = buildPOP_WB2(v2max=v2max)
+        problem = buildPOP_WB2(v2max=v2max, rmineqs=true)
 
         for d=2:2:2*dmax  # Complex d definition, twice real one...
             relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                                 d = d)
 
-            primobj, dualobj = run_hierarchy(problem, relax_ctx, "Mosek_WB2_v2max_$(v2max)_(d)_$(d).log")
-            primobjectives[(v2max, d)] = primobj
+            logpath = joinpath("Mosek_runs", "WB2_v2max_$(v2max)_d_$(d)_noeq")
+            ispath(logpath) && rm(logpath, recursive=true); mkpath(logpath)
+            (primobj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath);
+            primobjectives_noeqs[(v2max, d)] = (primobj, t, bytes / 10^6, gctime)
         end
     end
 
-    @printf("%5s  %4s  %s\n", "v2max", "dmax", "objective")
-    for ((v2max, data), obj) in primobjectives
-        @printf("%4f  %4i  %f\n", v2max, data, obj)
+    primobjectives_eqs = SortedDict()
+    for (v2max, vals) in sols
+        dmax = vals[1]
+
+        problem = buildPOP_WB2(v2max=v2max, rmineqs=false)
+
+        for d=2:2:2*dmax  # Complex d definition, twice real one...
+            relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+                                                d = d)
+
+            logpath = joinpath("Mosek_runs", "WB2_v2max_$(v2max)_d_$(d)_eq")
+            ispath(logpath) && rm(logpath, recursive=true); mkpath(logpath)
+            (primobj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath);
+            primobjectives_eqs[(v2max, d)] = (primobj, t, bytes / 10^6, gctime)
+        end
     end
 
-    return primobjectives
+    println("- No equality constraints:")
+    print_primobj(primobjectives_noeqs, sols)
+
+    println("- Equality constraints:")
+    print_primobj(primobjectives_eqs, sols)
+
+    return primobjectives_noeqs, primobjectives_eqs
 end
 
 main()

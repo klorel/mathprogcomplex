@@ -20,7 +20,7 @@ set_linear!(sdp, instance)
 set_const!(sdp, instance)
 
 
-for (cstr, block) in sdp.name_to_block
+for (cstr, block) in sdp.name_to_sdpblock
     println("  - $cstr -> $block")
 end
 
