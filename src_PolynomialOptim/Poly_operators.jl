@@ -5,7 +5,7 @@
 """
     add_to_dict!(dict::SortedDict{Any, V}, key, val::V; isdense=false) where V<:Number
 
-    *Sparsely* add `val` to the `key` entry of `dict` dictionnary (if not `isdense`). 
+    *Sparsely* add `val` to the `key` entry of `dict` dictionnary (if not `isdense`).
     That is creates the entry if needed, deletes it if the resulting value is null.
 """
 function add_to_dict!(dict::SortedDict{U, Number}, key::U, val::T; isdense = false) where T<:Number where U
@@ -28,6 +28,8 @@ Exponent() = Exponent(SortedDict{Variable, Degree}())
 Polynomial() = Polynomial(SortedDict{Exponent, Number}())
 
 Exponent(x::Variable) = Exponent(SortedDict{Variable, Degree}(x=>Degree(1,0)))
+Exponent(xdeg::Pair{Variable, Degree}) = Exponent(SortedDict{Variable, Degree}(xdeg[1]=>xdeg[2]))
+
 function Point(vars::Array{Variable}, vals::Array{<:Number})
   if length(vars) != length(vals)
     error("Point(): input arrays must have same size.")

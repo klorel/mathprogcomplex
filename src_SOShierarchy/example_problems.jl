@@ -93,7 +93,14 @@ function buildPOP_WB5(; q5min = 1.05, rmineqs = false)
     return pb_cplx2real(problem_c)
 end
 
+function buildPOP_case9(; rmineqs = false)
+    OPFpbs = load_OPFproblems(MatpowerInput, joinpath("..", "data", "data_Matpower", "matpower", "case9.m"))
+    problem_c = build_globalpb!(OPFpbs)
 
+    ## Converting to real ineq. only problem
+    !rmineqs || change_eq_to_ineq!(problem_c)
+    return pb_cplx2real(problem_c)
+end
 
 ############################
 ### Global Optim pbs from Lasserre2001

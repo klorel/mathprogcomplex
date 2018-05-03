@@ -50,6 +50,13 @@ function get_pbcstrname(cstrname::String)
     end
 end
 
+function get_ccmultvar(var::Variable, clique1::String, clique2::String)
+    return Variable("lagmult_cc_"*var.name*"_"*clique1*"_"*clique2, var.kind)
+end
+
+function get_varinclique(var::Variable, clique::String)
+    return Variable(var.name*"_"*clique, var.kind)
+end
 
 function format_string(α::Exponent, β::Exponent)
     s = "$α,$β"

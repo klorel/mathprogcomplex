@@ -84,57 +84,14 @@ end
 
     Compute the `momentrelaxation` of `problem` corresponding to the clique decomposition `max_cliques` and parameters `moment_param`.
 """
-function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{String, Int}, localizingmat_param::SortedDict{String, Tuple{SortedSet{String}, Int}}, max_cliques::SortedDict{String, SortedSet{Variable}})
+function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{String, Int},
+                                                localizingmat_param::SortedDict{String, Tuple{SortedSet{String}, Int}},
+                                                max_cliques::SortedDict{String, SortedSet{Variable}};
+                                                verbose=false)
     println("\n=== MomentRelaxationPb(relax_ctx, problem, moment_param::SortedDict{String, Tuple{SortedSet{String}, Int}}, max_cliques::SortedDict{String, SortedSet{Variable}})")
     println("Compute the moment and localizing matrices associated with the problem constraints and clique decomposition and return a MomentRelaxationPb object.")
 
-    momentmatrices = SortedDict{Tuple{String, String}, MomentMatrix}()
-
-    ## Build moment matrix
-    # NOTE: sparsity work tbd here : several moment matrices ?
-    for (cliquename, vars) in max_cliques
-        dcl = momentmat_param[cliquename]
-        momentmatrices[(get_momentcstrname(), cliquename)] = MomentMatrix(relax_ctx, vars, dcl, relax_ctx.symmetries, :SDP)
-    end
-
-    ## Build localizing matrices
-    for (cstrname, cstr) in problem.constraints
-
-        cstrtype = get_cstrtype(cstr)
-        if cstrtype == :ineqdouble
-            cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
-
-            # Deal with lower inequality
-            clique_keys, order = localizingmat_param[cstrname_lo]
-            vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
-
-            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries, relax_ctx.cstrtypes[cstrname_lo])
-            momentmatrices[(cstrname_lo, cliquename)] = mmt * (cstr.p - cstr.lb)
-
-            # Deal with upper inequality, no recomputing of variables or moment matrix if possible
-            clique_keys_up, order_up = localizingmat_param[cstrname_up]
-            if collect(clique_keys) != collect(clique_keys_up)
-                warn("clique keys different from lower and upper side of double constraint")
-                vars, cliquename = collect_cliquesvars(clique_keys_up, max_cliques)
-
-                mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries, relax_ctx.cstrtypes[cstrname_hi])
-            elseif order_up != order
-                warn("order different from lower and upper side of double constraint")
-                mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries, relax_ctx.cstrtypes[cstrname_hi])
-            end
-
-            momentmatrices[(cstrname_up, cliquename)] = mmt * (cstr.ub - cstr.p)
-
-        else
-            # either cstrtype == :ineqlo, :ineqhi, :eq
-            clique_keys, order = localizingmat_param[get_cstrname(cstrname, cstrtype)]
-            vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
-
-            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries, relax_ctx.cstrtypes[get_cstrname(cstrname, cstrtype)])
-            momentmatrices[(get_cstrname(cstrname, cstrtype), cliquename)] = mmt * get_normalizedpoly(cstr, cstrtype)
-        end
-    end
-
+    verbose && println("Computing overlapping variables...")
     ## Locate clique overlapping variables
     vars_overlap = SortedDict{Variable, SortedSet{String}}()
 
@@ -160,7 +117,92 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
         length(cliques) > 1 || delete!(vars_overlap, var)
     end
 
-    return MomentRelaxationPb(problem.objective, momentmatrices, vars_overlap)
+    verbose && for (var, cliques) in vars_overlap println("$var, $(collect(cliques))") end
+
+
+    ## Build moment matrix
+    momentmatrices = SortedDict{Tuple{String, String}, MomentMatrix}()
+    for (cliquename, vars) in max_cliques
+
+        # Compute set of variables in cliquename
+        vars_inclique = SortedSet{Variable}()
+        for var in vars
+            var_inclique = var
+            if haskey(vars_overlap, var)
+                @assert haskey(vars_overlap[var], cliquename)
+                var_inclique = get_varinclique(var, cliquename)
+            end
+            insert!(vars_inclique, var_inclique)
+        end
+        verbose && println("Building moment matrix: clique $cliquename, $(length(vars)) variables")
+        # warn("Moment matrix vars : $vars_inclique")
+        dcl = momentmat_param[cliquename]
+        momentmatrices[(get_momentcstrname(), cliquename)] = MomentMatrix(relax_ctx, vars_inclique, dcl, relax_ctx.symmetries, :SDP)
+    end
+
+    ## Build localizing matrices
+    for (cstrname, cstr) in problem.constraints
+
+        cstrtype = get_cstrtype(cstr)
+        if cstrtype == :ineqdouble
+            cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
+
+            # Deal with lower inequality
+            clique_keys, order = localizingmat_param[cstrname_lo]
+            vars, cliquename = collect_cliquesvars(clique_keys, max_cliques, vars_overlap)
+
+            verbose && print("Building localizing matrix: constraint $cstrname_lo - $cliquename, $(length(vars)) variables : building moment matrix... ")
+            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries, relax_ctx.cstrtypes[cstrname_lo])
+            verbose && println("computing product with polynomial...")
+            momentmatrices[(cstrname_lo, cliquename)] = mmt * (cstr.p - cstr.lb)
+
+            # Deal with upper inequality, no recomputing of variables or moment matrix if possible
+            clique_keys_up, order_up = localizingmat_param[cstrname_up]
+            if collect(clique_keys) != collect(clique_keys_up)
+                warn("clique keys different from lower and upper side of double constraint")
+                vars, cliquename = collect_cliquesvars(clique_keys_up, max_cliques, vars_overlap)
+
+                verbose && print("Building localizing matrix: constraint $cstrname_up - $cliquename, $(length(vars)) variables : building moment matrix... ")
+                mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries, relax_ctx.cstrtypes[cstrname_up])
+            elseif order_up != order
+                warn("order different from lower and upper side of double constraint")
+
+                verbose && print("Building localizing matrix: constraint $cstrname_up - $cliquename, $(length(vars)) variables : building moment matrix... ")
+                mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries, relax_ctx.cstrtypes[cstrname_up])
+            end
+
+            verbose && collect(clique_keys) == collect(clique_keys_up) && order_up == order && print("Building localizing matrix: constraint $cstrname_up - $cliquename, $(length(vars)) variables : ")
+            verbose && println("computing product with polynomial...")
+            momentmatrices[(cstrname_up, cliquename)] = mmt * (cstr.ub - cstr.p)
+
+        else
+            # either cstrtype == :ineqlo, :ineqhi, :eq
+            clique_keys, order = localizingmat_param[get_cstrname(cstrname, cstrtype)]
+            vars, cliquename = collect_cliquesvars(clique_keys, max_cliques, vars_overlap)
+
+            verbose && print("Building localizing matrix: constraint $(get_cstrname(cstrname, cstrtype)) - $cliquename, $(length(vars)) variables : building moment matrix... ")
+            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries, relax_ctx.cstrtypes[get_cstrname(cstrname, cstrtype)])
+            verbose && println("computing product with polynomial...")
+            warn("Variables are $vars")
+            momentmatrices[(get_cstrname(cstrname, cstrtype), cliquename)] = mmt * get_normalizedpoly(cstr, cstrtype)
+        end
+    end
+
+    ## Treat objective polynomial
+    mmtobj = Polynomial()
+    for (expo, coeff) in problem.objective
+        mmtexpo = Exponent()
+        for (var, degree) in expo
+            varmmt = var
+            if haskey(vars_overlap, var)
+                varmmt = get_varinclique(var, first(collect(vars_overlap[var]))) # NOTE: proper choice to be made here ?
+            end
+            add_expod!(mmtexpo, Exponent(varmmt=>degree))
+        end
+        add!(mmtobj, mmtexpo * coeff)
+    end
+
+    return MomentRelaxationPb(mmtobj, momentmatrices, vars_overlap)
 end
 
 

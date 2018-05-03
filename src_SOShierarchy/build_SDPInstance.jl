@@ -33,7 +33,18 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
     end
 
     # Build linear dict
-    ## TODO : enforce clique coupling constraints
+    for (var, cliques) in mmtrelax_pb.vars_overlap
+
+        # Linking all clique instance of the var to the first clique var
+        cliqueref = first(cliques)
+        for clique in setdiff(cliques, SortedSet([cliqueref]))
+            lagmult = get_ccmultvar(var, cliqueref, clique)
+            sdplin[((Exponent(), Exponent(get_varinclique(var, cliqueref))), Exponent(lagmult))] = 1
+            sdplin[((Exponent(), Exponent(get_varinclique(var, clique))), Exponent(lagmult))] = -1
+        end
+
+        # NOTE other strategies for linking variables could be implemented here.
+    end
 
     ## Build constants dict
     for (expo, fαβ) in mmtrelax_pb.objective
@@ -78,6 +89,10 @@ function print(io::IO, sdpinst::SDPInstance)
     print(io, sdpinst.blocks)
     println(io, " -- linear part:")
     length(sdpinst.lin) == 0 ? println("") : print(io, sdpinst.lin)
+    println(io, " -- cc lin part:")
+    for (k,v) in sdpinst.lin_cc
+        println(io, "$k  $v")
+    end
     println(io, " -- const part:")
     print(io, sdpinst.cst)
     println(io, " -- mat var types:")
@@ -98,6 +113,16 @@ function print(io::IO, sdpblocks::SDPBlocks)
         print_string(io, format_string(γ), rowlen)
         print_string(io, format_string(δ), collen)
         @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
+    end
+end
+
+function print(io::IO, sdplin::SDPLin)
+    cstrlen = maximum(x->length(format_string(x[1][1], x[1][2])), keys(sdplin))
+    varlen = maximum(x->length(format_string(x[2])), keys(sdplin))
+    for (((α, β), var), λ) in sdplin
+        print_string(io, format_string(α, β), cstrlen)
+        print_string(io, format_string(var), varlen)
+        @printf(io, "% .16e\n", λ)
     end
 end
 

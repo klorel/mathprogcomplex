@@ -69,6 +69,7 @@ function get_linterms(problem; debug=debug)
   # TODO add linear variables and constraints
 
   nza, nzc = 0, 0
+  # Counting lin terms for symmetric matrices
   for ((objctr, block, var1, var2), coeff) in problem.lin_matsym
     if objctr == problem.obj_name
       nzc += 1
@@ -76,6 +77,8 @@ function get_linterms(problem; debug=debug)
       nza += 1
     end
   end
+  # Counting sym terms from linear constraints
+  nza += length(problem.linear)
 
   ai = zeros(Int32, nza)
   aj = zeros(Int32, nza)
@@ -95,6 +98,13 @@ function get_linterms(problem; debug=debug)
       aj[nza] = problem.name_to_symblock[blockname].varpairs_to_id[(var1, var2)]
       aij[nza] = coeff * (var1!=var2 ? 2 : 1)
     end
+  end
+
+  for ((ctrname, varname), coeff) in problem.linear
+    nza += 1
+    ai[nza] = problem.name_to_ctr[ctrname][1]
+    aj[nza] = problem.scalvar_to_id[varname]
+    aij[nza] = coeff
   end
 
   if debug
@@ -144,9 +154,9 @@ function get_ctrbounds(problem::SDP_Problem; debug = false)
   if debug
     warn("get_ctrbounds(): done")
     @show numcon
-    @show bkc
-    @show blc
-    @show buc
+    # @show bkc
+    # @show blc
+    # @show buc
   end
   return numcon, bkc, blc, buc
 end
@@ -154,14 +164,14 @@ end
 function get_varbounds(problem::SDP_Problem)
   MSK_INFINITY = 1.0e30
 
-  varnum = problem.n_scalvarsym
+  numvar = problem.n_scalvarsym + length(problem.scalvar_to_id)
 
-  sub = [i for i in 1:varnum]
-  bkx = [MSK_BK_FR for i in 1:varnum]
-  blx = [-MSK_INFINITY for i in 1:varnum]
-  bux = [MSK_INFINITY for i in 1:varnum]
+  sub = [i for i in 1:numvar]
+  bkx = [MSK_BK_FR for i in 1:numvar]
+  blx = [-MSK_INFINITY for i in 1:numvar]
+  bux = [MSK_INFINITY for i in 1:numvar]
 
-  return sub, bkx, blx, bux
+  return numvar, sub, bkx, blx, bux
 end
 
 function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64},
@@ -178,10 +188,8 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
 
   barvardim = [ length(problem.id_to_sdpblock[block].var_to_id) for block in 1:nbarvar ]
 
-  numvar = problem.n_scalvarsym
-
   numcon, bkc, blc, buc = get_ctrbounds(problem)
-  sub, bkx, blx, bux = get_varbounds(problem)
+  numvar, sub, bkx, blx, bux = get_varbounds(problem)
   println("numcon = ",   numcon)
   println("numvar = ",   numvar)
 
@@ -245,23 +253,23 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
         println("MSK_DPAR_INTPNT_CO_TOL_PFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_PFEAS))")
         println("MSK_DPAR_INTPNT_CO_TOL_REL_GAP,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_REL_GAP))")
 
-        println("Debug -> Reading Mosek problem")
-        num, subcj, subck, subcl, valcjkl = getbarcblocktriplet(task)
-        @printf("%5s  %5s  %5s  %s\n", "subcj", "subck", "subcl", "valcjkl")
-        for i=1:num
-            @printf("%5i  %5i  %5i  %f\n", subcj[i], subck[i], subcl[i], valcjkl[i])
-        end
+        # println("Debug -> Reading Mosek problem")
+        # num, subcj, subck, subcl, valcjkl = getbarcblocktriplet(task)
+        # @printf("%5s  %5s  %5s  %s\n", "subcj", "subck", "subcl", "valcjkl")
+        # for i=1:num
+        #     @printf("%5i  %5i  %5i  %f\n", subcj[i], subck[i], subcl[i], valcjkl[i])
+        # end
 
-        num, subai, subaj, subak, subal, valajkl = getbarablocktriplet(task)
-        @printf("%5s  %5s  %5s  %5s  %s\n", "subai", "subaj", "subak", "subal", "valajkl")
-        for i=1:num
-            @printf("%5i  %5i  %5i  %5i  %f\n", subai[i], subaj[i], subak[i], subal[i], valajkl[i])
-        end
+        # num, subai, subaj, subak, subal, valajkl = getbarablocktriplet(task)
+        # @printf("%5s  %5s  %5s  %5s  %s\n", "subai", "subaj", "subak", "subal", "valajkl")
+        # for i=1:num
+        #     @printf("%5i  %5i  %5i  %5i  %f\n", subai[i], subaj[i], subak[i], subal[i], valajkl[i])
+        # end
 
-        boundkeys, lbs, ubs = getconboundslice(task, 1, numcon+1)
-        @show boundkeys
-        @show lbs
-        @show ubs
+        # boundkeys, lbs, ubs = getconboundslice(task, 1, numcon+1)
+        # @show boundkeys
+        # @show lbs
+        # @show ubs
         println("*********************************************************************************")
       end
 

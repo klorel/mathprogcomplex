@@ -154,25 +154,81 @@ function get_WB5cliques(relax_ctx, problem)
     return maxcliques
 end
 
-"""
-    vars, blocname = collect_cliquesvars(clique_keys, max_cliques)
+function get_case9cliques(relax_ctx, problem)
+    if !relax_ctx.issparse
+        return get_maxcliques(relax_ctx, problem)
+    else
+        maxcliques = SortedDict{String, SortedSet{Variable}}()
+        maxcliques["clique1"] = SortedSet{Variable}([
+            Variable("BaseCase_1_VOLT_Im", Real),
+            Variable("BaseCase_1_VOLT_Re", Real),
+            Variable("BaseCase_5_VOLT_Im", Real),
+            Variable("BaseCase_5_VOLT_Re", Real),
+            Variable("BaseCase_4_VOLT_Im", Real),
+            Variable("BaseCase_4_VOLT_Re", Real),
+            Variable("BaseCase_9_VOLT_Im", Real),
+            Variable("BaseCase_9_VOLT_Re", Real),
+            Variable("BaseCase_8_VOLT_Im", Real),
+            Variable("BaseCase_8_VOLT_Re", Real)])
+        maxcliques["clique2"] = SortedSet{Variable}([
+            Variable("BaseCase_2_VOLT_Im", Real),
+            Variable("BaseCase_2_VOLT_Re", Real),
+            Variable("BaseCase_9_VOLT_Im", Real),
+            Variable("BaseCase_9_VOLT_Re", Real),
+            Variable("BaseCase_8_VOLT_Im", Real),
+            Variable("BaseCase_8_VOLT_Re", Real),
+            Variable("BaseCase_7_VOLT_Im", Real),
+            Variable("BaseCase_7_VOLT_Re", Real),
+            Variable("BaseCase_6_VOLT_Im", Real),
+            Variable("BaseCase_6_VOLT_Re", Real)])
+        maxcliques["clique3"] = SortedSet{Variable}([
+            Variable("BaseCase_3_VOLT_Im", Real),
+            Variable("BaseCase_3_VOLT_Re", Real),
+            Variable("BaseCase_7_VOLT_Im", Real),
+            Variable("BaseCase_7_VOLT_Re", Real),
+            Variable("BaseCase_6_VOLT_Im", Real),
+            Variable("BaseCase_6_VOLT_Re", Real),
+            Variable("BaseCase_5_VOLT_Im", Real),
+            Variable("BaseCase_5_VOLT_Re", Real),
+            Variable("BaseCase_4_VOLT_Im", Real),
+            Variable("BaseCase_4_VOLT_Re", Real)])
+        return maxcliques
+    end
+end
 
-    Collect variables of `cliques_keys` cliques, described in `max_cliques`
+
 """
-function collect_cliquesvars(clique_keys, max_cliques)
+    vars, blocname = collect_cliquesvars(clique_names, max_cliques)
+
+    Collect variables of `cliques_names` cliques, described in `max_cliques`
+"""
+function collect_cliquesvars(clique_names, max_cliques, vars_overlap)
     # Collect variables involved in constraint
     vars = SortedSet{Variable}()
     blocname = ""
-    for clique_key in clique_keys
-        union!(vars, max_cliques[clique_key])
-        blocname = blocname*clique_key*"_"
+    for clique_name in clique_names
+        union!(vars, max_cliques[clique_name])
+        blocname = blocname*clique_name*"_"
+    end
+
+    # deal with variables in several cliques
+    for var in vars
+        if haskey(vars_overlap, var)
+            inter = intersect(vars_overlap[var], clique_names)
+            delete!(vars, var)
+            if length(inter) > 0
+                insert!(vars, get_varinclique(var, first(inter))) # NOTE: better way to choose which clique here ?
+            else
+                insert!(vars, get_varinclique(var, first(vars_overlap[var]))) # NOTE: better way to choose which clique here ?
+            end
+        end
     end
     return vars, blocname[1:end-1]
 end
+
+
 #################################################################################
 ## Old stuff
-
-
 """
     sparsity_pattern = compute_sparsitypattern(problem, di, ki)
     Compute the sparsity_pattern corresponding to the given partial orders.

@@ -159,9 +159,13 @@ end
 
 
 function set_linear!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
-  # TODO
-  if length(instance.LINEAR) != 0
-    warn("  set_linmatrix!() not implemented yet. Passing.")
+  for i=1:size(instance.LINEAR, 1)
+    (ctrname, varname, coeff) = instance.LINEAR[i, :]
+    sdp.linear[(ctrname, varname)] = parse(coeff)
+
+    if !haskey(sdp.scalvar_to_id, varname)
+      sdp.scalvar_to_id[varname] = sdp.n_scalvarsym + length(sdp.scalvar_to_id) + 1
+    end
   end
 
   if debug
@@ -181,14 +185,6 @@ function set_const!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
 end
 
 function print(io::IO, sdp::SDP_Problem)
-  for (cstr, block) in sdp.name_to_sdpblock
-    println(io, "  sdp   : $cstr -> $block")
-  end
-
-  for (cstr, block) in sdp.name_to_symblock
-    println(io, "  sym   : $cstr -> $block")
-  end
-
   println(io, "  objk  : $(obj_key())")
 
   for (name, ctr) in sdp.name_to_ctr
@@ -207,11 +203,15 @@ function print(io::IO, sdp::SDP_Problem)
     println(io, "  cst   : $name \t $cst")
   end
 
-  for (name, cst) in sdp.scalar_vars_sym
-    println(io, "  sym v : $name \t $cst")
+  for (name, id) in sdp.scalvar_to_id
+    println(io, "scalvar : $name \t $id")
   end
 
-  for (name, cst) in sdp.scalar_vars_ctr
-    println(io, "  multv : $name \t $cst")
+  for (cstr, block) in sdp.name_to_sdpblock
+    println(io, "  sdp   : $cstr -> $block")
+  end
+
+  for (cstr, block) in sdp.name_to_symblock
+    println(io, "  sym   : $cstr -> $block")
   end
 end
