@@ -146,6 +146,7 @@ function print_poly!(io::IO, p::AbstractPolynomial, cat::String, maxvarlen, maxc
 
     oneline = (length(expo) == 0)
     oneline = (oneline || ((length(expo) == 2) && ((explsum, conjsum) == (1,1)))) # Hermitian product of two complex variables
+    oneline = (oneline || ((length(expo) == 1) && (first(expo)[2] == Degree(1,1)))) # Hermitian square of the same complex variable
     oneline = (oneline || ((length(expo) == 2) && ((explsum, conjsum) == (2,0)) && isreal(first(vars_deg)[1]) && isreal(last(vars_deg)[1]))) # Product of two real variables
     var = ((length(expo) == 1) && (((explsum, conjsum) == (0,1)) || ((explsum, conjsum) == (1,0)))) # One real or complex variable
     oneline = (var || oneline)
