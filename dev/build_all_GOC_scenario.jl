@@ -1,40 +1,43 @@
-include(joinpath(ROOT,"src_PowSysMod", "PowSysMod_body.jl"))
+using MAT
+include(joinpath(pwd(),"src_PowSysMod", "PowSysMod_body.jl"))
 
-# NOTE: Launch in console using 'julia -p nbparathreads compute_GOC_all_scenario.jl'
-# where the nb of cores is a likely good value for nbparathreads
+
+export_path = abspath(pwd(), "hadr_export")
 
 folder = "Phase_0_IEEE14_1Scenario"
-work_dir = joinpath("..", "data", "data_GOC", folder)
-isfolder(work_dir) || error("Not a folder $work_dir")
+work_dir = abspath("..", "data", "data_GOC", folder)
+ispath(work_dir) || error("Not a folder $work_dir")
 
+scenarios = SortedSet(setdiff(readdir(work_dir), ["scorepara.csv"]))
 
+for scenario in scenarios
+    cur_dir = joinpath(work_dir, scenario)
+    info("working on $cur_dir")
 
-scenarios = sort(filter(x->!ismatch(r"\.", x), readdir(folder_path)), by=x->parse(split(x, "_")[2]))
+    OPFpbs = load_OPFproblems(GOCInput, cur_dir)
 
-date = Dates.format(now(), "yy_u_dd_HH_MM_SS")
-save_folder = joinpath("knitro_runs", "para_run_$date")
-mkdir(save_folder)
+    for contingency in SortedSet(keys(OPFpbs))
+        ds = OPFpbs[contingency].ds
+        mp = OPFpbs[contingency].mp
 
-println("----------> Start para jobs")
+        print_with_color(:light_green, "$scenario -> $contingency\n")
 
-# r = build_and_solve_GOC(folder, scenarios[1])
-r = pmap(build_and_solve_GOC, [folder for i=1:length(scenarios)], scenarios, [save_folder for i=1:length(scenarios)])
+        ## Setting problem for simple OPF: no constraint for lines
+        for link in get_links(OPFpbs, contingency)
+            linkformulations = mp.link_formulations[link]
+            for (elemid, elem) in ds.link[link]
+                linkformulations[elemid] = :NoCtr
+            end
+        end
 
-println("----------> para jobs done")
+        OPFpb = build_Problem!(OPFpbs, contingency)
+        println(OPFpb)
 
-println("length scenarios : $(length(r))")
+        cur_export = joinpath(export_path, "$(scenario)_$(contingency)")
+        ispath(cur_export) && rm(cur_export, recursive=true)
+        mkpath(cur_export)
+        warn("Exporting to $cur_export")
+        export_to_dat(OPFpb, cur_export)
+    end
 
-
-# r = SortedDict(r)
-#
-# tasks_th = SortedDict()
-# for (key, val) in r
-#     if !haskey(tasks_th, val["thread_id"])
-#         tasks_th[val["thread_id"]] = 0
-#     end
-#     tasks_th[val["thread_id"]] += 1
-# end
-# println("id count:")
-# for (k, v) in tasks_th
-#     println("$k → $v")
-# end
+end

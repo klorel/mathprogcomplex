@@ -86,16 +86,21 @@ end
 function constraint(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T<:GOCLineπ_withtransformer
     cstrs = SortedDict{String, Constraint}()
 
-    Sor = Sorig(element, link, elemid, elem_formulation, link_vars)
-    Sde = Sdest(element, link, elemid, elem_formulation, link_vars)
-    Smax = element.power_magnitude_max
+    if elem_formulation == :NbMinVar
+        Sor = Sorig(element, link, elemid, elem_formulation, link_vars)
+        Sde = Sdest(element, link, elemid, elem_formulation, link_vars)
+        Smax = element.power_magnitude_max
 
-    cstrs[get_Smax_orig_cstrname()] = (abs2(real(Sor)) + abs2(imag(Sor))) << Smax^2
-    cstrs[get_Smax_dest_cstrname()] = (abs2(real(Sde)) + abs2(imag(Sde))) << Smax^2
+        cstrs[get_Smax_orig_cstrname()] = (abs2(real(Sor)) + abs2(imag(Sor))) << Smax^2
+        cstrs[get_Smax_dest_cstrname()] = (abs2(real(Sde)) + abs2(imag(Sde))) << Smax^2
 
-    cstrs[get_Smax_orig_cstrname()].precond = :sqrt
-    cstrs[get_Smax_dest_cstrname()].precond = :sqrt
+        cstrs[get_Smax_orig_cstrname()].precond = :sqrt
+        cstrs[get_Smax_dest_cstrname()].precond = :sqrt
+    elseif elem_formulation == :NoCtr
 
+    else
+        error("Unknown formulation $elem_formulation for link $link, element $elemid.")
+    end
     return cstrs
 end
 
