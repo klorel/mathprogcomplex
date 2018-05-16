@@ -140,6 +140,12 @@ function print(io::IO, sdpblocks::SDPBlocks)
     rowlen = maximum(x->length(format_string(x[3])), keys(sdpblocks))
     collen = maximum(x->length(format_string(x[4])), keys(sdpblocks))
 
+    print_string(io, "# Ctr / Obj key j", cstrlen)
+    print_string(io, "# Matrix variable key i", blocklen)
+    print_string(io, "# row key", rowlen)
+    print_string(io, "# col key", collen)
+    @printf(io, "%23s %23s\n", "# Coeff real part", "# Coeff imag part")
+
     for (((α, β), blockname, γ, δ), λ) in sdpblocks
         print_string(io, format_string(α, β), cstrlen)
         print_string(io, blockname, blocklen)
@@ -150,20 +156,33 @@ function print(io::IO, sdpblocks::SDPBlocks)
 end
 
 function print(io::IO, sdplin::SDPLin)
-    cstrlen = maximum(x->length(format_string(x[1][1], x[1][2])), keys(sdplin))
-    varlen = maximum(x->length(format_string(x[2])), keys(sdplin))
+    cstrlen = length(sdplin)!=0 ? maximum(x->length(format_string(x[1][1], x[1][2])), keys(sdplin)) : 0
+    varlen = length(sdplin)!=0 ? maximum(x->length(format_string(x[2])), keys(sdplin)) : 0
+
+    cstrlen = max(cstrlen, length("# Ctr / Obj key j"))
+    varlen = max(varlen, length("# Scalar variable key"))
+    print_string(io, "# Ctr / Obj key j", cstrlen)
+    print_string(io, "# Scalar variable key", varlen)
+    @printf(io, "%23s %23s\n", "# Coeff real part", "# Coeff imag part")
+
+    length(sdplin)==0 && return
     for (((α, β), var), λ) in sdplin
         print_string(io, format_string(α, β), cstrlen)
         print_string(io, format_string(var), varlen)
-        @printf(io, "% .16e\n", λ)
+        @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
     end
 end
 
+
 function print(io::IO, sdpcst::SDPcst)
     cstrlen = maximum(x->length(format_string(x[1], x[2])), keys(sdpcst))
+
+    print_string(io, "# Ctr / Obj key j", cstrlen)
+    @printf(io, "%23s %23s\n", "# Coeff real part", "# Coeff imag part")
+
     for ((α, β), λ) in sdpcst
         print_string(io, format_string(α, β), cstrlen)
-        @printf(io, "% .16e\n", λ)
+        @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
     end
 end
 

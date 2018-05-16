@@ -19,9 +19,8 @@ function main()
 
     # problem = buildPOP_1v2()
 
-    # problem = buildPOP_WB2(v2max=0.983, rmineqs=true)
-    problem = buildPOP_WB5()
-    # problem = buildPOP_case9()
+    problem = buildPOP_WB2(rmineqs=false) #v2max=0.983
+    # problem = buildPOP_WB5()
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         d = 2,
