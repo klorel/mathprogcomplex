@@ -30,6 +30,9 @@ function get_cstrname(cstrname::String, cstrtype::Symbol)
     end
 end
 
+###############################################################################
+## Moment Relaxation problem
+
 function get_normalizedpoly(cstr::Constraint, cstrtype::Symbol)
     if cstrtype == :eq
         return cstr.p - cstr.lb
@@ -41,6 +44,54 @@ function get_normalizedpoly(cstr::Constraint, cstrtype::Symbol)
         error("get_normalizedpoly(): Unhandeld type $cstrtype.")
     end
 end
+
+"""
+    ginorm = set_givars(gi, vars, vars_overlap)
+
+    replacing variables occuring in several cliques by `vars` variables.
+    NOTE: this *should* be done inplace for efficiency.
+"""
+function set_givars(gi::Polynomial, authorized_vars::SortedSet{Variable}, vars_overlap::SortedDict{Variable, SortedSet{String}}, ctr_cliques::SortedSet{String})
+    gi_res = Polynomial()
+    # info("poly input :")
+    # println(gi)
+    # info("Authorized vars :")
+    # for var in authorized_vars print("$var  ") end
+    # println()
+    # info("vars_overlap:")
+    # for (var, cliques) in vars_overlap
+        # print("$var  ⇥ ")
+        # for clique in cliques print("$clique ") end
+        # println()
+    # end
+
+    for (expo, λ) in gi
+        # warn(" - $expo")
+        cur_expo = Exponent()
+        for (var, degree) in expo
+            # warn("   |-> $var")
+            cur_var = var
+            if !(var ∈ authorized_vars)
+                @assert haskey(vars_overlap, var)
+                inter = intersect(ctr_cliques, vars_overlap[var])
+                # info("         cliques of var $var : $(vars_overlap[var])")
+                # info("         cliques of var $var and ctr : $(inter)")
+                clique = first(inter)
+                cur_var = get_varinclique(var, clique)
+            end
+            cur_var in authorized_vars || println("((( $var  not $cur_var")
+            @assert cur_var in authorized_vars
+            add_expod!(cur_expo, Exponent(cur_var=>degree))
+        end
+        # warn("   |==> $cur_expo")
+        add!(gi_res, cur_expo * λ)
+    end
+    # info("           : $gi_res")
+    # info("          -> $(gi == gi_res)")
+    return gi_res
+end
+
+
 
 function get_pbcstrname(cstrname::String)
     if ismatch(r".+(\_lo|\_hi|\_eq)", cstrname)

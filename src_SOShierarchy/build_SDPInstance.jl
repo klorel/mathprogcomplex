@@ -32,6 +32,39 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
         end
     end
 
+    # Collecting all monomial keys involving an overlapping variable
+    overlap_vars = SortedSet(keys(mmtrelax_pb.vars_overlap))
+
+    overlapping_expos_to_cliques = SortedDict{Exponent, SortedSet{String}}()
+
+    for ((ctrmomentname, cliquename), mmtmat) in mmtrelax_pb.constraints
+        if ctrmomentname == get_momentcstrname()
+            warn("--> $ctrmomentname  $cliquename")
+            for (key, poly) in mmtmat.mm
+                println("$poly")
+                for (expo, λ) in poly
+
+                    expo_vars = SortedSet(keys(expo))
+                    println("   $expo")
+                    println("           $expo_vars")
+                    println(intersect(expo_vars, overlap_vars))
+                    if length(intersect(expo_vars, overlap_vars)) > 0
+                        warn("Coucou")
+                        info("Adding $expo , clique $cliquename")
+                        haskey(overlapping_expos_to_cliques, cliquename) || (overlapping_expos_to_cliques[cliquename] = SortedSet{String}())
+                        push!(overlapping_expos_to_cliques[expo], cliquename)
+                    end
+                end
+
+            end
+
+        end
+    end
+
+    @show overlapping_expos_to_cliques
+    @show overlap_vars
+    error()
+
     # Build linear dict
     for (var, cliques) in mmtrelax_pb.vars_overlap
 

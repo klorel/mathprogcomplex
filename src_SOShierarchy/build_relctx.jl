@@ -3,8 +3,8 @@
 
     Build a `relax_ctx` object containing relaxation choices and problem features : order by constraint, relaxation order by constraint...
 """
-function set_relaxation(pb::Problem; ismultiordered=false, 
-                                     issparse=false, 
+function set_relaxation(pb::Problem; ismultiordered=false,
+                                     issparse=false,
                                      symmetries=[],
                                      hierarchykind=:Complex,
                                      renamevars=false,

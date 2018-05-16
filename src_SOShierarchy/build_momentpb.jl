@@ -134,10 +134,11 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
             end
             insert!(vars_inclique, var_inclique)
         end
-        verbose && println("Building moment matrix: clique $cliquename, $(length(vars)) variables")
+        verbose && print("Building moment matrix: clique $cliquename, $(length(vars)) variables... ")
         # warn("Moment matrix vars : $vars_inclique")
         dcl = momentmat_param[cliquename]
         momentmatrices[(get_momentcstrname(), cliquename)] = MomentMatrix(relax_ctx, vars_inclique, dcl, relax_ctx.symmetries, :SDP)
+        verbose && println("done.")
     end
 
     ## Build localizing matrices
@@ -154,7 +155,9 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
             verbose && print("Building localizing matrix: constraint $cstrname_lo - $cliquename, $(length(vars)) variables : building moment matrix... ")
             mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries, relax_ctx.cstrtypes[cstrname_lo])
             verbose && println("computing product with polynomial...")
-            momentmatrices[(cstrname_lo, cliquename)] = mmt * (cstr.p - cstr.lb)
+            gi = get_normalizedpoly(cstr, :ineqlo)
+            ginorm = set_givars(gi, vars, vars_overlap, clique_keys)
+            momentmatrices[(cstrname_lo, cliquename)] = mmt * ginorm
 
             # Deal with upper inequality, no recomputing of variables or moment matrix if possible
             clique_keys_up, order_up = localizingmat_param[cstrname_up]
@@ -173,8 +176,9 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
 
             verbose && collect(clique_keys) == collect(clique_keys_up) && order_up == order && print("Building localizing matrix: constraint $cstrname_up - $cliquename, $(length(vars)) variables : ")
             verbose && println("computing product with polynomial...")
-            momentmatrices[(cstrname_up, cliquename)] = mmt * (cstr.ub - cstr.p)
-
+            gi = get_normalizedpoly(cstr, :ineqhi)
+            ginorm = set_givars(gi, vars, vars_overlap, clique_keys)
+            momentmatrices[(cstrname_up, cliquename)] = mmt * ginorm
         else
             # either cstrtype == :ineqlo, :ineqhi, :eq
             clique_keys, order = localizingmat_param[get_cstrname(cstrname, cstrtype)]
@@ -184,7 +188,12 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
             mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries, relax_ctx.cstrtypes[get_cstrname(cstrname, cstrtype)])
             verbose && println("computing product with polynomial...")
             # warn("Variables are $vars")
-            momentmatrices[(get_cstrname(cstrname, cstrtype), cliquename)] = mmt * get_normalizedpoly(cstr, cstrtype)
+            gi = get_normalizedpoly(cstr, cstrtype)
+            ginorm = set_givars(gi, vars, vars_overlap, clique_keys)
+            # info(" Normalized poly is :")
+            # info("      $gi")
+            # info("      $ginorm")
+            momentmatrices[(get_cstrname(cstrname, cstrtype), cliquename)] = mmt * ginorm
         end
     end
 
@@ -201,6 +210,13 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
         end
         add!(mmtobj, mmtexpo * coeff)
     end
+
+    # info("---------------------------------------------------------------------------------")
+    # info("Objective polynomial treatment")
+    # println("init obj:\n$(problem.objective)")
+
+    # println("\nmmtrel objective:\n$mmtobj")
+
 
     return MomentRelaxationPb(mmtobj, momentmatrices, vars_overlap)
 end

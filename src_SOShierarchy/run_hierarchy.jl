@@ -1,5 +1,5 @@
 
-function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath)
+function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext; logpath = "")
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
     max_cliques = get_maxcliques(relax_ctx, problem)
@@ -35,7 +35,11 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath)
     primal = SortedDict{Tuple{String,String,String}, Float64}()
     dual = SortedDict{Tuple{String, String, String}, Float64}()
 
-    primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual; logname = joinpath(logpath, "Mosek_run.log"))
+    if logpath != ""
+        primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual; logname = joinpath(logpath, "Mosek_run.log"))
+    else
+        primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual)
+    end
 
     return primobj, dualobj
 end

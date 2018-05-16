@@ -57,9 +57,9 @@ function get_variables(p::Polynomial)
 end
 
 """
-    locctrcliques = get_locctrcliques(ctrvars, max_cliques)
+    locctrcliques = get_locctrcliques(p, max_cliques)
 
-    Find a minimal set of cliques gathering all variables from `ctrvars`.
+    Find a minimal set of cliques gathering all variables from `p` polynomial.
 """
 function get_locctrcliques(p::Polynomial, max_cliques::SortedDict{String, SortedSet{Variable}})
     ctrvars = get_variables(p)
@@ -100,7 +100,7 @@ function get_locctrcliques(p::Polynomial, max_cliques::SortedDict{String, Sorted
 
         # Hopefully all variables are treated that way. Else repeat this process by choosing a clique. Again, which one ?
         if length(unaffected_vars) != 0
-            warn("get_locctrcliques(): length(unaffected_vars) = $(length(unaffected_vars))")
+            warn("get_locctrcliques(): length(unaffected_vars) = $(length(unaffected_vars)).\nPolynomial is $p")
             cliques_from_unaffvar = SortedDict{String, Int}()
             for var in unaffected_vars
                 for clique in var_to_cliques[var]
@@ -134,24 +134,28 @@ function get_maxcliques(relax_ctx, problem)
 end
 
 function get_WB5cliques(relax_ctx, problem)
-    maxcliques = SortedDict{String, SortedSet{Variable}}()
-    maxcliques["clique1"] = SortedSet{Variable}([
-        Variable("BaseCase_1_VOLT_Im", Real),
-        Variable("BaseCase_1_VOLT_Re", Real),
-        Variable("BaseCase_2_VOLT_Im", Real),
-        Variable("BaseCase_2_VOLT_Re", Real),
-        Variable("BaseCase_3_VOLT_Im", Real),
-        Variable("BaseCase_3_VOLT_Re", Real)])
-    maxcliques["clique2"] = SortedSet{Variable}([
-        Variable("BaseCase_2_VOLT_Im", Real),
-        Variable("BaseCase_2_VOLT_Re", Real),
-        Variable("BaseCase_3_VOLT_Im", Real),
-        Variable("BaseCase_3_VOLT_Re", Real),
-        Variable("BaseCase_4_VOLT_Im", Real),
-        Variable("BaseCase_4_VOLT_Re", Real),
-        Variable("BaseCase_5_VOLT_Im", Real),
-        Variable("BaseCase_5_VOLT_Re", Real)])
-    return maxcliques
+    if !relax_ctx.issparse
+        return get_maxcliques(relax_ctx, problem)
+    else
+        maxcliques = SortedDict{String, SortedSet{Variable}}()
+        maxcliques["clique1"] = SortedSet{Variable}([
+            Variable("BaseCase_1_VOLT_Im", Real),
+            Variable("BaseCase_1_VOLT_Re", Real),
+            Variable("BaseCase_2_VOLT_Im", Real),
+            Variable("BaseCase_2_VOLT_Re", Real),
+            Variable("BaseCase_3_VOLT_Im", Real),
+            Variable("BaseCase_3_VOLT_Re", Real)])
+        maxcliques["clique2"] = SortedSet{Variable}([
+            Variable("BaseCase_2_VOLT_Im", Real),
+            Variable("BaseCase_2_VOLT_Re", Real),
+            Variable("BaseCase_3_VOLT_Im", Real),
+            Variable("BaseCase_3_VOLT_Re", Real),
+            Variable("BaseCase_4_VOLT_Im", Real),
+            Variable("BaseCase_4_VOLT_Re", Real),
+            Variable("BaseCase_5_VOLT_Im", Real),
+            Variable("BaseCase_5_VOLT_Re", Real)])
+        return maxcliques
+    end
 end
 
 function get_case9cliques(relax_ctx, problem)

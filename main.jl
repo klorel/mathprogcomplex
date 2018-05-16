@@ -20,12 +20,13 @@ function main()
     # problem = buildPOP_1v2()
 
     # problem = buildPOP_WB2(v2max=0.983, rmineqs=true)
-    # problem = buildPOP_WB5()
-    problem = buildPOP_case9()
+    problem = buildPOP_WB5()
+    # problem = buildPOP_case9()
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         d = 2,
-                                        issparse=false)
+                                        # symmetries=[PhaseInvariance],
+                                        issparse=true)
 
 
     println("\n--------------------------------------------------------")
@@ -37,8 +38,8 @@ function main()
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
     # max_cliques = get_maxcliques(relax_ctx, problem)
-    # max_cliques = get_WB5cliques(relax_ctx, problem)
-    max_cliques = get_case9cliques(relax_ctx, problem)
+    max_cliques = get_WB5cliques(relax_ctx, problem)
+    # max_cliques = get_case9cliques(relax_ctx, problem)
 
     println("\n--------------------------------------------------------")
     println("max cliques =")
@@ -64,9 +65,9 @@ function main()
 
     ########################################
     # Build the moment relaxation problem
-    mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques; verbose=false)
-    # println("\n--------------------------------------------------------")
-    # println("mmtrel_pb = $mmtrel_pb")
+    mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques; verbose=true)
+    println("\n--------------------------------------------------------")
+    println("mmtrel_pb = $mmtrel_pb")
 
     # ########################################
     # # Convert to a primal SDP problem
