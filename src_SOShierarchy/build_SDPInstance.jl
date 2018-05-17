@@ -1,6 +1,7 @@
 function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxationPb)
     sdpblocks = SDPBlocks()
     sdplin = SDPLin()
+    sdplinsym = SDPLinSym()
     sdpcst = SDPcst()
     block_to_vartype = SortedDict{String, Symbol}()
 
@@ -23,16 +24,24 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
                 α, β = split_expo(relaxctx, expo)
 
                 # Add the current coeff to the SDP problem
-                key = ((α, β), block_name, γ, δ)
-
-                @assert !haskey(sdpblocks, key)
                 # Constraints are fα - ∑ Bi.Zi = 0
-                sdpblocks[key] = -λ
+                if mmt.matrixkind == :SDP
+                    key = ((α, β), block_name, γ, δ)
+                    @assert !haskey(sdpblocks, key)
+
+                    sdpblocks[key] = -λ
+                elseif mmt.matrixkind == :Sym
+                    key = ((α, β), block_name, product(γ, δ))
+                    @assert !haskey(sdplinsym, key)
+
+                    sdplinsym[key] = -λ
+                end
+
             end
         end
     end
 
-    # Build linear dict
+    ## Build linear dict
     ## TODO : enforce clique coupling constraints
 
     ## Build constants dict
@@ -48,7 +57,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
         sdpcst[(α, β)] += fαβ
     end
 
-    return SDPInstance(block_to_vartype, sdpblocks, sdplin, sdpcst)
+    return SDPInstance(block_to_vartype, sdpblocks, sdplinsym, sdplin, sdpcst)
 end
 
 
@@ -113,26 +122,36 @@ function print(io::IO, sdpblocks::SDPBlocks)
     end
 end
 
-function print(io::IO, sdplin::SDPLin)
-    cstrlenα = length(sdplin)!=0 ? maximum(x->length(format_string(x[1][1])), keys(sdplin)) : 0
+function print(io::IO, sdplinsym::SDPLinSym, sdplin::SDPLin)
+    cstrlenα = length(sdplin)!=0 ? maximum(x->length(format_string(x[1][1])), union(keys(sdplin), keys(sdplinsym))) : 0
     cstrlenα= max(cstrlenα, length("# Ctr/Obj key j : conj part"))
-    cstrlenβ = length(sdplin)!=0 ? maximum(x->length(format_string(x[1][2])), keys(sdplin)) : 0
+    cstrlenβ = length(sdplinsym)!=0 ? maximum(x->length(format_string(x[1][2])), union(keys(sdplin), keys(sdplinsym))) : 0
     cstrlenβ= max(cstrlenβ, length("# Ctr/Obj key j : expl part"))
 
     varlen = length(sdplin)!=0 ? maximum(x->length(format_string(x[2])), keys(sdplin)) : 0
-    varlen = max(varlen, length("# Scalar variable key k"))
+    varlensym = length(sdplinsym)!=0 ? maximum(x->length(format_string(x[3], x[2])), keys(sdplinsym)) : 0
+    varlen = max(varlen, varlensym, length("# Scalar variable key k"))
 
     print_string(io, "# Ctr/Obj key j : conj part", cstrlenα)
     print_string(io, "# Ctr/Obj key j : expl part", cstrlenβ)
     print_string(io, "# Scalar variable key k", varlen)
     @printf(io, "%23s %23s\n", "# b_j[k] real part", "# b_j[k] imag part")
 
-    length(sdplin)==0 && return
-    for (((α, β), var), λ) in sdplin
-        print_string(io, format_string(α), cstrlenα)
-        print_string(io, format_string(β), cstrlenβ)
-        print_string(io, format_string(var), varlen)
-        @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
+    if length(sdplin)!=0
+        for (((α, β), var), λ) in sdplin
+            print_string(io, format_string(α), cstrlenα)
+            print_string(io, format_string(β), cstrlenβ)
+            print_string(io, format_string(var), varlen)
+            @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
+        end
+    end
+    if length(sdplinsym) != 0
+        for (((α, β), blockname, var), λ) in sdplinsym
+            print_string(io, format_string(α), cstrlenα)
+            print_string(io, format_string(β), cstrlenβ)
+            print_string(io, format_string(var, blockname), varlen)
+            @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
+        end
     end
 end
 

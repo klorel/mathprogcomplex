@@ -66,6 +66,11 @@ function format_string(α::Exponent)
     return replace(s, " ", "_")
 end
 
+function format_string(α::Exponent, block::String)
+    s = "$(α)_$block"
+    return replace(s, " ", "_")
+end
+
 function change_eq_to_ineq!(problem::Problem)
     for (ctrname, ctr) in problem.constraints
         if get_cstrtype(ctr) == :eq

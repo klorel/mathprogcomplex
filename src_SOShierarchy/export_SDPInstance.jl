@@ -26,7 +26,7 @@ function export_SDP(relax_ctx, sdp::SDPInstance, path)
     println(flin, "##         s.t.    ∑ A_ji ⋅ Zi + b_j ⋅ x + c_j  ==  0")
     println(flin, "## Objective key is \"1,1\"")
     println(flin, "#")
-    print(flin, sdp.lin)
+    print(flin, sdp.linsym, sdp.lin)
     close(flin)
 
     # Export constants of constraints
