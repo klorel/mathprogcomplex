@@ -7,9 +7,11 @@ function parse_log(knitro_log_path)
     nb_it = Dict{Int64, Any}()
     feaserror = Dict{Int64, Any}()
     opterror = Dict{Int64, Any}()
+    cpu = Dict{Int64, Any}()
     i = 0
     j = 0
     k = 0
+    l = 0
     for line in lines
         if ismatch(r"Final feasibility error", line)
             j +=1
@@ -23,9 +25,13 @@ function parse_log(knitro_log_path)
             i +=1
             nb_it[i] = split(line)[end]
         end
+        if ismatch(r"CPU time", line)
+            l +=1
+            cpu[l] = matchall(r"\d+.\d+",line)[end]
+        end
 
     end
-    return nb_it, feaserror, opterror
+    return nb_it, feaserror, opterror, cpu
 end
 
 # knitro_log_path = joinpath(pwd(), "..", "knitro_runs", "IEEE14_scenario_1", "Knitro_18_Apr_27_15_46_54.log")

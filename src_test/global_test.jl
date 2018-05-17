@@ -108,11 +108,11 @@ function build_and_solve_instance(typeofinput, instance_path)
     _, t_knitro, _ = @timed run_knitro(amplexportpath, joinpath(pwd(),"..","src_ampl"))
     pt_knitro, pt_GOC = read_Knitro_output(amplexportpath, pb_global_real)
 
-    write_solutions(OPFpbs, pt_knitro, amplexportpath)
+    # write_solutions(OPFpbs, pt_knitro, amplexportpath)
 
-    sol_txt = read_solution_point_GOC(instance_path, amplexportpath)
-    pt_txt = cplx2real(sol_txt)
-    println("get_minslack point from txt files:", get_minslack(pb_global_real, pt_txt))
+    # sol_txt = read_solution_point_GOC(instance_path, amplexportpath)
+    # pt_txt = cplx2real(sol_txt)
+    # println("get_minslack point from txt files:", get_minslack(pb_global_real, pt_txt))
 
     feas,ctr = get_minslack(pb_global_real, pt_knitro)
     obj = get_objective(pb_global_real, pt_knitro)
