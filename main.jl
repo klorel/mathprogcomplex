@@ -23,7 +23,7 @@ function main()
     # problem = buildPOP_WB5()
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        d = 4)
+                                        d = 2)
 
 
     println("\n--------------------------------------------------------")

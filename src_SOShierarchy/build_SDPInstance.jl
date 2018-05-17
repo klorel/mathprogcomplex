@@ -87,19 +87,25 @@ function print(io::IO, sdpinst::SDPInstance)
 end
 
 function print(io::IO, sdpblocks::SDPBlocks)
-    cstrlen = maximum(x->length(format_string(x[1][1], x[1][2])), keys(sdpblocks))
+    cstrlenα = maximum(x->length(format_string(x[1][1])), keys(sdpblocks))
+    cstrlenα= max(cstrlenα, length("# Ctr/Obj key j : conj part"))
+    cstrlenβ = maximum(x->length(format_string(x[1][2])), keys(sdpblocks))
+    cstrlenβ= max(cstrlenβ, length("# Ctr/Obj key j : expl part"))
     blocklen = maximum(x->length(x[2]), keys(sdpblocks))
+    blocklen= max(blocklen, length("# Matrix variable key i"))
     rowlen = maximum(x->length(format_string(x[3])), keys(sdpblocks))
     collen = maximum(x->length(format_string(x[4])), keys(sdpblocks))
 
-    print_string(io, "# Ctr / Obj key j", cstrlen)
+    print_string(io, "# Ctr/Obj key j : conj part", cstrlenα)
+    print_string(io, "# Ctr/Obj key j : expl part", cstrlenβ)
     print_string(io, "# Matrix variable key i", blocklen)
-    print_string(io, "# row key", rowlen)
-    print_string(io, "# col key", collen)
-    @printf(io, "%23s %23s\n", "# Coeff real part", "# Coeff imag part")
+    print_string(io, "# row key k", rowlen)
+    print_string(io, "# col key l", collen)
+    @printf(io, "%23s %23s\n", "# A_ij[k, l] real part", "# A_ij[k, l] imag part")
 
     for (((α, β), blockname, γ, δ), λ) in sdpblocks
-        print_string(io, format_string(α, β), cstrlen)
+        print_string(io, format_string(α), cstrlenα)
+        print_string(io, format_string(β), cstrlenβ)
         print_string(io, blockname, blocklen)
         print_string(io, format_string(γ), rowlen)
         print_string(io, format_string(δ), collen)
@@ -108,18 +114,23 @@ function print(io::IO, sdpblocks::SDPBlocks)
 end
 
 function print(io::IO, sdplin::SDPLin)
-    cstrlen = length(sdplin)!=0 ? maximum(x->length(format_string(x[1][1], x[1][2])), keys(sdplin)) : 0
-    varlen = length(sdplin)!=0 ? maximum(x->length(format_string(x[2])), keys(sdplin)) : 0
+    cstrlenα = length(sdplin)!=0 ? maximum(x->length(format_string(x[1][1])), keys(sdplin)) : 0
+    cstrlenα= max(cstrlenα, length("# Ctr/Obj key j : conj part"))
+    cstrlenβ = length(sdplin)!=0 ? maximum(x->length(format_string(x[1][2])), keys(sdplin)) : 0
+    cstrlenβ= max(cstrlenβ, length("# Ctr/Obj key j : expl part"))
 
-    cstrlen = max(cstrlen, length("# Ctr / Obj key j"))
-    varlen = max(varlen, length("# Scalar variable key"))
-    print_string(io, "# Ctr / Obj key j", cstrlen)
-    print_string(io, "# Scalar variable key", varlen)
-    @printf(io, "%23s %23s\n", "# Coeff real part", "# Coeff imag part")
+    varlen = length(sdplin)!=0 ? maximum(x->length(format_string(x[2])), keys(sdplin)) : 0
+    varlen = max(varlen, length("# Scalar variable key k"))
+
+    print_string(io, "# Ctr/Obj key j : conj part", cstrlenα)
+    print_string(io, "# Ctr/Obj key j : expl part", cstrlenβ)
+    print_string(io, "# Scalar variable key k", varlen)
+    @printf(io, "%23s %23s\n", "# b_j[k] real part", "# b_j[k] imag part")
 
     length(sdplin)==0 && return
     for (((α, β), var), λ) in sdplin
-        print_string(io, format_string(α, β), cstrlen)
+        print_string(io, format_string(α), cstrlenα)
+        print_string(io, format_string(β), cstrlenβ)
         print_string(io, format_string(var), varlen)
         @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
     end
@@ -127,13 +138,18 @@ end
 
 
 function print(io::IO, sdpcst::SDPcst)
-    cstrlen = maximum(x->length(format_string(x[1], x[2])), keys(sdpcst))
+    cstrlenα = maximum(x->length(format_string(x[1])), keys(sdpcst))
+    cstrlenα= max(cstrlenα, length("# Ctr/Obj key j : conj part"))
+    cstrlenβ = maximum(x->length(format_string(x[2])), keys(sdpcst))
+    cstrlenβ= max(cstrlenβ, length("# Ctr/Obj key j : expl part"))
 
-    print_string(io, "# Ctr / Obj key j", cstrlen)
-    @printf(io, "%23s %23s\n", "# Coeff real part", "# Coeff imag part")
+    print_string(io, "# Ctr/Obj key j : conj part", cstrlenα)
+    print_string(io, "# Ctr/Obj key j : expl part", cstrlenβ)
+    @printf(io, "%23s %23s\n", "# c_j real part", "# c_j imag part")
 
     for ((α, β), λ) in sdpcst
-        print_string(io, format_string(α, β), cstrlen)
+        print_string(io, format_string(α), cstrlenα)
+        print_string(io, format_string(β), cstrlenβ)
         @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
     end
 end
