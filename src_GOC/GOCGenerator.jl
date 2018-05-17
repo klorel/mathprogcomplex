@@ -183,14 +183,9 @@ function cost(element::T, bus::String, elemid::String, elem_formulation::Symbol,
   dict_coeffs = element.dict_obj_coeffs
   degrees_sorted = sort(collect(keys(dict_coeffs)))
   #quartic objective
-  imax = 3
-  #quadratic objective :TODO
-  #imax = 2
-  if imax != 3
-    warning("Objective is troncated to $imax degree")
-  end
+  imax = length(degrees_sorted)
   for i=1:imax
-        degree = degrees_sorted[i] ## NOTE: NOT normal behaviour, required for linear cost...
+        degree = degrees_sorted[i]
         add!(gencost, dict_coeffs[degree]*Sexp)
         Sexp = Sexp*Sactive
   end

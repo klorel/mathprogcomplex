@@ -30,8 +30,18 @@ for scenario in scenarios
             end
         end
 
+        ## Setting problem for simple OPF: linear objetive function
+        for bus in get_buses(OPFpbs, contingency)
+            for (elemid, elem) in ds.bus[bus]
+                if typeof(elem) == GOCGenerator
+                    for deg in keys(elem.dict_obj_coeffs)
+                        deg ≤ 1 || delete!(elem.dict_obj_coeffs, deg)
+                    end
+                end
+            end
+        end
+
         OPFpb = build_Problem!(OPFpbs, contingency)
-        println(OPFpb)
 
         cur_export = joinpath(export_path, "$(scenario)_$(contingency)")
         ispath(cur_export) && rm(cur_export, recursive=true)
