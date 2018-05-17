@@ -57,8 +57,12 @@ function export_SDP(relax_ctx, sdp::SDPInstance, path)
     cstrlen = max(cstrlen, length("# Matrix variable key i"))
     print_string(ftypes, "# Matrix variable key i", cstrlen); println(ftypes, " # Matrix type")
     for (blockname, vartype) in sdp.block_to_vartype
-        print_string(ftypes, blockname, cstrlen)
-        println(ftypes, " $(string(vartype))")
+        if vartype in Set([:SDP])
+            print_string(ftypes, blockname, cstrlen)
+            println(ftypes, " $(string(vartype))")
+        else
+            warn("Ignoring variable $blockname of type $vartype")
+        end
     end
     close(ftypes)
 end

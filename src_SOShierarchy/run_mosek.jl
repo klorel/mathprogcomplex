@@ -69,7 +69,7 @@ function get_linterms(problem; debug=debug)
   # TODO add linear variables and constraints
 
   nza, nzc = 0, 0
-  for ((objctr, block, var1, var2), coeff) in problem.lin_matsym
+  for (objctr, var) in keys(problem.linear)
     if objctr == problem.obj_name
       nzc += 1
     else
@@ -84,16 +84,16 @@ function get_linterms(problem; debug=debug)
   cjval = zeros(Float64, nzc)
 
   nza, nzc = 0, 0
-  for ((ctrname, blockname, var1, var2), coeff) in problem.lin_matsym
+  for ((ctrname, var), coeff) in problem.linear
     if ctrname == problem.obj_name
       nzc += 1
-      cj[nzc]= problem.name_to_symblock[blockname].varpairs_to_id[(var1, var2)]
-      cjval[nzc] = coeff * (var1!=var2 ? 2 : 1)
+      cj[nzc] = problem.scalvar_to_id[var]
+      cjval[nzc] = coeff
     else
       nza += 1
       ai[nza] = problem.name_to_ctr[ctrname][1]
-      aj[nza] = problem.name_to_symblock[blockname].varpairs_to_id[(var1, var2)]
-      aij[nza] = coeff * (var1!=var2 ? 2 : 1)
+      aj[nza] = problem.scalvar_to_id[var]
+      aij[nza] = coeff
     end
   end
 
@@ -154,12 +154,12 @@ end
 function get_varbounds(problem::SDP_Problem)
   MSK_INFINITY = 1.0e30
 
-  varnum = problem.n_scalvarsym
+  numvar = length(problem.scalvar_to_id)
 
-  sub = [i for i in 1:varnum]
-  bkx = [MSK_BK_FR for i in 1:varnum]
-  blx = [-MSK_INFINITY for i in 1:varnum]
-  bux = [MSK_INFINITY for i in 1:varnum]
+  sub = [i for i in 1:numvar]
+  bkx = [MSK_BK_FR for i in 1:numvar]
+  blx = [-MSK_INFINITY for i in 1:numvar]
+  bux = [MSK_INFINITY for i in 1:numvar]
 
   return sub, bkx, blx, bux
 end
@@ -178,7 +178,7 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
 
   barvardim = [ length(problem.id_to_sdpblock[block].var_to_id) for block in 1:nbarvar ]
 
-  numvar = problem.n_scalvarsym
+  numvar = length(problem.scalvar_to_id)
 
   numcon, bkc, blc, buc = get_ctrbounds(problem)
   sub, bkx, blx, bux = get_varbounds(problem)

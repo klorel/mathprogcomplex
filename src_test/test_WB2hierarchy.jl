@@ -2,7 +2,7 @@ ROOT = pwd()
 include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
 
 function print_primobj(primobjectives, sols)
-    @printf("%15s  %6s  %15s  %15s  | %15s  %20s  %15s\n", "q5min", "d", "objective", "CJ obj", "elapsed time", "tot. bytes alloc (MB)", "gctime")
+    @printf("%15s  %6s  %15s  %15s  | %15s  %20s  %15s\n", "v2max", "d", "objective", "CJ obj", "elapsed time", "tot. bytes alloc (MB)", "gctime")
     for ((v2max, d), (cur_obj, t, bytes, gctime)) in primobjectives
         target_obj = -1
         if d == 2
@@ -38,11 +38,14 @@ function main()
         problem = buildPOP_WB2(v2max=v2max, rmineqs=true)
 
         for d=2:2:2*dmax  # Complex d definition, twice real one...
+            info("Working on WB2, no ineqs, v2max=$v2max, d=$d")
+            logpath = joinpath("Mosek_runs", "WB2_v2max_$(v2max)_d_$(d)_noeq")
+            ispath(logpath) && rm(logpath, recursive=true); mkpath(logpath)
+            println("Saving file at $logpath")
+
             relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                                 d = d)
 
-            logpath = joinpath("Mosek_runs", "WB2_v2max_$(v2max)_d_$(d)_noeq")
-            ispath(logpath) && rm(logpath, recursive=true); mkpath(logpath)
             (primobj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath);
             primobjectives_noeqs[(v2max, d)] = (primobj, t, bytes / 10^6, gctime)
         end
@@ -55,11 +58,14 @@ function main()
         problem = buildPOP_WB2(v2max=v2max, rmineqs=false)
 
         for d=2:2:2*dmax  # Complex d definition, twice real one...
+            info("Working on WB2, ineqs, v2max=$v2max, d=$d")
+            logpath = joinpath("Mosek_runs", "WB2_v2max_$(v2max)_d_$(d)_eq")
+            ispath(logpath) && rm(logpath, recursive=true); mkpath(logpath)
+            println("Saving file at $logpath")
+
             relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                                 d = d)
 
-            logpath = joinpath("Mosek_runs", "WB2_v2max_$(v2max)_d_$(d)_eq")
-            ispath(logpath) && rm(logpath, recursive=true); mkpath(logpath)
             (primobj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath);
             primobjectives_eqs[(v2max, d)] = (primobj, t, bytes / 10^6, gctime)
         end

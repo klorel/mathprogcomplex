@@ -54,7 +54,7 @@ set_vartypes!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
 Input all matrix varibales structural information regarding name and kind in the appropriate attributes of `SDP_Problem`.
 """
 function set_vartypes!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
-  n_sdp, n_sym = 0, 0
+  n_sdp = 0
   for i=1:size(instance.VAR_TYPES, 1)
     (block_name, block_type) = instance.VAR_TYPES[i, :]
 
@@ -64,13 +64,8 @@ function set_vartypes!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
       sdp.name_to_sdpblock[block_name] = block
       sdp.id_to_sdpblock[n_sdp] = block
 
-    elseif block_type == "Sym"
-      n_sym += 1
-      block = Sym_Block(n_sym, block_name)
-      sdp.name_to_symblock[block_name] = block
-      sdp.id_to_symblock[n_sym] = block
     else
-      error("set_vartypes()!: Unknown blockvar type")
+      error("set_vartypes()!: Unknown blockvar type $block_type for variable $block_name")
     end
   end
 
@@ -99,30 +94,26 @@ function set_blocks!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
       if !haskey(cur_blockvar.var_to_id, var2)
         cur_blockvar.var_to_id[var2] = length(cur_blockvar.var_to_id) + 1
       end
-    elseif haskey(sdp.name_to_symblock, block_name)
-      cur_blockvar = sdp.name_to_symblock[block_name]
-
-      # Adding var pair to SDP block
-      sortedtuple = min(var1, var2), max(var1, var2)
-      if !haskey(cur_blockvar.varpairs_to_id, sortedtuple)
-        cur_blockvar.varpairs_to_id[sortedtuple] = -1
-      end
     else
       error("set_blocks!(): Unknown block_kind $(sdp.block_to_kind) for i=$i")
     end
   end
 
-  # Associating id to each variable pair
-  n_sym = 0
-  for (blockname, block) in sdp.name_to_symblock
-    for varpair in keys(block.varpairs_to_id)
-      n_sym += 1
-      block.varpairs_to_id[varpair] = n_sym
-    end
-  end
-
-  sdp.n_scalvarsym = n_sym
   if debug
+  end
+end
+
+"""
+set_linvars!(sdp::SDP_Problem, sdp_instance::SDP_Instance)
+
+Set the scalar variable name to id dict of the `sdp` structure.
+"""
+function set_linvars!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
+  for i in 1:size(instance.LINEAR, 1)
+    var = instance.LINEAR[i, 3]
+    if !haskey(sdp.scalvar_to_id, var)
+      sdp.scalvar_to_id[var] = length(sdp.scalvar_to_id) + 1
+    end
   end
 end
 
@@ -139,14 +130,7 @@ function set_matrices!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
       if !haskey(sdp.matrices, (ctr_name, block_name, var1, var2))
         sdp.matrices[(ctr_name, block_name, var1, var2)] = parse(coeff)
       else
-        warn("set_matrices!(): sdp.matrices already has key ($ctr_name, $block_name, $var1, $var2) with val $(sdp.matrices[(ctr_name, block_name, var1, var2)]), $(prase(coeff))")
-      end
-
-    elseif haskey(sdp.name_to_symblock, block_name)
-      if !haskey(sdp.matrices, (ctr_name, block_name, var1, var2))
-        sdp.lin_matsym[(ctr_name, block_name, var1, var2)] = parse(coeff)
-      else
-        warn("set_matrices!(): sdp.matrices already has key ($ctr_name, $block_name, $var1, $var2) with val $(sdp.matrices[(ctr_name, block_name, var1, var2)]), $(prase(coeff))")
+        warn("set_matrices!(): sdp.matrices already has key ($ctr_name, $block_name, $var1, $var2) with val $(sdp.matrices[(ctr_name, block_name, var1, var2)]), $(parse(coeff))")
       end
 
     else
@@ -160,9 +144,17 @@ end
 
 
 function set_linear!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
-  # TODO
   if length(instance.LINEAR) != 0
-    warn("  set_linmatrix!() not implemented yet. Passing.")
+    for i=1:size(instance.LINEAR, 1)
+      ctr_name = (instance.LINEAR[i, 1], instance.LINEAR[i, 2])
+      (var, coeff) = instance.LINEAR[i, 3:4]
+
+      if !haskey(sdp.linear, (ctr_name, var))
+        sdp.linear[(ctr_name, var)] = parse(coeff)
+      else
+        warn("set_linear!(): sdp.linear already has key ($ctr_name, $var) with val $(sdp.linear[(ctr_name, var)]). New val is $(parse(coeff))")
+      end
+    end
   end
 
   if debug
@@ -187,11 +179,7 @@ function print(io::IO, sdp::SDP_Problem)
     println(io, "  sdp   : $cstr -> $block")
   end
 
-  for (cstr, block) in sdp.name_to_symblock
-    println(io, "  sym   : $cstr -> $block")
-  end
-
-  println(io, "  objk  : $(obj_key())")
+  println(io, "  objk  : $(sdp.obj_name)")
 
   for (name, ctr) in sdp.name_to_ctr
     println(io, "  ctr   : $name \t $ctr")
@@ -207,13 +195,5 @@ function print(io::IO, sdp::SDP_Problem)
 
   for (name, cst) in sdp.cst_ctr
     println(io, "  cst   : $name \t $cst")
-  end
-
-  for (name, cst) in sdp.scalar_vars_sym
-    println(io, "  sym v : $name \t $cst")
-  end
-
-  for (name, cst) in sdp.scalar_vars_ctr
-    println(io, "  multv : $name \t $cst")
   end
 end

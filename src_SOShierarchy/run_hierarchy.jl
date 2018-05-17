@@ -27,6 +27,7 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath)
     set_constraints!(sdp, sdp_instance)
     set_vartypes!(sdp, sdp_instance)
     set_blocks!(sdp, sdp_instance)
+    set_linvars!(sdp, sdp_instance)
 
     set_matrices!(sdp, sdp_instance)
     set_linear!(sdp, sdp_instance)

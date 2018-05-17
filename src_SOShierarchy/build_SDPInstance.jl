@@ -32,9 +32,13 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
                     sdpblocks[key] = -λ
                 elseif mmt.matrixkind == :Sym
                     key = ((α, β), block_name, product(γ, δ))
-                    @assert !haskey(sdplinsym, key)
+                    haskey(sdplinsym, key) || (sdplinsym[key] = 0)
 
-                    sdplinsym[key] = -λ
+                    if sdplinsym[key] != 0
+                        warn("build_SDPInstance(): sdplinsym already has value for $γ * $δ ($block_name, $α, $β)")
+                    end
+
+                    sdplinsym[key] -= -λ * (γ!=δ ? 2 : 1)
                 end
 
             end

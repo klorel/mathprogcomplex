@@ -19,11 +19,11 @@ function main()
 
     # problem = buildPOP_1v2()
 
-    problem = buildPOP_WB2(rmineqs=false) #v2max=0.983
+    problem = buildPOP_WB2(v2max=0.976, rmineqs=false)
     # problem = buildPOP_WB5()
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        d = 2)
+                                        d = 4)
 
 
     println("\n--------------------------------------------------------")
@@ -85,6 +85,7 @@ function main()
     set_constraints!(sdp, sdp_instance)
     set_vartypes!(sdp, sdp_instance)
     set_blocks!(sdp, sdp_instance)
+    set_linvars!(sdp, sdp_instance)
 
     # warn("sdpvars : ")
     # for (blockname, block) in sdp.name_to_sdpblock
@@ -113,7 +114,7 @@ function main()
     set_linear!(sdp, sdp_instance)
     set_const!(sdp, sdp_instance)
 
-    println(sdp)
+    # println(sdp)
 
     primal = SortedDict{Tuple{String,String,String}, Float64}()
     dual = SortedDict{Tuple{String, String, String}, Float64}()
