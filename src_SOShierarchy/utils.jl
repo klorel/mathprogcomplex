@@ -77,4 +77,4 @@ function change_eq_to_ineq!(problem::Problem)
 end
 
 ## Mosek
-obj_key() = "1,1"
+obj_key() = ("1", "1")

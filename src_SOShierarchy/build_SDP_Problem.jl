@@ -23,9 +23,9 @@ Build `name_to_ctr` with explicit constraint parameters from instance with ==0 a
 """
 function set_constraints!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   # Collect constraints names
-  ctr_names = SortedSet{String}([instance.BLOCKS[i, 1] for i=1:size(instance.BLOCKS, 1)])
-  union!(ctr_names, [instance.LINEAR[i, 1] for i=1:size(instance.LINEAR, 1)])
-  union!(ctr_names, [instance.CONST[i, 1] for i=1:size(instance.CONST, 1)])
+  ctr_names = SortedSet{Tuple{String, String}}([(instance.BLOCKS[i, 1], instance.BLOCKS[i, 2]) for i=1:size(instance.BLOCKS, 1)])
+  union!(ctr_names, [(instance.LINEAR[i, 1], instance.LINEAR[i, 2]) for i=1:size(instance.LINEAR, 1)])
+  union!(ctr_names, [(instance.CONST[i, 1], instance.CONST[i, 2]) for i=1:size(instance.CONST, 1)])
 
   if haskey(ctr_names, obj_key())
     delete!(ctr_names, obj_key())
@@ -87,7 +87,7 @@ Fill all variables blocks with their elementary variables previously declared by
 """
 function set_blocks!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   for i in 1:size(instance.BLOCKS, 1)
-    block_name, var1, var2 = instance.BLOCKS[i, 2:4]
+    block_name, var1, var2 = instance.BLOCKS[i, 3:5]
 
     if haskey(sdp.name_to_sdpblock, block_name)
       cur_blockvar = sdp.name_to_sdpblock[block_name]
@@ -129,7 +129,8 @@ end
 
 function set_matrices!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   for i=1:size(instance.BLOCKS, 1)
-    (ctr_name, block_name, var1, var2, coeff) = instance.BLOCKS[i, :]
+    ctr_name = (instance.BLOCKS[i, 1], instance.BLOCKS[i, 2])
+    (block_name, var1, var2, coeff) = instance.BLOCKS[i, 3:6]
 
     # Sort variables for triangular matrix storage
     var1, var2 = min(var1, var2), max(var1, var2)
@@ -170,7 +171,8 @@ end
 
 function set_const!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   for i=1:size(instance.CONST, 1)
-    (ctr_name, coeff) = instance.CONST[i, :]
+    ctr_name = (instance.CONST[i, 1], instance.CONST[i, 2])
+    coeff = instance.CONST[i, 3]
 
     @assert !haskey(sdp.cst_ctr, ctr_name)
     sdp.cst_ctr[ctr_name] = parse(coeff)
