@@ -9,7 +9,7 @@ function get_blockname(cstrname, cliquename, mmtrelax_pb)
     if length(cstrcliques) == 1
         return cstrname
     else
-        warn("get_blockname(): several cliques found for $cstrname")
+        cstrname == get_momentcstrname() || warn("get_blockname(): several cliques found for $cstrname : $cstrcliques")
         return cstrname*"_"*cliquename
     end
 end
@@ -45,7 +45,7 @@ end
 function get_pbcstrname(cstrname::String)
     if ismatch(r".+(\_lo|\_hi|\_eq)", cstrname)
         return cstrname[1:end-3]
-    else 
+    else
         return cstrname
     end
 end
@@ -75,3 +75,6 @@ function change_eq_to_ineq!(problem::Problem)
         end
     end
 end
+
+## Mosek
+obj_key() = "1,1"

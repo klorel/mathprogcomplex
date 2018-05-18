@@ -68,6 +68,25 @@ function get_sumdegs(expo::Exponent)
     return explsum, conjsum
 end
 
+"""
+    cstrtype = get_cstrtype(cstr::Constraint)
+
+    Return a cstraint type among `:eq`, `:ineqhi`, `:ineqlo`, `:ineqdouble`.
+"""
+function get_cstrtype(cstr::Constraint)
+    if cstr.lb == cstr.ub && isfinite(cstr.ub)
+        return :eq
+    elseif (cstr.lb == -Inf-im*Inf) && (cstr.ub != Inf+im*Inf)
+        return :ineqhi
+    elseif (cstr.lb != -Inf-im*Inf) && (cstr.ub == Inf+im*Inf)
+        return :ineqlo
+    elseif (cstr.lb != -Inf-im*Inf) && (cstr.ub != Inf+im*Inf)
+        return :ineqdouble
+    else
+        error("get_cstrtype(): unknown constraint type.\nConstraint is $cstr")
+    end
+end
+
 function compute_degree(expo::Exponent)
     expldeg = conjdeg = 0
     for (var, deg) in expo.expo

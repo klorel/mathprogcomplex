@@ -45,6 +45,5 @@ src_modeler/Modeler/QCQP_ampl.jl
 /dev/solution1.txt
 /dev/solution2.txt
 JuMP_runs
-/blocks.sdp
-/const.sdp
-/types.sdp
+Mosek_runs
+*.sdp

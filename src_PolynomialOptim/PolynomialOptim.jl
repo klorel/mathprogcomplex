@@ -176,8 +176,9 @@ julia > pt = Point(SortedDict(a=>π, b=>e+7im))
 """
 struct Point
     coords::SortedDict{Variable, Number}
+    isdense::Bool
 
-    function Point(dict::SortedDict)
+    function Point(dict::SortedDict; isdense=false)
         dict_pt = SortedDict{Variable, Number}()
         for (var, val) in dict
             if !isa(var, Variable) || !isa(val, Number)
@@ -189,16 +190,16 @@ struct Point
                     booled = Int((val/abs(val) + 1) / 2)
                 end
                 (booled ≠ val) && warn("Point(): $var is $(var.kind), provided value is $val, $booled stored.")
-                add_to_dict!(dict_pt, var, booled)
+                add_to_dict!(dict_pt, var, booled, isdense = isdense)
             elseif isreal(var)
                 realed = real(val)
                 (realed ≠ val) && warn("Point(): $var is $(var.kind), provided value is $val, $realed stored.")
-                add_to_dict!(dict_pt, var, realed)
+                add_to_dict!(dict_pt, var, realed, isdense = isdense)
             else
-                add_to_dict!(dict_pt, var, val)
+                add_to_dict!(dict_pt, var, val, isdense = isdense)
             end
         end
-        return new(dict_pt)
+        return new(dict_pt, isdense)
     end
 end
 
