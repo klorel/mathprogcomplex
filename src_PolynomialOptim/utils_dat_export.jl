@@ -109,11 +109,11 @@ function print_variables(io::IO, variables, pt::Point, maxvarlen, maxcstrlen)
   for (varname, varkind) in variables
     var = Variable(varname, varkind)
     if iscomplex(var)
-      var_type = "CPLX"
+      var_type = "C"
     elseif isbool(var)
       var_type = "BOOL"
     elseif isreal(var)
-      var_type = "REAL"
+      var_type = "R"
     else
       error("Export_to_dat(): unsuported variable type $(var.kind)")
     end
