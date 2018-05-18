@@ -34,7 +34,7 @@ function main()
     primobjectives_noeqs = SortedDict()
     for (q5min, vals) in sols
         dmax = vals[1]
-        problem = buildPOP_WB5(q5min=q5min, rmineqs=true)
+        problem = buildPOP_WB5(q5min=q5min, rmeqs=true)
 
         dmax = 1 ## To Be Removed
         for d=2:2:2*dmax  # Complex d definition, twice real one...
@@ -53,7 +53,7 @@ function main()
     primobjectives_eqs = SortedDict()
     for (q5min, vals) in sols
         dmax = vals[1]
-        problem = buildPOP_WB5(q5min=q5min, rmineqs=false)
+        problem = buildPOP_WB5(q5min=q5min, rmeqs=false)
 
         dmax = 1 ## To Be Removed
         for d=2:2:2*dmax  # Complex d definition, twice real one...

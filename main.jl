@@ -19,7 +19,7 @@ function main()
 
     # problem = buildPOP_1v2()
 
-    problem = buildPOP_WB2(v2max=0.976, rmineqs=false)
+    problem = buildPOP_WB2(v2max=0.976, rmeqs=false)
     # problem = buildPOP_WB5()
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
