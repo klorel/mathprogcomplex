@@ -13,7 +13,7 @@ function read_input(intput_type::T, instance_path::String) where T<:Type{Matpowe
 
   # DataStructure and Gridstructure data:
   bus = SortedDict{String, SortedDict{String, Any}}()
-  link = SortedDict{Link, SortedDict{String, MatpowerLine_π}}()
+  link = SortedDict{Link, SortedDict{String, Any}}()
 
   bus_id_line=SortedDict{Int, Int}()
   bus_id_name=SortedDict{Int, String}()
@@ -29,7 +29,10 @@ function read_input(intput_type::T, instance_path::String) where T<:Type{Matpowe
     id = i-i_debut+1
     busname = bus_name(id)
     ## Adding MatpowerVolt structure (for each bus)
-    bus[busname] = SortedDict(volt_name() => MatpowerVolt(busname, id, data[i,13], data[i,12]))
+    if !haskey(bus, busname)
+        bus[busname] = SortedDict{String, Any}()
+    end
+    bus[busname][volt_name()] = MatpowerVolt(busname, id, data[i,13], data[i,12])
 
     ## Matpower Load
     load = data[i,3] + im*data[i,4]
@@ -74,7 +77,7 @@ function read_input(intput_type::T, instance_path::String) where T<:Type{Matpowe
       S_min += data[i,10] + im*data[i,5] #Smin = Pmin + i Qmin
       S_max += data[i,9] + im*data[i,4] #Smax = Pmax + i Qmax
     end
-    bus[busname]["Gen"] = MatpowerGenerator(S_min, S_max, -1, [-1])
+    bus[busname]["Gen"] = MatpowerGenerator(S_min, S_max, -1, [-1],true)
   end
 
   ## building link information
@@ -86,7 +89,7 @@ function read_input(intput_type::T, instance_path::String) where T<:Type{Matpowe
       rs, xs, bc = data[i,3:5]
       τ, θ = data[i, 9:10]
       if !haskey(link, linkname)
-        link[linkname] = SortedDict{String, MatpowerLine_π}()
+        link[linkname] = SortedDict{String, Any}()
       end
 
       nb_elem = length(link[linkname])
@@ -137,7 +140,7 @@ function read_input(intput_type::T, instance_path::String) where T<:Type{Matpowe
   ## Adding null generator to reference bus
   refind = find(bustype .== 3)
   length(refind) == 1 || warn("/! refind = $refind")
-  bus["BUS_$(refind[1])"]["Gen_reference"] = MatpowerGenerator(0,0,3,[0 0 0])
+  bus["BUS_$(refind[1])"]["Gen_reference"] = MatpowerGenerator(0,0,3,[0 0 0],true)
 
   ds = DataSource(bus, link)
 
@@ -145,10 +148,10 @@ function read_input(intput_type::T, instance_path::String) where T<:Type{Matpowe
   node_linksin = node_linksout = SortedDict{String, SortedSet{Link}}()
   node_vars = SortedDict{String, SortedDict{String, Variable}}()
   link_vars = SortedDict{Link, SortedDict{String, Variable}}()
-  gs = GridStructure(basecase_scenario_name(), node_linksin, node_linksout, node_vars, link_vars)
+  gs = GridStructure(basecase_scenario_name(), node_linksin, node_linksout)
 
-  node_formulations = SortedDict{String, SortedDict{Tuple{Type, String}, Symbol}}()
-  link_formulations = SortedDict{Link, SortedDict{Tuple{Type, String}, Symbol}}()
-  mc = ModellingChoice(node_formulations, link_formulations)
-  return OPFProblems(basecase_scenario_name()=>Scenario(ds, gs, mc))
+  node_formulations = SortedDict{String, SortedDict{String, Symbol}}()
+  link_formulations = SortedDict{Link, SortedDict{String, Symbol}}()
+  mp = MathematicalProgramming(node_formulations, link_formulations, node_vars, link_vars)
+  return OPFProblems(basecase_scenario_name()=>Scenario(ds, gs, mp))
 end

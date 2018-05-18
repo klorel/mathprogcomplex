@@ -132,7 +132,7 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	write gphase1 ;
 	solve;
 
-	/* close D:\repo\data\data_Matpower\solutions\sol.txt ;
+	close D:\repo\data\data_Matpower\solutions\sol.txt ;
 	printf "%s %d\n", "# SCALE =", SCALE  > D:\repo\data\data_Matpower\solutions\sol.txt ;
 	printf "%s %d\n", "# scaling =", scaling  >> D:\repo\data\data_Matpower\solutions\sol.txt ;
 	printf "%s % 10.2e \n", "# FEASTOL =", FEASTOL  >> D:\repo\data\data_Matpower\solutions\sol.txt ;
@@ -146,7 +146,7 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	}
 	close D:\repo\data\data_Matpower\solutions\sol.txt  ;
 
-	exit; */
+	exit;
 
 if scale_from_phase1 == 1 then {
 		let{i in 1.._ncons} _con[i].cscalefactor := if abs(_con[i])>1e-5 then 1/abs(_con[i]) else 1;
