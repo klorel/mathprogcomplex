@@ -167,7 +167,8 @@ end
 function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64},
                                            dual::SortedDict{Tuple{String, String, String}, Float64};
                                            debug = false,
-                                           logname = "")
+                                           logname = "",
+                                           printlog = true)
   empty!(primal)
   empty!(dual)
   primobj = NaN
@@ -191,11 +192,9 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
 
   # Create a task object and attach log stream printer
   maketask() do task
-      if logname != ""
-        linkfiletostream(task, MSK_STREAM_LOG, logname, 0)
-      else
-        putstreamfunc(task,MSK_STREAM_LOG,printstream)
-      end
+      logname != "" && linkfiletostream(task, MSK_STREAM_LOG, logname, 0)
+
+      printlog && putstreamfunc(task,MSK_STREAM_LOG,printstream)
 
       # Append SDP matrix variables and scalar variables.
       # The variables will initially be fixed at zero.

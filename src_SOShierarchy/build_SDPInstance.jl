@@ -34,11 +34,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
                     key = ((α, β), block_name, product(γ, δ))
                     haskey(sdplinsym, key) || (sdplinsym[key] = 0)
 
-                    if sdplinsym[key] != 0
-                        warn("build_SDPInstance(): sdplinsym already has value for $γ * $δ ($block_name, $α, $β)")
-                    end
-
-                    sdplinsym[key] -= -λ * (γ!=δ ? 2 : 1)
+                    sdplinsym[key] += -λ * (γ!=δ ? 2 : 1)
                 end
 
             end
@@ -107,7 +103,9 @@ function print(io::IO, sdpblocks::SDPBlocks)
     blocklen = maximum(x->length(x[2]), keys(sdpblocks))
     blocklen= max(blocklen, length("# Matrix variable key i"))
     rowlen = maximum(x->length(format_string(x[3])), keys(sdpblocks))
+    rowlen = max(rowlen, length("# row key k"))
     collen = maximum(x->length(format_string(x[4])), keys(sdpblocks))
+    collen = max(collen, length("# col key l"))
 
     print_string(io, "# Ctr/Obj key j : conj part", cstrlenα)
     print_string(io, "# Ctr/Obj key j : expl part", cstrlenβ)
