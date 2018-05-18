@@ -72,10 +72,15 @@ function main()
     println("\n--------------------------------------------------------")
     println("sdpinstance = \n$sdpinstance")
 
-    export_SDP(relax_ctx, sdpinstance, pwd())
+    mkpath("zmain_cplx")
+    export_SDP(relax_ctx, sdpinstance, "zmain_cplx")
 
-error()
-    sdp_instance = read_SDPInstance(pwd())
+    sdpinstance_real = SDPInstance_cplx2real(sdpinstance)
+
+    mkpath("zmain_real")
+    export_SDP(relax_ctx, sdpinstance_real, "zmain_real")
+
+    sdp_instance = read_SDPInstance("zmain_real")
 
     println("VAR_TYPES size:     $(size(sdp_instance.VAR_TYPES))")
     println("BLOCKS size:        $(size(sdp_instance.BLOCKS))")

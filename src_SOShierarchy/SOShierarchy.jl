@@ -16,6 +16,13 @@ mutable struct RelaxationContext
     cstrtypes
 end
 
+"""
+    SparsityPattern
+
+    Type for storing and working on sparsitty patterns.
+"""
+type SparsityPattern end
+
 include("build_relctx.jl")
 include("build_maxcliques.jl")
 
@@ -72,6 +79,7 @@ end
 
 include("build_SDPInstance.jl")
 include("export_SDPInstance.jl")
+include("SDPInstance_cplx2real.jl")
 
 
 
@@ -131,12 +139,7 @@ include("build_SDP_Problem.jl")
 ###############################################################################
 ## Unsorted
 ###############################################################################
-"""
-    SparsityPattern
 
-    Type for storing and working on sparsitty patterns.
-"""
-type SparsityPattern end
 
 include("run_hierarchy.jl")
 
