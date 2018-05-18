@@ -129,24 +129,24 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	let{varname in BINARY_VARIABLES} y[varname].intvarstrategy := 1;
 
 	option knitro_options;
-	/* write gphase1; */
+	write gphase1 ;
 	solve;
 
-	close sol.txt ;
-	printf "%s %d\n", "# SCALE =", SCALE  > sol.txt;
-	printf "%s %d\n", "# scaling =", scaling  >> sol.txt;
-	printf "%s % 10.2e \n", "# FEASTOL =", FEASTOL  >> sol.txt;
-	printf "%s % 10.2e\n", "# FEASTOLABS =", FEASTOLABS  >> sol.txt;
-	printf "%s % 10.2e\n", "# OPTTOL =", OPTTOL  >> sol.txt;
-	printf "%s % 10.2e\n", "# OPTTOLABS =", OPTTOLABS  >> sol.txt;
-	printf "\n%s % 10.16e\n", "# OBJECTIVE = ", CRITERION >> sol.txt;
-	printf "\n% 30s % 10s\n", "# VARNAME", "VALUE"  >> sol.txt;
+	/* close D:\repo\data\data_Matpower\solutions\sol.txt ;
+	printf "%s %d\n", "# SCALE =", SCALE  > D:\repo\data\data_Matpower\solutions\sol.txt ;
+	printf "%s %d\n", "# scaling =", scaling  >> D:\repo\data\data_Matpower\solutions\sol.txt ;
+	printf "%s % 10.2e \n", "# FEASTOL =", FEASTOL  >> D:\repo\data\data_Matpower\solutions\sol.txt ;
+	printf "%s % 10.2e\n", "# FEASTOLABS =", FEASTOLABS  >> D:\repo\data\data_Matpower\solutions\sol.txt ;
+	printf "%s % 10.2e\n", "# OPTTOL =", OPTTOL  >> D:\repo\data\data_Matpower\solutions\sol.txt ;
+	printf "%s % 10.2e\n", "# OPTTOLABS =", OPTTOLABS  >> D:\repo\data\data_Matpower\solutions\sol.txt ;
+	printf "\n%s % 10.16e\n", "# OBJECTIVE = ", CRITERION >> D:\repo\data\data_Matpower\solutions\sol.txt ;
+	printf "\n% 30s % 10s\n", "# VARNAME", "VALUE"  >> D:\repo\data\data_Matpower\solutions\sol.txt ;
 	for {varname in REAL_VARIABLES} {
-		printf "% 30s % 10.16e \n", varname, x[varname]  >> sol.txt;
+		printf "% 30s % 10.16e \n", varname, x[varname]  >> D:\repo\data\data_Matpower\solutions\sol.txt ;
 	}
-	close sol.txt ;
+	close D:\repo\data\data_Matpower\solutions\sol.txt  ;
 
-	exit;
+	exit; */
 
 if scale_from_phase1 == 1 then {
 		let{i in 1.._ncons} _con[i].cscalefactor := if abs(_con[i])>1e-5 then 1/abs(_con[i]) else 1;
@@ -198,6 +198,8 @@ if scale_from_phase1 == 1 then {
 	#let{i in REAL_VARIABLES: x[i].lb2 != -Infinity and x[i].ub2 != Infinity} x[i].xscalefactor := (x[i].ub2-x[i].lb2)*1e-2;
 	option presolve 0;
 
+	option knitro_options;
+	write gphase2;
 	solve;
 
 
@@ -223,6 +225,9 @@ if scale_from_phase1 == 1 then {
 
 	display{i in 1.._ncons: _con[i].slack<-1e-6}(_conname [i], _con[i].slack);
 	fix{varname in BINARY_VARIABLES} y[varname];
+
+	option knitro_options;
+	write gphase3;
 	solve;
 
 	printf "%s;%f\n", "Time resolution Phase 3", time()-TIME_BEGIN >> knitro_info.csv;
