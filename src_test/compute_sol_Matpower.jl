@@ -2,7 +2,8 @@ ROOT = pwd()
 include(joinpath(ROOT,"..","src_PowSysMod", "PowSysMod_body.jl"))
 
 function build_and_solve_matpower_instance(instance_path)
-    typeofinput = MatpowerSimpleInput
+    # typeofinput = MatpowerSimpleInput
+    typeofinput = MatpowerInput
     OPFpbs = load_OPFproblems(typeofinput, instance_path)
     ## Bulding optimization problem
     pb_global = build_globalpb!(OPFpbs)

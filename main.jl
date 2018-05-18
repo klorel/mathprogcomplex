@@ -1,5 +1,6 @@
 ROOT = pwd()
 include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
+include(joinpath(ROOT,"src_PowSysMod", "PowSysMod_body.jl"))
 
 
 function main()
@@ -20,18 +21,34 @@ function main()
     # problem = buildPOP_1v2()
 
     problem = buildPOP_WB2(rmineqs=false) #v2max=0.983
+    # typeofinput = GOCInput
+    # instance_path = joinpath("..", "data", "data_GOC", "Phase_0_IEEE14_1Scenario","scenario_1")
+    # raw = "powersystem.raw"
+    # gen = "generator.csv"
+    # con = "contingency.csv"
+    # rawfile = joinpath(instance_path,raw)
+    # genfile = joinpath(instance_path, gen)
+    # contfile = joinpath(instance_path, con)
+    # OPFpbs = load_OPFproblems(rawfile, genfile, contfile)
+
+    typeofinput = MatpowerInput
+    instance_path = joinpath("..", "data", "data_Matpower","matpower", "WB5.m")
+
+    OPFpbs = load_OPFproblems(typeofinput, instance_path)
+    ## Introducing coupling constraints on generator output
+    (typeofinput != GOCInput) || introduce_Sgenvariables!(OPFpbs)
+
+    ## Bulding optimization problem
+    problem = build_globalpb!(OPFpbs)
+    problem = pb_cplx2real(problem)
     # problem = buildPOP_WB5()
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        d = 4)
-
-<<<<<<< HEAD
-=======
+                                        d = 1)
 
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")
 
->>>>>>> master
     println("\n--------------------------------------------------------")
     println("relax_ctx = \n$relax_ctx")
 
