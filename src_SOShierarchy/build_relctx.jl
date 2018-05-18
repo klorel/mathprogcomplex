@@ -3,8 +3,8 @@
 
     Build a `relax_ctx` object containing relaxation choices and problem features : order by constraint, relaxation order by constraint...
 """
-function set_relaxation(pb::Problem; ismultiordered=false, 
-                                     issparse=false, 
+function set_relaxation(pb::Problem; ismultiordered=false,
+                                     issparse=false,
                                      symmetries=[],
                                      hierarchykind=:Complex,
                                      renamevars=false,
@@ -39,15 +39,15 @@ function set_relaxation(pb::Problem; ismultiordered=false,
         cstrtype = get_cstrtype(cstr)
         if cstrtype == :ineqdouble
             cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
-            cstrtypes[cstrname_lo] = :SDP
-            cstrtypes[cstrname_up] = :SDP
+            cstrtypes[cstrname_lo] = (hierarchykind==:Complex ? :CplxSDP : :SDP)
+            cstrtypes[cstrname_up] = (hierarchykind==:Complex ? :CplxSDP : :SDP)
         elseif cstrtype == :eq
-            cstrtypes[get_cstrname(cstrname, cstrtype)] = :Sym
+            cstrtypes[get_cstrname(cstrname, cstrtype)] = (hierarchykind==:Complex ? :CplxSym : :Sym)
         else
-            cstrtypes[get_cstrname(cstrname, cstrtype)] = :SDP
+            cstrtypes[get_cstrname(cstrname, cstrtype)] = (hierarchykind==:Complex ? :CplxSDP : :SDP)
         end
     end
-    cstrtypes[get_momentcstrname()] = :SDP
+    cstrtypes[get_momentcstrname()] = (hierarchykind==:Complex ? :CplxSDP : :SDP)
 
     # Relaxation order management
     di_relax = SortedDict{String, Int}()

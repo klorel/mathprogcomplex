@@ -1,7 +1,4 @@
 function export_SDP(relax_ctx, sdp::SDPInstance, path)
-    if relax_ctx.hierarchykind != :Real
-        error("export_SDP(): Only real hierarchy for now... C -> R conversion still to be done")
-    end
 
     # Export blocks of constraints
     blocks_file = joinpath(path, "blocks.sdp")
@@ -57,7 +54,7 @@ function export_SDP(relax_ctx, sdp::SDPInstance, path)
     cstrlen = max(cstrlen, length("# Matrix variable key i"))
     print_string(ftypes, "# Matrix variable key i", cstrlen); println(ftypes, " # Matrix type")
     for (blockname, vartype) in sdp.block_to_vartype
-        if vartype in Set([:SDP])
+        if vartype in Set([:SDP, :CplxSDP])
             print_string(ftypes, blockname, cstrlen)
             println(ftypes, " $(string(vartype))")
         else

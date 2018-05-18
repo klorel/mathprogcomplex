@@ -1,12 +1,10 @@
 using DataStructures
 include(joinpath(ROOT, "src_PolynomialOptim", "PolynomialOptim.jl"))
 
-## Symetries
-abstract type AbstractSymetry end
-type PhaseInvariance <: AbstractSymetry end
 
-
-
+###############################################################################
+## Relaxation context, symmetries and cliques
+###############################################################################
 mutable struct RelaxationContext
     ismultiordered
     issparse
@@ -18,7 +16,16 @@ mutable struct RelaxationContext
     cstrtypes
 end
 
+include("build_relctx.jl")
+include("build_maxcliques.jl")
 
+abstract type AbstractSymetry end
+type PhaseInvariance <: AbstractSymetry end
+include("symmetries.jl")
+
+###############################################################################
+## Moment Problem
+###############################################################################
 """
     MomentMatrix(mm, vars, order)
 
@@ -40,23 +47,20 @@ end
 struct MomentRelaxationPb
     objective::AbstractPolynomial
     constraints::SortedDict{Tuple{String, String}, MomentMatrix}
-    vars_overlap::SortedDict{Variable, SortedSet{String}}
+    vars_overlap::SortedDict{Exponent, SortedSet{String}}
 end
 
+include("build_momentpb.jl")
 
 
 
-const SDPBlocks = SortedDict{Tuple{Tuple{Exponent, Exponent}, String, Exponent, Exponent}, Number}
-# ((α, β), block_name, γ, δ) -> coeff
-
-const SDPLinSym = SortedDict{Tuple{Tuple{Exponent, Exponent}, String, Exponent}, Number}
-# ((α, β), block_name, var) -> coeff
-
-const SDPLin = SortedDict{Tuple{Tuple{Exponent, Exponent}, Exponent}, Number}
-# ((α, β), var) -> coeff
-
-const SDPcst = SortedDict{Tuple{Exponent, Exponent}, Number}
-# (α, β) -> coeff
+###############################################################################
+## SOS Problem
+###############################################################################
+const SDPBlocks = SortedDict{Tuple{Tuple{Exponent, Exponent}, String, Exponent, Exponent}, Number} # ((α, β), block_name, γ, δ) -> coeff
+const SDPLinSym = SortedDict{Tuple{Tuple{Exponent, Exponent}, String, Exponent}, Number}           # ((α, β), block_name, var) -> coeff
+const SDPLin = SortedDict{Tuple{Tuple{Exponent, Exponent}, Exponent}, Number}                      # ((α, β), var) -> coeff
+const SDPcst = SortedDict{Tuple{Exponent, Exponent}, Number}                                       # (α, β) -> coeff
 
 mutable struct SDPInstance
     block_to_vartype::SortedDict{String, Symbol}  # Either :SDP, :Sym
@@ -66,7 +70,14 @@ mutable struct SDPInstance
     cst::SDPcst
 end
 
+include("build_SDPInstance.jl")
+include("export_SDPInstance.jl")
 
+
+
+###############################################################################
+## Mosek Structures
+###############################################################################
 type SDP_Instance
   VAR_TYPES
   BLOCKS
@@ -112,6 +123,14 @@ type SDP_Problem
                       )
 end
 
+include("run_mosek.jl")
+include("build_SDP_Problem.jl")
+
+
+
+###############################################################################
+## Unsorted
+###############################################################################
 """
     SparsityPattern
 
@@ -119,18 +138,9 @@ end
 """
 type SparsityPattern end
 
-include("build_relctx.jl")
-include("build_maxcliques.jl")
-include("build_momentpb.jl")
-include("build_SDPInstance.jl")
-include("build_SDP_Problem.jl")
-
-include("symmetries.jl")
-include("export_SDPInstance.jl")
 include("run_hierarchy.jl")
 
 include("example_problems.jl")
-include("run_mosek.jl")
 include("utils.jl")
 
 

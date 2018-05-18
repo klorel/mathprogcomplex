@@ -94,7 +94,7 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
     # NOTE: sparsity work tbd here : several moment matrices ?
     for (cliquename, vars) in max_cliques
         dcl = momentmat_param[cliquename]
-        momentmatrices[(get_momentcstrname(), cliquename)] = MomentMatrix(relax_ctx, vars, dcl, relax_ctx.symmetries, :SDP)
+        momentmatrices[(get_momentcstrname(), cliquename)] = MomentMatrix(relax_ctx, vars, dcl, relax_ctx.symmetries, relax_ctx.cstrtypes[get_momentcstrname()])
     end
 
     ## Build localizing matrices
@@ -136,31 +136,31 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
     end
 
     ## Locate clique overlapping variables
-    vars_overlap = SortedDict{Variable, SortedSet{String}}()
+    expo_overlap = SortedDict{Exponent, SortedSet{String}}()
 
-    # Collect all variables
-    variables = SortedSet{Variable}()
-    for (clique, clvars) in max_cliques
-        union!(variables, clvars)
-    end
+    # # Collect all variables
+    # expos = SortedSet{Exponent}()
+    # for (clique, clvars) in max_cliques
+    #     union!(variables, clvars)
+    # end
 
-    # Collect cliques by variable
-    for var in variables
-        for (clique, clique_vars) in max_cliques
-            if var in clique_vars
-                haskey(vars_overlap, var) || (vars_overlap[var] = SortedSet{String}())
+    # # Collect cliques by variable
+    # for var in variables
+    #     for (clique, clique_vars) in max_cliques
+    #         if var in clique_vars
+    #             haskey(expo_overlap, var) || (expo_overlap[var] = SortedSet{String}())
 
-                insert!(vars_overlap[var], clique)
-            end
-        end
-    end
+    #             insert!(expo_overlap[var], clique)
+    #         end
+    #     end
+    # end
 
-    # Delete variables appearing in one clique only
-    for (var, cliques) in vars_overlap
-        length(cliques) > 1 || delete!(vars_overlap, var)
-    end
+    # # Delete variables appearing in one clique only
+    # for (var, cliques) in expo_overlap
+    #     length(cliques) > 1 || delete!(expo_overlap, var)
+    # end
 
-    return MomentRelaxationPb(problem.objective, momentmatrices, vars_overlap)
+    return MomentRelaxationPb(problem.objective, momentmatrices, expo_overlap)
 end
 
 

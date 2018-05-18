@@ -4,27 +4,27 @@ include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
 
 function main()
 
-    ########################################
-    # Construction du problème type
-    # problem = buildPOP_1v1c()
-    # problem = buildPOPR_2v1c()
-    # problem = buildPOP_1v2c()
-    # problem = buildPOP_2v3c()
-    # problem = buildPOP_WB2()
+    # problem = buildPOP_WB2(v2max=0.976, rmeqs=false)
 
-    # problem, relax_ctx = lasserre_ex1()
-    # problem, relax_ctx = lasserre_ex2()
-    # problem, relax_ctx = lasserre_ex3()
-    # problem, relax_ctx = lasserre_ex5(d=4)
+    OPFpbs = load_OPFproblems(MatpowerInput, joinpath("..", "data", "data_Matpower", "matpower", "WB2.m"))
+    problem = build_globalpb!(OPFpbs)
+    # problem = pb_cplx2real(problem)
 
-    # problem = buildPOP_1v2()
+    # ## Fixing volt phase of last bus to 0
+    # lastctr = problem.constraints["BaseCase_2_Volt_VOLTM_Re"]
+    # rm_constraint!(problem, "BaseCase_2_Volt_VOLTM_Re")
 
-    problem = buildPOP_WB2(v2max=0.976, rmeqs=false)
-    # problem = buildPOP_WB5()
+    # ## Setting imag part to 0
+    # pt = Point(SortedDict(Variable("BaseCase_2_VOLT_Im", Real)=>0.0), isdense=true)
+    # infer_problem!(problem, pt)
 
-    relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        d = 4)
+    # add_constraint!(problem, "BaseCase_2_Volt_VOLTM", sqrt(lastctr.lb) << Variable("BaseCase_2_VOLT_Re", Real) << 0.983)
 
+    # relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+    #                                     d = 4)
+
+    relax_ctx = set_relaxation(problem; hierarchykind=:Complex,
+                                        d = 1)
 
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")
@@ -63,16 +63,18 @@ function main()
     ########################################
     # Build the moment relaxation problem
     mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
-    # println("\n--------------------------------------------------------")
-    # println("mmtrel_pb = $mmtrel_pb")
+    println("\n--------------------------------------------------------")
+    println("mmtrel_pb = $mmtrel_pb")
 
     ########################################
     # Convert to a primal SDP problem
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
-    # println("\n--------------------------------------------------------")
-    # println("sdpinstance = \n$sdpinstance")
+    println("\n--------------------------------------------------------")
+    println("sdpinstance = \n$sdpinstance")
 
     export_SDP(relax_ctx, sdpinstance, pwd())
+
+error()
     sdp_instance = read_SDPInstance(pwd())
 
     println("VAR_TYPES size:     $(size(sdp_instance.VAR_TYPES))")

@@ -25,16 +25,18 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
 
                 # Add the current coeff to the SDP problem
                 # Constraints are fα - ∑ Bi.Zi = 0
-                if mmt.matrixkind == :SDP
+                if mmt.matrixkind == :SDP || mmt.matrixkind == :CplxSDP
                     key = ((α, β), block_name, γ, δ)
                     @assert !haskey(sdpblocks, key)
 
                     sdpblocks[key] = -λ
-                elseif mmt.matrixkind == :Sym
+                elseif mmt.matrixkind == :Sym || mmt.matrixkind == :CplxSym
                     key = ((α, β), block_name, product(γ, δ))
                     haskey(sdplinsym, key) || (sdplinsym[key] = 0)
 
                     sdplinsym[key] += -λ * (γ!=δ ? 2 : 1)
+                else
+                    error("build_SDPInstance(): Unhandled matrix kind $(mmt.matrixkind) for ($cstrname, $cliquename)")
                 end
 
             end
