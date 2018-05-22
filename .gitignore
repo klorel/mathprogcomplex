@@ -47,3 +47,4 @@ src_modeler/Modeler/QCQP_ampl.jl
 JuMP_runs
 Mosek_runs
 *.sdp
+*.zip
