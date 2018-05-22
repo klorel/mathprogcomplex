@@ -23,7 +23,8 @@ function main()
     # problem = buildPOP_WB5()
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        d = 4)
+                                        # symmetries=[PhaseInvariance],
+                                        d = 2)
 
 
     println("\n--------------------------------------------------------")
@@ -72,8 +73,10 @@ function main()
     # println("\n--------------------------------------------------------")
     # println("sdpinstance = \n$sdpinstance")
 
-    export_SDP(relax_ctx, sdpinstance, pwd())
-    sdp_instance = read_SDPInstance(pwd())
+    path = joinpath(pwd(), "_worksdp")
+    mkpath(path)
+    export_SDP(relax_ctx, sdpinstance, path)
+    sdp_instance = read_SDPInstance(path)
 
     println("VAR_TYPES size:     $(size(sdp_instance.VAR_TYPES))")
     println("BLOCKS size:        $(size(sdp_instance.BLOCKS))")
