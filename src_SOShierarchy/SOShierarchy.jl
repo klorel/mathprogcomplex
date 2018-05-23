@@ -54,7 +54,7 @@ end
 struct MomentRelaxationPb
     objective::AbstractPolynomial
     constraints::SortedDict{Tuple{String, String}, MomentMatrix}
-    vars_overlap::SortedDict{Exponent, SortedSet{String}}
+    moments_overlap::SortedDict{Exponent, SortedSet{String}}
 end
 
 include("build_momentpb.jl")

@@ -1,10 +1,13 @@
 """
     momentmat_param, localizingmat_param = build_sparsity(relax_ctx, problem)
+
     Build the sparsitty pattern and variables decomposition for laying out the moment or SOS hierarchy
 """
 function build_sparsity(relax_ctx, problem, max_cliques::SortedDict{String, SortedSet{Variable}})
 
     ((relax_ctx.issparse == false) && (length(max_cliques) > 1)) && error("build_sparsity(): Relaxation is not sparse, one clique is expected (not $(length(max_cliques)))")
+
+    # Build localizing constraints order and variable set.
     localizingmat_param = SortedDict{String, Tuple{SortedSet{String}, Int}}()
     for (ctrname, ctr) in problem.constraints
         ctrtype = get_cstrtype(ctr)
@@ -22,7 +25,7 @@ function build_sparsity(relax_ctx, problem, max_cliques::SortedDict{String, Sort
         end
     end
 
-
+    # Build moment constraints order and variable set.
     momentmat_param = SortedDict{String, Int}()
     for (cliquename, cliquevars) in max_cliques
         cur_d = -1
@@ -57,9 +60,9 @@ function get_variables(p::Polynomial)
 end
 
 """
-    locctrcliques = get_locctrcliques(ctrvars, max_cliques)
+    locctrcliques = get_locctrcliques(p, max_cliques)
 
-    Find a minimal set of cliques gathering all variables from `ctrvars`.
+    Find a minimal set of cliques gathering all variables from polynomial `p`.
 """
 function get_locctrcliques(p::Polynomial, max_cliques::SortedDict{String, SortedSet{Variable}})
     ctrvars = get_variables(p)
@@ -134,24 +137,28 @@ function get_maxcliques(relax_ctx, problem)
 end
 
 function get_WB5cliques(relax_ctx, problem)
-    maxcliques = SortedDict{String, SortedSet{Variable}}()
-    maxcliques["clique1"] = SortedSet{Variable}([
-        Variable("BaseCase_1_VOLT_Im", Real),
-        Variable("BaseCase_1_VOLT_Re", Real),
-        Variable("BaseCase_2_VOLT_Im", Real),
-        Variable("BaseCase_2_VOLT_Re", Real),
-        Variable("BaseCase_3_VOLT_Im", Real),
-        Variable("BaseCase_3_VOLT_Re", Real)])
-    maxcliques["clique2"] = SortedSet{Variable}([
-        Variable("BaseCase_2_VOLT_Im", Real),
-        Variable("BaseCase_2_VOLT_Re", Real),
-        Variable("BaseCase_3_VOLT_Im", Real),
-        Variable("BaseCase_3_VOLT_Re", Real),
-        Variable("BaseCase_4_VOLT_Im", Real),
-        Variable("BaseCase_4_VOLT_Re", Real),
-        Variable("BaseCase_5_VOLT_Im", Real),
-        Variable("BaseCase_5_VOLT_Re", Real)])
-    return maxcliques
+    if !relax_ctx.issparse
+        return get_maxcliques(relax_ctx, problem)
+    else
+        maxcliques = SortedDict{String, SortedSet{Variable}}()
+        maxcliques["clique1"] = SortedSet{Variable}([
+            Variable("BaseCase_1_VOLT_Im", Real),
+            Variable("BaseCase_1_VOLT_Re", Real),
+            Variable("BaseCase_2_VOLT_Im", Real),
+            Variable("BaseCase_2_VOLT_Re", Real),
+            Variable("BaseCase_3_VOLT_Im", Real),
+            Variable("BaseCase_3_VOLT_Re", Real)])
+        maxcliques["clique2"] = SortedSet{Variable}([
+            Variable("BaseCase_2_VOLT_Im", Real),
+            Variable("BaseCase_2_VOLT_Re", Real),
+            Variable("BaseCase_3_VOLT_Im", Real),
+            Variable("BaseCase_3_VOLT_Re", Real),
+            Variable("BaseCase_4_VOLT_Im", Real),
+            Variable("BaseCase_4_VOLT_Re", Real),
+            Variable("BaseCase_5_VOLT_Im", Real),
+            Variable("BaseCase_5_VOLT_Re", Real)])
+        return maxcliques
+    end
 end
 
 """

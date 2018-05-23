@@ -91,7 +91,6 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
     momentmatrices = SortedDict{Tuple{String, String}, MomentMatrix}()
 
     ## Build moment matrix
-    # NOTE: sparsity work tbd here : several moment matrices ?
     for (cliquename, vars) in max_cliques
         dcl = momentmat_param[cliquename]
         momentmatrices[(get_momentcstrname(), cliquename)] = MomentMatrix(relax_ctx, vars, dcl, relax_ctx.symmetries, relax_ctx.cstrtypes[get_momentcstrname()])
@@ -135,32 +134,37 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
         end
     end
 
-    ## Locate clique overlapping variables
-    expo_overlap = SortedDict{Exponent, SortedSet{String}}()
+    ## Locate clique overlapping moments
+    moments_overlap = SortedDict{Exponent, SortedSet{String}}()
 
-    # # Collect all variables
-    # expos = SortedSet{Exponent}()
-    # for (clique, clvars) in max_cliques
-    #     union!(variables, clvars)
-    # end
+    # Collect Exponents per clique (moment matrix)
+    clique_to_moments = SortedDict{String, SortedSet{Exponent}}()
+    for ((ctrobj, clique), mmtmat) in momentmatrices
+        if ctrobj == get_momentcstrname()
+            cur_expos = SortedSet{Exponent}()
 
-    # # Collect cliques by variable
-    # for var in variables
-    #     for (clique, clique_vars) in max_cliques
-    #         if var in clique_vars
-    #             haskey(expo_overlap, var) || (expo_overlap[var] = SortedSet{String}())
+            for (key, moment) in mmtmat.mm
+                @assert typeof(first(moment)[1]) == Exponent
+                push!(cur_expos, first(moment)[1])
+            end
+            clique_to_moments[clique] = cur_expos
+        end
+    end
 
-    #             insert!(expo_overlap[var], clique)
-    #         end
-    #     end
-    # end
+    cliques = SortedSet{String}(keys(max_cliques))
+    for clique_i in cliques, clique_j in cliques
+        if clique_i < clique_j
+            expos_i = clique_to_moments[clique_i]
+            expos_j = clique_to_moments[clique_j]
 
-    # # Delete variables appearing in one clique only
-    # for (var, cliques) in expo_overlap
-    #     length(cliques) > 1 || delete!(expo_overlap, var)
-    # end
+            for expo in intersect(expos_i, expos_j)
+                haskey(moments_overlap, expo) || (moments_overlap[expo] = SortedSet{String}())
+                union!(moments_overlap[expo], [clique_i, clique_j])
+            end
+        end
+    end
 
-    return MomentRelaxationPb(problem.objective, momentmatrices, expo_overlap)
+    return MomentRelaxationPb(problem.objective, momentmatrices, moments_overlap)
 end
 
 
@@ -172,14 +176,16 @@ function print(io::IO, momentrelax::MomentRelaxationPb)
         println(io, " → $cstrname, $blocname")
         println(io, mmtmat)
     end
-    println(io, "▶ Variables clique overlap:")
-    if length(momentrelax.vars_overlap) > 0
-        for (var, cliquenames) in momentrelax.vars_overlap
-            print(io, " → $var : ")
+    println(io, "▶ Moments clique overlap:")
+    mmtlength = maximum(x->length(string(x)), keys(momentrelax.moments_overlap))
+    if length(momentrelax.moments_overlap) > 0
+        for (moment, cliquenames) in momentrelax.moments_overlap
+            print(io, " → ")
+            print_string(io, string(moment), mmtlength)
             for clique in cliquenames print(io, "$clique, ") end
             @printf(io, "\b\b \n")
         end
     else
-        println(io, "  None")
+        print(io, "  None")
     end
 end

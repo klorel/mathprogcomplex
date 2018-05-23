@@ -50,6 +50,9 @@ function get_pbcstrname(cstrname::String)
     end
 end
 
+function get_ccmultvar(relaxctx::RelaxationContext, moment::Exponent, clique1::String, clique2::String)
+    return Variable("lagmult_cc_$(format_string(moment))_$(clique1)_$(clique2)", relaxctx.hierarchykind)
+end
 
 function format_string(α::Exponent, β::Exponent)
     s = "$α,$β"

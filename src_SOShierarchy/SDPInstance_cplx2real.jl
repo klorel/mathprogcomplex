@@ -64,7 +64,7 @@ function SDPInstance_cplx2real(sdp::SDPInstance)
     for (block, vartype) in sdp.block_to_vartype
         if vartype == :SDPC
             block_to_vartype[block] = :SDP
-        elseif vartype == :CplxSym
+        elseif vartype == :SymC
             block_to_vartype[block] = :Sym
         else
             error("SDPInstance_cplx2real(): Unhandled matrix type $vartype for $block")

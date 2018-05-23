@@ -42,7 +42,7 @@ function set_relaxation(pb::Problem; ismultiordered=false,
             cstrtypes[cstrname_lo] = (hierarchykind==:Complex ? :SDPC : :SDP)
             cstrtypes[cstrname_up] = (hierarchykind==:Complex ? :SDPC : :SDP)
         elseif cstrtype == :eq
-            cstrtypes[get_cstrname(cstrname, cstrtype)] = (hierarchykind==:Complex ? :CplxSym : :Sym)
+            cstrtypes[get_cstrname(cstrname, cstrtype)] = (hierarchykind==:Complex ? :SymC : :Sym)
         else
             cstrtypes[get_cstrname(cstrname, cstrtype)] = (hierarchykind==:Complex ? :SDPC : :SDP)
         end

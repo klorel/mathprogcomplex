@@ -30,7 +30,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
                     @assert !haskey(sdpblocks, key)
 
                     sdpblocks[key] = -λ
-                elseif mmt.matrixkind == :Sym || mmt.matrixkind == :CplxSym
+                elseif mmt.matrixkind == :Sym || mmt.matrixkind == :SymC
                     key = ((α, β), block_name, product(γ, δ))
                     haskey(sdplinsym, key) || (sdplinsym[key] = 0)
 
@@ -44,7 +44,20 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
     end
 
     ## Build linear dict
-    ## TODO : enforce clique coupling constraints
+    # Enforce clique coupling constraints on moments
+    for (moment, cliques) in sdp.moments_overlap
+        @show moment
+        @assert length(cliques)>1
+        cliqueref = first(cliques)
+
+        for clique in setdiff(cliques, [cliqueref])
+            α, β = split_expo(relaxctx, moment)
+            var = get_ccmultvar(relaxctx, moment, cliqueref, clique)
+
+            warn("Ready to append to $α, $β $var")
+            # sdplin[((α, β), Exponent(var))] = 1
+        end
+    end
 
     ## Build constants dict
     for (expo, fαβ) in mmtrelax_pb.objective
