@@ -99,22 +99,22 @@ end
 
 function print(io::IO, sdpblocks::SDPBlocks)
     cstrlenα = maximum(x->length(format_string(x[1][1])), keys(sdpblocks))
-    cstrlenα= max(cstrlenα, length("# Ctr/Obj key j : conj part"))
+    cstrlenα= max(cstrlenα, length("#Ctr/Obj key j : conj part"))
     cstrlenβ = maximum(x->length(format_string(x[1][2])), keys(sdpblocks))
-    cstrlenβ= max(cstrlenβ, length("# Ctr/Obj key j : expl part"))
+    cstrlenβ= max(cstrlenβ, length("#Ctr/Obj key j : expl part"))
     blocklen = maximum(x->length(x[2]), keys(sdpblocks))
-    blocklen= max(blocklen, length("# Matrix variable key i"))
+    blocklen= max(blocklen, length("#Matrix variable key i"))
     rowlen = maximum(x->length(format_string(x[3])), keys(sdpblocks))
-    rowlen = max(rowlen, length("# row key k"))
+    rowlen = max(rowlen, length("#row key k"))
     collen = maximum(x->length(format_string(x[4])), keys(sdpblocks))
-    collen = max(collen, length("# col key l"))
+    collen = max(collen, length("#col key l"))
 
-    print_string(io, "# Ctr/Obj key j : conj part", cstrlenα)
-    print_string(io, "# Ctr/Obj key j : expl part", cstrlenβ)
-    print_string(io, "# Matrix variable key i", blocklen)
-    print_string(io, "# row key k", rowlen)
-    print_string(io, "# col key l", collen)
-    @printf(io, "%23s %23s\n", "# A_ij[k, l] real part", "# A_ij[k, l] imag part")
+    print_string(io, "#Ctr/Obj key j : conj part", cstrlenα)
+    print_string(io, "#Ctr/Obj key j : expl part", cstrlenβ)
+    print_string(io, "#Matrix variable key i", blocklen)
+    print_string(io, "#row key k", rowlen)
+    print_string(io, "#col key l", collen)
+    @printf(io, "%23s %23s\n", "#A_ij[k, l] real part", "#A_ij[k, l] imag part")
 
     for (((α, β), blockname, γ, δ), λ) in sdpblocks
         print_string(io, format_string(α), cstrlenα)
@@ -128,18 +128,18 @@ end
 
 function print(io::IO, sdplinsym::SDPLinSym, sdplin::SDPLin)
     cstrlenα = length(sdplin)!=0 ? maximum(x->length(format_string(x[1][1])), union(keys(sdplin), keys(sdplinsym))) : 0
-    cstrlenα= max(cstrlenα, length("# Ctr/Obj key j : conj part"))
+    cstrlenα= max(cstrlenα, length("#Ctr/Obj key j : conj part"))
     cstrlenβ = length(sdplinsym)!=0 ? maximum(x->length(format_string(x[1][2])), union(keys(sdplin), keys(sdplinsym))) : 0
-    cstrlenβ= max(cstrlenβ, length("# Ctr/Obj key j : expl part"))
+    cstrlenβ= max(cstrlenβ, length("#Ctr/Obj key j : expl part"))
 
     varlen = length(sdplin)!=0 ? maximum(x->length(format_string(x[2])), keys(sdplin)) : 0
     varlensym = length(sdplinsym)!=0 ? maximum(x->length(format_string(x[3], x[2])), keys(sdplinsym)) : 0
-    varlen = max(varlen, varlensym, length("# Scalar variable key k"))
+    varlen = max(varlen, varlensym, length("#Scalar variable key k"))
 
-    print_string(io, "# Ctr/Obj key j : conj part", cstrlenα)
-    print_string(io, "# Ctr/Obj key j : expl part", cstrlenβ)
-    print_string(io, "# Scalar variable key k", varlen)
-    @printf(io, "%23s %23s\n", "# b_j[k] real part", "# b_j[k] imag part")
+    print_string(io, "#Ctr/Obj key j : conj part", cstrlenα)
+    print_string(io, "#Ctr/Obj key j : expl part", cstrlenβ)
+    print_string(io, "#Scalar variable key k", varlen)
+    @printf(io, "%23s %23s\n", "#b_j[k] real part", "#b_j[k] imag part")
 
     if length(sdplin)!=0
         for (((α, β), var), λ) in sdplin
@@ -162,13 +162,13 @@ end
 
 function print(io::IO, sdpcst::SDPcst)
     cstrlenα = maximum(x->length(format_string(x[1])), keys(sdpcst))
-    cstrlenα= max(cstrlenα, length("# Ctr/Obj key j : conj part"))
+    cstrlenα= max(cstrlenα, length("#Ctr/Obj key j : conj part"))
     cstrlenβ = maximum(x->length(format_string(x[2])), keys(sdpcst))
-    cstrlenβ= max(cstrlenβ, length("# Ctr/Obj key j : expl part"))
+    cstrlenβ= max(cstrlenβ, length("#Ctr/Obj key j : expl part"))
 
-    print_string(io, "# Ctr/Obj key j : conj part", cstrlenα)
-    print_string(io, "# Ctr/Obj key j : expl part", cstrlenβ)
-    @printf(io, "%23s %23s\n", "# c_j real part", "# c_j imag part")
+    print_string(io, "#Ctr/Obj key j : conj part", cstrlenα)
+    print_string(io, "#Ctr/Obj key j : expl part", cstrlenβ)
+    @printf(io, "%23s %23s\n", "#c_j real part", "#c_j imag part")
 
     for ((α, β), λ) in sdpcst
         print_string(io, format_string(α), cstrlenα)

@@ -8,7 +8,7 @@ function main()
 
 
     ## Rank relaxation
-    logpath = joinpath(pwd(), "WB2_d1")
+    logpath = joinpath(pwd(), "WB2_ordre1")
     mkpath(logpath)
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
@@ -18,7 +18,7 @@ function main()
 
 
     ## Order 2 relaxation
-    logpath = joinpath(pwd(), "WB2_d2")
+    logpath = joinpath(pwd(), "WB2_ordre2")
     mkpath(logpath)
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
