@@ -119,7 +119,6 @@ function print_blocksfile(io::IO, sdpblocks::SDPBlocks, momentdict; indentedprin
     println(io, "## Objective key is 0 → (1,1).")
     println(io, "#")
 
-    @show indentedprint
     cstrlenα = maximum(x->length(momentdict[x[1][1]]), keys(sdpblocks))
     cstrlenα= max(cstrlenα, length("#j_conj"))
     cstrlenβ = maximum(x->length(momentdict[x[1][2]]), keys(sdpblocks))

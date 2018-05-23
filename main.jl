@@ -4,27 +4,11 @@ include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
 
 function main()
 
-    # problem = buildPOP_WB2(v2max=0.976, rmeqs=false)
+    problem = buildPOP_WB2(rmeqs=false) #v2max=0.983
 
-    OPFpbs = load_OPFproblems(MatpowerInput, joinpath("..", "data", "data_Matpower", "matpower", "WB2.m"))
-    problem = build_globalpb!(OPFpbs)
-    # problem = pb_cplx2real(problem)
-
-    # ## Fixing volt phase of last bus to 0
-    # lastctr = problem.constraints["BaseCase_2_Volt_VOLTM_Re"]
-    # rm_constraint!(problem, "BaseCase_2_Volt_VOLTM_Re")
-
-    # ## Setting imag part to 0
-    # pt = Point(SortedDict(Variable("BaseCase_2_VOLT_Im", Real)=>0.0), isdense=true)
-    # infer_problem!(problem, pt)
-
-    # add_constraint!(problem, "BaseCase_2_Volt_VOLTM", sqrt(lastctr.lb) << Variable("BaseCase_2_VOLT_Re", Real) << 0.983)
-
-    # relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-    #                                     d = 4)
-
-    relax_ctx = set_relaxation(problem; hierarchykind=:Complex,
-                                        d = 1)
+    relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+                                        # symmetries=[PhaseInvariance],
+                                        d = 2)
 
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")
@@ -35,8 +19,6 @@ function main()
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
     max_cliques = get_maxcliques(relax_ctx, problem)
-    # max_cliques = get_WB5cliques(relax_ctx, problem)
-    # relax_ctx.issparse = true
 
     println("\n--------------------------------------------------------")
     println("max cliques =")
@@ -49,6 +31,7 @@ function main()
     ########################################
     # Compute moment and localizing matrices parameters: order et variables
     momentmat_param, localizingmat_param = build_sparsity(relax_ctx, problem, max_cliques)
+
     println("\n--------------------------------------------------------")
     println("moment params =")
     for (cliquename, dcl) in momentmat_param
@@ -63,24 +46,21 @@ function main()
     ########################################
     # Build the moment relaxation problem
     mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
+
     println("\n--------------------------------------------------------")
     println("mmtrel_pb = $mmtrel_pb")
 
     ########################################
     # Convert to a primal SDP problem
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
+
     println("\n--------------------------------------------------------")
     println("sdpinstance = \n$sdpinstance")
 
-    mkpath("zmain_cplx")
-    export_SDP(relax_ctx, sdpinstance, "zmain_cplx")
-
-    sdpinstance_real = SDPInstance_cplx2real(sdpinstance)
-
-    mkpath("zmain_real")
-    export_SDP(relax_ctx, sdpinstance_real, "zmain_real")
-
-    sdp_instance = read_SDPInstance("zmain_real")
+    path = joinpath(pwd(), "_worksdp")
+    mkpath(path)
+    export_SDP(relax_ctx, sdpinstance, path)
+    sdp_instance = read_SDPInstance(path)
 
     println("VAR_TYPES size:     $(size(sdp_instance.VAR_TYPES))")
     println("BLOCKS size:        $(size(sdp_instance.BLOCKS))")
@@ -94,30 +74,7 @@ function main()
     set_blocks!(sdp, sdp_instance)
     set_linvars!(sdp, sdp_instance)
 
-    # warn("sdpvars : ")
-    # for (blockname, block) in sdp.name_to_sdpblock
-    #     println("$blockname \t $block")
-    # end
-
-    # warn("symvars : ")
-    # for (blockname, block) in sdp.name_to_symblock
-    #     println("$blockname \t $block")
-    # end
-    # @show sdp.n_scalvarsym
-
-
     set_matrices!(sdp, sdp_instance)
-
-    # warn("sdp.matrices")
-    # for ((ctrname, blockname, var1, var2), coeff) in sdp.matrices
-    #     @printf("%45s %30s %20s %20s -> %f\n", ctrname, blockname, var1, var2, coeff)
-    # end
-
-    # warn("sdp.lin_matsym")
-    # for ((ctrname, blockname, var1, var2), coeff) in sdp.lin_matsym
-    #     @printf("%45s %30s %20s %20s -> %f\n", ctrname, blockname, var1, var2, coeff)
-    # end
-
     set_linear!(sdp, sdp_instance)
     set_const!(sdp, sdp_instance)
 
