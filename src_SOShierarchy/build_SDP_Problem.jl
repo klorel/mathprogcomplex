@@ -1,6 +1,6 @@
 function read_SDPInstance(path::String)
   BLOCKS = readdlm(joinpath(path, "matrix.sdp"), String)
-  if isfile(joinpath(path, "lin.sdp")) && length(matchall(r"\n", readstring(joinpath(path, "lin.sdp")))) > 6
+  if isfile(joinpath(path, "lin.sdp")) && length(matchall(r"\n", readstring(joinpath(path, "lin.sdp")))) > 7
     LINEAR = readdlm(joinpath(path, "lin.sdp"), String)
   else
     LINEAR = []
