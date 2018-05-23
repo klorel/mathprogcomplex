@@ -161,6 +161,50 @@ function get_WB5cliques(relax_ctx, problem)
     end
 end
 
+function get_case9cliques(relax_ctx, problem)
+    if !relax_ctx.issparse
+        return get_maxcliques(relax_ctx, problem)
+    else
+        maxcliques = SortedDict{String, SortedSet{Variable}}()
+        maxcliques["clique1"] = SortedSet{Variable}([
+            Variable("BaseCase_1_VOLT_Im", Real),
+            Variable("BaseCase_1_VOLT_Re", Real),
+            Variable("BaseCase_5_VOLT_Im", Real),
+            Variable("BaseCase_5_VOLT_Re", Real),
+            Variable("BaseCase_4_VOLT_Im", Real),
+            Variable("BaseCase_4_VOLT_Re", Real),
+            Variable("BaseCase_9_VOLT_Im", Real),
+            Variable("BaseCase_9_VOLT_Re", Real),
+            Variable("BaseCase_8_VOLT_Im", Real),
+            Variable("BaseCase_8_VOLT_Re", Real)])
+        maxcliques["clique2"] = SortedSet{Variable}([
+            Variable("BaseCase_2_VOLT_Im", Real),
+            Variable("BaseCase_2_VOLT_Re", Real),
+            Variable("BaseCase_9_VOLT_Im", Real),
+            Variable("BaseCase_9_VOLT_Re", Real),
+            Variable("BaseCase_8_VOLT_Im", Real),
+            Variable("BaseCase_8_VOLT_Re", Real),
+            Variable("BaseCase_7_VOLT_Im", Real),
+            Variable("BaseCase_7_VOLT_Re", Real),
+            Variable("BaseCase_6_VOLT_Im", Real),
+            Variable("BaseCase_6_VOLT_Re", Real)])
+        maxcliques["clique3"] = SortedSet{Variable}([
+            Variable("BaseCase_3_VOLT_Im", Real),
+            Variable("BaseCase_3_VOLT_Re", Real),
+            Variable("BaseCase_7_VOLT_Im", Real),
+            Variable("BaseCase_7_VOLT_Re", Real),
+            Variable("BaseCase_6_VOLT_Im", Real),
+            Variable("BaseCase_6_VOLT_Re", Real),
+            Variable("BaseCase_5_VOLT_Im", Real),
+            Variable("BaseCase_5_VOLT_Re", Real),
+            Variable("BaseCase_4_VOLT_Im", Real),
+            Variable("BaseCase_4_VOLT_Re", Real)])
+        return maxcliques
+    end
+end
+
+
+
 """
     vars, blocname = collect_cliquesvars(clique_keys, max_cliques)
 
