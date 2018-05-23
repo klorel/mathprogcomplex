@@ -39,7 +39,7 @@ function main()
     for (v2max, vals) in sols
         dmax = vals[1]
 
-        problem = buildPOP_WB2(v2max=v2max, rmeqs=true)
+        problem = buildPOP_WB2(v2max=v2max, rmineqs=true)
 
         for d=2:2:2*dmax  # Complex d definition, twice real one...
             info("Working on WB2, no ineqs, v2max=$v2max, d=$d")
@@ -59,7 +59,7 @@ function main()
     for (v2max, vals) in sols
         dmax = vals[1]
 
-        problem = buildPOP_WB2(v2max=v2max, rmeqs=false)
+        problem = buildPOP_WB2(v2max=v2max, rmineqs=false)
 
         for d=2:2:2*dmax  # Complex d definition, twice real one...
             info("Working on WB2, ineqs, v2max=$v2max, d=$d")
