@@ -14,7 +14,7 @@ function main()
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         d = 2)
 
-    primobj, dualobj = run_hierarchy(problem, relax_ctx, logpath)
+    primobj, dualobj = run_hierarchy(problem, relax_ctx, logpath, indentedprint=true)
 
 
     ## Order 2 relaxation

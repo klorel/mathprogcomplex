@@ -1,4 +1,4 @@
-function export_SDP(relax_ctx, sdp::SDPInstance, path)
+function export_SDP(relax_ctx, sdp::SDPInstance, path; indentedprint=false)
 
     # Export blocks of constraints
     blocks_file = joinpath(path, "blocks.sdp")
@@ -10,7 +10,7 @@ function export_SDP(relax_ctx, sdp::SDPInstance, path)
     println(fblocks, "##         s.t.    ∑ A_ji ⋅ Zi + b_j ⋅ x + c_j  ==  0")
     println(fblocks, "## Objective key is \"1,1\"")
     println(fblocks, "#")
-    print(fblocks, sdp.blocks)
+    print(fblocks, sdp.blocks, indentedprint=indentedprint)
     close(fblocks)
 
     # Export linear part of constraints
@@ -23,7 +23,7 @@ function export_SDP(relax_ctx, sdp::SDPInstance, path)
     println(flin, "##         s.t.    ∑ A_ji ⋅ Zi + b_j ⋅ x + c_j  ==  0")
     println(flin, "## Objective key is \"1,1\"")
     println(flin, "#")
-    print(flin, sdp.linsym, sdp.lin)
+    print(flin, sdp.linsym, sdp.lin, indentedprint=indentedprint)
     close(flin)
 
     # Export constants of constraints
@@ -36,7 +36,7 @@ function export_SDP(relax_ctx, sdp::SDPInstance, path)
     println(fcst, "##         s.t.    ∑ A_ji ⋅ Zi + b_j ⋅ x + c_j  ==  0")
     println(fcst, "## Objective key is \"1,1\"")
     println(fcst, "#")
-    print(fcst, sdp.cst)
+    print(fcst, sdp.cst, indentedprint=indentedprint)
     close(fcst)
 
 

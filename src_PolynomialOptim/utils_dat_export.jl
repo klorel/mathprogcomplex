@@ -17,7 +17,8 @@ function get_varslin(exp::Exponent)
   varlin
 end
 
-function print_string(io, strng, len; alignright = true)
+function print_string(io, strng, len; alignright = true, indentedprint=true)
+  indentedprint || (len = length(strng))
   if alignright
     print(io, " "^(len-length(strng)), strng, " ")
   else

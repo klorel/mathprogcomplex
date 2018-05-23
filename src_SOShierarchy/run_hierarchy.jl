@@ -1,5 +1,5 @@
 
-function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath)
+function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath; indentedprint=false)
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
     max_cliques = get_maxcliques(relax_ctx, problem)
@@ -17,7 +17,7 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath)
     # Convert to a primal SDP problem
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
 
-    export_SDP(relax_ctx, sdpinstance, logpath)
+    export_SDP(relax_ctx, sdpinstance, logpath, indentedprint=indentedprint)
     sdp_instance = read_SDPInstance(logpath)
 
     ########################################
