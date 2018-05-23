@@ -62,7 +62,7 @@ function SDPInstance_cplx2real(sdp::SDPInstance)
 
     ## Convert variable types
     for (block, vartype) in sdp.block_to_vartype
-        if vartype == :CplxSDP
+        if vartype == :SDPC
             block_to_vartype[block] = :SDP
         elseif vartype == :CplxSym
             block_to_vartype[block] = :Sym

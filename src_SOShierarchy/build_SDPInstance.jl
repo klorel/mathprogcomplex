@@ -25,7 +25,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
 
                 # Add the current coeff to the SDP problem
                 # Constraints are fα - ∑ Bi.Zi = 0
-                if mmt.matrixkind == :SDP || mmt.matrixkind == :CplxSDP
+                if mmt.matrixkind == :SDP || mmt.matrixkind == :SDPC
                     key = ((α, β), block_name, γ, δ)
                     @assert !haskey(sdpblocks, key)
 
@@ -99,22 +99,24 @@ end
 
 function print(io::IO, sdpblocks::SDPBlocks; indentedprint=false)
     cstrlenα = maximum(x->length(format_string(x[1][1])), keys(sdpblocks))
-    cstrlenα= max(cstrlenα, length("#Ctr/Obj key j : conj part"))
+    cstrlenα= max(cstrlenα, length("#j_conj"))
     cstrlenβ = maximum(x->length(format_string(x[1][2])), keys(sdpblocks))
-    cstrlenβ= max(cstrlenβ, length("#Ctr/Obj key j : expl part"))
+    cstrlenβ= max(cstrlenβ, length("j_expl"))
     blocklen = maximum(x->length(x[2]), keys(sdpblocks))
-    blocklen= max(blocklen, length("#Matrix variable key i"))
+    blocklen= max(blocklen, length("Zi"))
     rowlen = maximum(x->length(format_string(x[3])), keys(sdpblocks))
-    rowlen = max(rowlen, length("#row key k"))
+    rowlen = max(rowlen, length("k"))
     collen = maximum(x->length(format_string(x[4])), keys(sdpblocks))
-    collen = max(collen, length("#col key l"))
+    collen = max(collen, length("l"))
 
-    print_string(io, "#Ctr/Obj key j : conj part", cstrlenα, indentedprint=indentedprint)
-    print_string(io, "#Ctr/Obj key j : expl part", cstrlenβ, indentedprint=indentedprint)
-    print_string(io, "#Matrix variable key i", blocklen, indentedprint=indentedprint)
-    print_string(io, "#row key k", rowlen, indentedprint=indentedprint)
-    print_string(io, "#col key l", collen, indentedprint=indentedprint)
-    @printf(io, "%23s %23s\n", "#A_ij[k, l] real part", "#A_ij[k, l] imag part")
+    print_string(io, "#j_conj", cstrlenα, indentedprint=indentedprint)
+    print_string(io, "j_expl", cstrlenβ, indentedprint=indentedprint)
+    print_string(io, "Zi", blocklen, indentedprint=indentedprint)
+    print_string(io, "k", rowlen, indentedprint=indentedprint)
+    print_string(io, "l", collen, indentedprint=indentedprint)
+    print_string(io, "Real(A_ij[k, l])", 23, indentedprint=indentedprint)
+    print_string(io, "Imag(A_ij[k, l])", 23, indentedprint=indentedprint)
+    println(io)
 
     for (((α, β), blockname, γ, δ), λ) in sdpblocks
         print_string(io, format_string(α), cstrlenα, indentedprint=indentedprint)
@@ -128,18 +130,20 @@ end
 
 function print(io::IO, sdplinsym::SDPLinSym, sdplin::SDPLin; indentedprint=false)
     cstrlenα = length(sdplin)!=0 ? maximum(x->length(format_string(x[1][1])), union(keys(sdplin), keys(sdplinsym))) : 0
-    cstrlenα= max(cstrlenα, length("#Ctr/Obj key j : conj part"))
+    cstrlenα= max(cstrlenα, length("#j_conj"))
     cstrlenβ = length(sdplinsym)!=0 ? maximum(x->length(format_string(x[1][2])), union(keys(sdplin), keys(sdplinsym))) : 0
-    cstrlenβ= max(cstrlenβ, length("#Ctr/Obj key j : expl part"))
+    cstrlenβ= max(cstrlenβ, length("j_expl"))
 
     varlen = length(sdplin)!=0 ? maximum(x->length(format_string(x[2])), keys(sdplin)) : 0
     varlensym = length(sdplinsym)!=0 ? maximum(x->length(format_string(x[3], x[2])), keys(sdplinsym)) : 0
-    varlen = max(varlen, varlensym, length("#Scalar variable key k"))
+    varlen = max(varlen, varlensym, length("x[k]"))
 
-    print_string(io, "#Ctr/Obj key j : conj part", cstrlenα, indentedprint=indentedprint)
-    print_string(io, "#Ctr/Obj key j : expl part", cstrlenβ, indentedprint=indentedprint)
-    print_string(io, "#Scalar variable key k", varlen, indentedprint=indentedprint)
-    @printf(io, "%23s %23s\n", "#b_j[k] real part", "#b_j[k] imag part")
+    print_string(io, "#j_conj", cstrlenα, indentedprint=indentedprint)
+    print_string(io, "j_expl", cstrlenβ, indentedprint=indentedprint)
+    print_string(io, "x[k]", varlen, indentedprint=indentedprint)
+    print_string(io, "Real(b_j[k])", 23, indentedprint=indentedprint)
+    print_string(io, "Imag(b_j[k])", 23, indentedprint=indentedprint)
+    println(io)
 
     if length(sdplin)!=0
         for (((α, β), var), λ) in sdplin
@@ -162,13 +166,15 @@ end
 
 function print(io::IO, sdpcst::SDPcst; indentedprint=false)
     cstrlenα = maximum(x->length(format_string(x[1])), keys(sdpcst))
-    cstrlenα= max(cstrlenα, length("#Ctr/Obj key j : conj part"))
+    cstrlenα= max(cstrlenα, length("#j_conj"))
     cstrlenβ = maximum(x->length(format_string(x[2])), keys(sdpcst))
-    cstrlenβ= max(cstrlenβ, length("#Ctr/Obj key j : expl part"))
+    cstrlenβ= max(cstrlenβ, length("j_expl"))
 
-    print_string(io, "#Ctr/Obj key j : conj part", cstrlenα, indentedprint=indentedprint)
-    print_string(io, "#Ctr/Obj key j : expl part", cstrlenβ, indentedprint=indentedprint)
-    @printf(io, "%23s %23s\n", "#c_j real part", "#c_j imag part")
+    print_string(io, "#j_conj", cstrlenα, indentedprint=indentedprint)
+    print_string(io, "j_expl", cstrlenβ, indentedprint=indentedprint)
+    print_string(io, "Real(c_j)", 23, indentedprint=indentedprint)
+    print_string(io, "Imag(c_j)", 23, indentedprint=indentedprint)
+    println(io)
 
     for ((α, β), λ) in sdpcst
         print_string(io, format_string(α), cstrlenα, indentedprint=indentedprint)

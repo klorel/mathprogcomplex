@@ -83,3 +83,19 @@ end
 
 ## Mosek
 obj_key() = ("1", "1")
+
+
+
+## Misc
+function print_cmat(mat::AbstractArray, round = 1e-3)
+    for i=1:size(mat, 1)
+        for j=1:size(mat, 2)
+            re, im = real(mat[i, j]), imag(mat[i, j])
+            @printf("% 5.4f", re)
+            @printf(" ")
+            @printf("%+5.4fim", im)
+            @printf("   ")
+        end
+        @printf("\n")
+    end
+end
