@@ -57,7 +57,7 @@ function main()
     println("\n--------------------------------------------------------")
     println("sdpinstance = \n$sdpinstance")
 
-    path = joinpath(pwd(), "_worksdp")
+    path = joinpath(pwd(), "Mosek_runs", "worksdp")
     mkpath(path)
     export_SDP(relax_ctx, sdpinstance, path)
     sdp_instance = read_SDPInstance(path)
