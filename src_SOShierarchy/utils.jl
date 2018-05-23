@@ -71,6 +71,8 @@ function format_string(α::Exponent, block::String)
     return replace(s, " ", "_")
 end
 
+shortname_moment(n::Int) = "mmt_$n"
+
 function change_eq_to_ineq!(problem::Problem)
     for (ctrname, ctr) in problem.constraints
         if get_cstrtype(ctr) == :eq

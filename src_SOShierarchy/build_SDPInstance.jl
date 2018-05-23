@@ -2,7 +2,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
     sdpblocks = SDPBlocks()
     sdplin = SDPLin()
     sdplinsym = SDPLinSym()
-    sdpcst = SDPcst()
+    sdpcst = SDPCst()
     block_to_vartype = SortedDict{String, Symbol}()
 
     ## Build blocks dict
@@ -164,7 +164,7 @@ function print(io::IO, sdplinsym::SDPLinSym, sdplin::SDPLin; indentedprint=false
 end
 
 
-function print(io::IO, sdpcst::SDPcst; indentedprint=false)
+function print(io::IO, sdpcst::SDPCst; indentedprint=false)
     cstrlenα = maximum(x->length(format_string(x[1])), keys(sdpcst))
     cstrlenα= max(cstrlenα, length("#j_conj"))
     cstrlenβ = maximum(x->length(format_string(x[2])), keys(sdpcst))

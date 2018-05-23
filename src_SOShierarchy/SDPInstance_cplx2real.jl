@@ -3,7 +3,7 @@ function SDPInstance_cplx2real(sdp::SDPInstance)
     sdpblocks = SDPBlocks()
     sdplinsym = SDPLinSym()
     sdplin = SDPLin()
-    sdpcst = SDPcst()
+    sdpcst = SDPCst()
     block_to_vartype = SortedDict{String, Symbol}()
 
     ## Complex blocks to real
