@@ -188,14 +188,22 @@ function print_linfile(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym, momentdict;
     println(io, "## Objective key is 0 → (1,1).")
     println(io, "#")
 
-    cstrlenα = maximum(x->length(momentdict[x[1].conj_part]), union(keys(sdplin), keys(sdplinsym)))
+    cstrlenα = 0
+    cstrlenβ = 0
+    cliquelen = 0
+    varlen = varlensym = 0
+
+    if length(union(keys(sdplin), keys(sdplinsym))) > 0
+        cstrlenα = maximum(x->length(momentdict[x[1].conj_part]), union(keys(sdplin), keys(sdplinsym)))
+        cstrlenβ = maximum(x->length(momentdict[x[1].expl_part]), union(keys(sdplin), keys(sdplinsym)))
+        cliquelen = maximum(x->length(x[1].clique), union(keys(sdplin), keys(sdplinsym)))
+        varlen = length(sdplin)!=0 ? maximum(x->length(format_string(x[2])), keys(sdplin)) : 0
+        varlensym = length(sdplinsym)!=0 ? maximum(x->length(format_string(x[3], x[2])), keys(sdplinsym)) : 0
+    end
+
     cstrlenα= max(cstrlenα, length("#j_conj"))
-    cstrlenβ = maximum(x->length(momentdict[x[1].expl_part]), union(keys(sdplin), keys(sdplinsym)))
     cstrlenβ= max(cstrlenβ, length("j_expl"))
-    cliquelen = maximum(x->length(x[1].clique), union(keys(sdplin), keys(sdplinsym)))
     cliquelen= max(cliquelen, length("clique"))
-    varlen = length(sdplin)!=0 ? maximum(x->length(format_string(x[2])), keys(sdplin)) : 0
-    varlensym = length(sdplinsym)!=0 ? maximum(x->length(format_string(x[3], x[2])), keys(sdplinsym)) : 0
     varlen = max(varlen, varlensym, length("x[k]"))
 
     print_string(io, "#j_conj", cstrlenα, indentedprint=indentedprint)
