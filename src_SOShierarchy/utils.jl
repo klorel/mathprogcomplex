@@ -51,27 +51,33 @@ function get_pbcstrname(cstrname::String)
 end
 
 function get_ccmultvar(relaxctx::RelaxationContext, moment::Exponent, clique1::String, clique2::String)
-    return Variable("lagmult_cc_$(format_string(moment))_$(clique1)_$(clique2)", relaxctx.hierarchykind)
+    if relaxctx.hierarchykind == :Real
+        return Variable("lagmult_cc_$(format_string(moment))_$(clique1)_$(clique2)", Real)
+    elseif relaxctx.hierarchykind == :Complex
+        return Variable("lagmult_cc_$(format_string(moment))_$(clique1)_$(clique2)", Complex)
+    else
+        error("get_ccmultvar(): Unhandled hierarchy kind $(relaxctx.hierarchykind) ")
+    end
 end
 
 function format_string(α::Exponent, β::Exponent)
     s = "$α,$β"
-    return replace(s, " ", "_")
+    return replace(s, " ", "")
 end
 
 function format_string(s1::String, s2::String)
     s = "$s1,$s2"
-    return replace(s, " ", "_")
+    return replace(s, " ", "")
 end
 
 function format_string(α::Exponent)
     s = "$α"
-    return replace(s, " ", "_")
+    return replace(s, " ", "")
 end
 
 function format_string(α::Exponent, block::String)
     s = "$(α)_$block"
-    return replace(s, " ", "_")
+    return format_string(α)*"_$block"
 end
 
 shortname_moment(n::Int) = "mmt_$n"

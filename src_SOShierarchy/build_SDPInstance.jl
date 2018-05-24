@@ -11,7 +11,10 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
         block_to_vartype[block_name] = mmt.matrixkind
 
         for ((γ, δ), poly) in mmt.mm
-            for (expo, λ) in poly
+            for (moment, λ) in poly
+                expo = product(moment.conj_part, moment.expl_part)
+                @assert expo.degree.explvar == moment.expl_part.degree.explvar
+                @assert expo.degree.conjvar == moment.conj_part.degree.conjvar
                 # Check the current monomial has correct degree
                 if (relaxctx.hierarchykind==:Complex) && ((expo.degree.explvar > relaxctx.di[cstrname]) || (expo.degree.conjvar > relaxctx.di[cstrname]))
                     warn("convertMMtobase(): Found exponent pair of degree $(expo.degree) > $(relaxctx.di[cstrname]) for Complex hierarchy.\n($(expo), at $((γ, δ)) of MM matrix)")
@@ -22,7 +25,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
 
                 # Determine which moment to affect the current coefficient.
                 # α, β = split_expo(relaxctx, expo)
-                moment = Moment(expo, cliquename)
+                # moment = Moment(expo, cliquename)
                 #### TODO : Handle one ctr several cliques case...
 
                 # Add the current coeff to the SDP problem
@@ -49,32 +52,31 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
 
     ## Build linear dict
     # Enforce clique coupling constraints on moments
-    for (expo, cliques) in sdp.moments_overlap
-        @show expo
+    for (expo, cliques) in mmtrelax_pb.moments_overlap
+        print_with_color(:light_cyan, "-> $expo - $(collect(cliques))\n")
         @assert length(cliques)>1
         cliqueref = first(cliques)
 
         refmoment = Moment(expo, cliqueref)
         for clique in setdiff(cliques, [cliqueref])
-            α, β = split_expo(relaxctx, expo)
             curmoment = Moment(expo, clique)
-            var = get_ccmultvar(relaxctx, expo, cliqueref, clique)
+            var = Exponent(get_ccmultvar(relaxctx, expo, cliqueref, clique))
 
-            warn("Ready to append to $α, $β, multiplier : $var")
-            # sdplin[(refmomnet, var)] =  1
-            # sdplin[(curmomnet, var)] = -1
-            # sdplin[((α, β), Exponent(var))] = 1
+            println("  - Adding to $refmoment : $var*1")
+            println("    Adding to $curmoment : $var*-1")
+            @assert !haskey(sdplin, (refmoment, var))
+            @assert !haskey(sdplin, (curmoment, var))
+            sdplin[(refmoment, var)] =  1
+            sdplin[(curmoment, var)] = -1
         end
     end
 
     ## Build constants dict
-    for (expo, fαβ) in mmtrelax_pb.objective
+    for (moment, fαβ) in mmtrelax_pb.objective
         # Determine which moment to affect the current coefficient.
         # α, β = split_expo(relaxctx, expo)
-        clique = "common clique..."
-        moment = Moment(expo, clique)
 
-        if !haskey(sdpcst, (α, β))
+        if !haskey(sdpcst, moment)
             # sdpcst[(α, β)] = 0.0
             sdpcst[moment] = 0.0
         end

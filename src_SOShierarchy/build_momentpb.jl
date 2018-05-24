@@ -212,88 +212,110 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
             mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries,
                                                        relax_ctx.cstrtypes[cstrname_lo],
                                                        var_to_cliques = var_to_cliques)
+            print_with_color(:green, "$cstrname, :Lo\n")
             @show length(mmt.mm)
-            warn("$cstrname mmt is")
+            warn("$cstrname - Initial mmt is")
             println(mmt)
             product!(mmt, cstr.p - cstr.lb, var_to_cliques)
-            warn("$cstrname mmt new is below. p = $(cstr.p)")
+            warn("$cstrname - New mmt is below. p = $(cstr.p - cstr.lb)")
+            @show length(cstr.p - cstr.lb)
             println(mmt)
             momentmatrices[(cstrname_lo, cliquename)] = mmt
-            @show cliquename
-            print(momentmatrices[(get_momentcstrname(), cliquename)])
-            sleep(3)
+            # sleep(3)
 
-            # Deal with upper inequality, no recomputing of variables or moment matrix if possible
-            clique_keys_up, order_up, default_clique, expo_to_clique = localizingmat_param[cstrname_up]
-            if collect(clique_keys) != collect(clique_keys_up)
-                warn("clique keys different from lower and upper side of double constraint")
-                length(clique_keys_up) == 1 || error("MomentRelaxationPb(): constraint $cstrname spans several cliques ($clique_keys).\nNot supported yet.")
-                vars, cliquename = collect_cliquesvars(clique_keys_up, max_cliques)
+            # Deal with upper inequality
+            clique_keys, order = localizingmat_param[cstrname_up]
+            vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
+            length(clique_keys) == 1 || error("MomentRelaxationPb(): constraint $cstrname spans several cliques ($clique_keys).\nNot supported yet.")
 
-                mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries,
-                                                              relax_ctx.cstrtypes[cstrname_hi],
-                                                              var_to_cliques = var_to_cliques)
-            elseif order_up != order
-                warn("order different from lower and upper side of double constraint")
-                mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries,
-                                                              relax_ctx.cstrtypes[cstrname_hi],
-                                                              var_to_cliques = var_to_cliques)
-            end
+            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries,
+                                                       relax_ctx.cstrtypes[cstrname_up],
+                                                       var_to_cliques = var_to_cliques)
+            print_with_color(:green, "$cstrname, :Up\n")
+            @show length(mmt.mm)
+            warn("$cstrname - Initial mmt is")
+            println(mmt)
+            product!(mmt, cstr.ub - cstr.p, var_to_cliques)
+            warn("$cstrname - New mmt is below. p = $(cstr.p - cstr.lb)")
+            @show length(cstr.ub - cstr.p)
+            println(mmt)
+            momentmatrices[(cstrname_up, cliquename)] = mmt
+            # sleep(3)
 
-            # momentmatrices[(cstrname_up, cliquename)] = mmt * (cstr.ub - cstr.p)
-            momentmatrices[(cstrname_up, cliquename)] = product!(mmt, cstr.ub - cstr.p, var_to_cliques)
-            @show cliquename
-            print(momentmatrices[(get_momentcstrname(), cliquename)])
-            sleep(3)
+            # # Deal with upper inequality, no recomputing of variables or moment matrix if possible
+            # clique_keys_up, order_up = localizingmat_param[cstrname_up]
+            # if collect(clique_keys) != collect(clique_keys_up)
+            #     warn("clique keys different from lower and upper side of double constraint")
+            #     length(clique_keys_up) == 1 || error("MomentRelaxationPb(): constraint $cstrname spans several cliques ($clique_keys).\nNot supported yet.")
+            #     vars, cliquename = collect_cliquesvars(clique_keys_up, max_cliques)
+
+            #     mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries,
+            #                                                   relax_ctx.cstrtypes[cstrname_hi],
+            #                                                   var_to_cliques = var_to_cliques)
+            # elseif order_up != order
+            #     warn("order different from lower and upper side of double constraint")
+            #     mmt = MomentMatrix(relax_ctx, vars, order_up, relax_ctx.symmetries,
+            #                                                   relax_ctx.cstrtypes[cstrname_hi],
+            #                                                   var_to_cliques = var_to_cliques)
+            # end
+
 
         else
             # either cstrtype == :ineqlo, :ineqhi, :eq
             clique_keys, order = localizingmat_param[get_cstrname(cstrname, cstrtype)]
             vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
-            length(clique_keys) == 1 || error("MomentRelaxationPb(): constraint $cstrname spans several cliques ($clique_keys).\nNot supported yet.")
+            # length(clique_keys) == 1 || error("MomentRelaxationPb(): constraint $cstrname spans several cliques ($clique_keys).\nNot supported yet.")
 
             mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries,
                                                        relax_ctx.cstrtypes[get_cstrname(cstrname, cstrtype)],
                                                        var_to_cliques = var_to_cliques)
 
-            momentmatrices[(get_cstrname(cstrname, cstrtype), cliquename)] = product!(mmt, get_normalizedpoly(cstr, cstrtype), var_to_cliques)
-            @show cliquename
-            print(momentmatrices[(get_momentcstrname(), cliquename)])
-            sleep(3)
+
+            print_with_color(:green, "$cstrname, :Up\n")
+            @show length(mmt.mm)
+            warn("$cstrname - Initial mmt is")
+            println(mmt)
+            product!(mmt, get_normalizedpoly(cstr, cstrtype), var_to_cliques)
+            warn("$cstrname - New mmt is below. p = $(get_normalizedpoly(cstr, cstrtype))")
+            @show length(get_normalizedpoly(cstr, cstrtype))
+            println(mmt)
+
+            momentmatrices[(get_cstrname(cstrname, cstrtype), cliquename)] = mmt
+            # sleep(3)
         end
     end
 
     ## Locate clique overlapping moments
-    moments_overlap = SortedDict{Exponent, SortedSet{String}}()
+    expo_to_cliques = SortedDict{Exponent, SortedSet{String}}()
 
     # Collect Exponents per clique (moment matrix)
-    clique_to_moments = SortedDict{String, SortedSet{Exponent}}()
     for ((ctrobj, clique), mmtmat) in momentmatrices
         if ctrobj == get_momentcstrname()
-            cur_expos = SortedSet{Exponent}()
 
-            for (key, moment) in mmtmat.mm
-                @assert typeof(first(moment)[1]) == Exponent
-                push!(cur_expos, first(moment)[1])
-            end
-            clique_to_moments[clique] = cur_expos
-        end
-    end
-
-    cliques = SortedSet{String}(keys(max_cliques))
-    for clique_i in cliques, clique_j in cliques
-        if clique_i < clique_j
-            expos_i = clique_to_moments[clique_i]
-            expos_j = clique_to_moments[clique_j]
-
-            for expo in intersect(expos_i, expos_j)
-                haskey(moments_overlap, expo) || (moments_overlap[expo] = SortedSet{String}())
-                union!(moments_overlap[expo], [clique_i, clique_j])
+            for (key, momentpoly) in mmtmat.mm
+                for (moment, coeff) in momentpoly
+                    expo = product(moment.conj_part, moment.expl_part)
+                    haskey(expo_to_cliques, expo) || (expo_to_cliques[expo] = SortedSet{String}())
+                    push!(expo_to_cliques[expo], moment.clique)
+                end
             end
         end
     end
 
-    return MomentRelaxationPb(objective, momentmatrices, moments_overlap)
+    @show length(expo_to_cliques)
+    for (expo, cliques) in expo_to_cliques
+        if length(cliques) > 1
+            # print_with_color(:light_cyan, "$expo  -> $(collect(cliques))\n")
+        else
+            # print("$expo  -> $(collect(cliques))\n")
+        end
+
+        length(cliques) > 1 || delete!(expo_to_cliques, expo)
+    end
+
+    @show length(expo_to_cliques)
+
+    return MomentRelaxationPb(objective, momentmatrices, expo_to_cliques)
 end
 
 
