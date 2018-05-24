@@ -45,7 +45,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
 
     ## Build linear dict
     # Enforce clique coupling constraints on moments
-    for (moment, cliques) in sdp.moments_overlap
+    for (moment, cliques) in mmtrelax_pb.moments_overlap
         @show moment
         @assert length(cliques)>1
         cliqueref = first(cliques)
