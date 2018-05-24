@@ -21,17 +21,21 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
                 !isnan(λ) || warn("convertMMtobase(): isNaN ! constraint $cstrname - clique $blocname - mm entry $((γ, δ)) - moment $(expo)")
 
                 # Determine which moment to affect the current coefficient.
-                α, β = split_expo(relaxctx, expo)
+                # α, β = split_expo(relaxctx, expo)
+                moment = Moment(expo, cliquename)
+                #### TODO : Handle one ctr several cliques case...
 
                 # Add the current coeff to the SDP problem
                 # Constraints are fα - ∑ Bi.Zi = 0
                 if mmt.matrixkind == :SDP || mmt.matrixkind == :SDPC
-                    key = ((α, β), block_name, γ, δ)
+                    # key = ((α, β), block_name, γ, δ)
+                    key = (moment, block_name, γ, δ)
                     @assert !haskey(sdpblocks, key)
 
                     sdpblocks[key] = -λ
                 elseif mmt.matrixkind == :Sym || mmt.matrixkind == :SymC
-                    key = ((α, β), block_name, product(γ, δ))
+                    # key = ((α, β), block_name, product(γ, δ))
+                    key = (moment, block_name, product(γ, δ))
                     haskey(sdplinsym, key) || (sdplinsym[key] = 0)
 
                     sdplinsym[key] += -λ * (γ!=δ ? 2 : 1)
@@ -45,16 +49,20 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
 
     ## Build linear dict
     # Enforce clique coupling constraints on moments
-    for (moment, cliques) in sdp.moments_overlap
-        @show moment
+    for (expo, cliques) in sdp.moments_overlap
+        @show expo
         @assert length(cliques)>1
         cliqueref = first(cliques)
 
+        refmoment = Moment(expo, cliqueref)
         for clique in setdiff(cliques, [cliqueref])
-            α, β = split_expo(relaxctx, moment)
-            var = get_ccmultvar(relaxctx, moment, cliqueref, clique)
+            α, β = split_expo(relaxctx, expo)
+            curmoment = Moment(expo, clique)
+            var = get_ccmultvar(relaxctx, expo, cliqueref, clique)
 
-            warn("Ready to append to $α, $β $var")
+            warn("Ready to append to $α, $β, multiplier : $var")
+            # sdplin[(refmomnet, var)] =  1
+            # sdplin[(curmomnet, var)] = -1
             # sdplin[((α, β), Exponent(var))] = 1
         end
     end
@@ -62,14 +70,18 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
     ## Build constants dict
     for (expo, fαβ) in mmtrelax_pb.objective
         # Determine which moment to affect the current coefficient.
-        α, β = split_expo(relaxctx, expo)
+        # α, β = split_expo(relaxctx, expo)
+        clique = "common clique..."
+        moment = Moment(expo, clique)
 
         if !haskey(sdpcst, (α, β))
-            sdpcst[(α, β)] = 0.0
+            # sdpcst[(α, β)] = 0.0
+            sdpcst[moment] = 0.0
         end
 
         # Constraints are fα - ∑ Bi.Zi = 0
-        sdpcst[(α, β)] += fαβ
+        # sdpcst[(α, β)] += fαβ
+        sdpcst[moment] += fαβ
     end
 
     return SDPInstance(block_to_vartype, sdpblocks, sdplinsym, sdplin, sdpcst)

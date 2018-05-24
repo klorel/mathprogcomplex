@@ -33,6 +33,25 @@ include("symmetries.jl")
 ###############################################################################
 ## Moment Problem
 ###############################################################################
+struct Moment
+    conj_part::Exponent
+    expl_part::Exponent
+    clique::String
+end
+
+function Moment(expo::Exponent, clique::String)
+    α, β = Exponent(), Exponent()
+
+    for (var, deg) in expo
+        add_expod!(α, Exponent(SortedDict(var=>Degree(0, deg.conjvar))))
+        add_expod!(β, Exponent(SortedDict(var=>Degree(deg.explvar, 0))))
+    end
+    return Moment(α, β, clique)
+end
+
+isless(mom1::Moment, mom2::Moment) = isless((mom1.conj_part, mom1.expl_part, mom1.clique),
+                                            (mom2.conj_part, mom2.expl_part, mom2.clique))
+
 """
     MomentMatrix(mm, vars, order)
 
@@ -40,7 +59,7 @@ include("symmetries.jl")
     **Note** that the matrix is indexed by a tuple of exponents, *the first of which contains only conjugated variables*, et second only real ones.
 """
 mutable struct MomentMatrix
-    mm::SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}
+    mm::SortedDict{Tuple{Exponent, Exponent}, SortedDict{Moment, Number}}
     vars::SortedSet{Variable}
     order::Int
     matrixkind::Symbol            # Either :SDP or :Sym
@@ -64,13 +83,13 @@ include("build_momentpb.jl")
 ###############################################################################
 ## SOS Problem
 ###############################################################################
-const SDPBlocks = SortedDict{Tuple{Tuple{Exponent, Exponent}, String, Exponent, Exponent}, Number} # ((α, β), block_name, γ, δ) -> coeff
-const SDPLinSym = SortedDict{Tuple{Tuple{Exponent, Exponent}, String, Exponent}, Number}           # ((α, β), block_name, var) -> coeff
-const SDPLin = SortedDict{Tuple{Tuple{Exponent, Exponent}, Exponent}, Number}                      # ((α, β), var) -> coeff
-const SDPCst = SortedDict{Tuple{Exponent, Exponent}, Number}                                       # (α, β) -> coeff
+const SDPBlocks = SortedDict{Tuple{Moment, String, Exponent, Exponent}, Number} # ((α, β), block_name, γ, δ) -> coeff
+const SDPLinSym = SortedDict{Tuple{Moment, String, Exponent}, Number}           # ((α, β), block_name, var) -> coeff
+const SDPLin = SortedDict{Tuple{Moment, Exponent}, Number}                      # ((α, β), var) -> coeff
+const SDPCst = SortedDict{Moment, Number}                                       # (α, β) -> coeff
 
 mutable struct SDPInstance
-    block_to_vartype::SortedDict{String, Symbol}  # Either :SDP, :Sym
+    block_to_vartype::SortedDict{String, Symbol}  # Either :SDP, :Sym, :SDPc, :SymC
     blocks::SDPBlocks
     linsym::SDPLinSym
     lin::SDPLin
