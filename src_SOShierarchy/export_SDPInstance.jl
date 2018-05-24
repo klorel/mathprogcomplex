@@ -3,6 +3,9 @@ function export_SDP(relax_ctx, sdp::SDPInstance, path; indentedprint=true, renam
     # Build moment shortname dict if required
     momentdict = build_momentdict(sdp, renamemoments)
 
+    # Collect all constraints keys
+    ctr_keys = build_ctrkeysset(sdp)
+
     # Export blocks of constraints
     blocks_file = joinpath(path, "matrix.sdp")
     !isfile(blocks_file) || rm(blocks_file)
@@ -24,7 +27,7 @@ function export_SDP(relax_ctx, sdp::SDPInstance, path; indentedprint=true, renam
     !isfile(cst_file) || rm(cst_file)
 
     fcst = open(cst_file, "a")
-    print_cstfile(fcst, sdp.cst, momentdict, indentedprint=indentedprint)
+    print_cstfile(fcst, sdp.cst, momentdict, ctr_keys, indentedprint=indentedprint)
     close(fcst)
 
 
@@ -110,12 +113,30 @@ function build_momentdict(sdp, renamemoments::Bool)
     return momentdict
 end
 
+function build_ctrkeysset(sdp)
+    ctr_keys = SortedSet{Tuple{Exponent, Exponent}}()
+
+    for (((α, β), blockname, γ, δ), λ) in sdp.blocks
+        push!(ctr_keys, (α, β))
+    end
+    for (((α, β), var), λ) in sdp.lin
+        push!(ctr_keys, (α, β))
+    end
+    for (((α, β), blockname, var), λ) in sdp.linsym
+        push!(ctr_keys, (α, β))
+    end
+    for ((α, β), λ) in sdp.cst
+        push!(ctr_keys, (α, β))
+    end
+    return ctr_keys
+end
+
 
 function print_blocksfile(io::IO, sdpblocks::SDPBlocks, momentdict; indentedprint=false)
     println(io, "## Description of the matrices A_ji for the problem:")
     println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
     println(io, "##         s.t.    ∑ A_ji[k,l] × Zi[k,l] + ∑ b_j[k] × x[k] + c_j  ==  0")
-    println(io, "## Constraints keys are j → (j_conj, j_expl).")
+    println(io, "## Constraints keys are j → (j_conj, j_expl, clique).")
     println(io, "## Objective key is 0 → (1,1).")
     println(io, "#")
 
@@ -132,6 +153,7 @@ function print_blocksfile(io::IO, sdpblocks::SDPBlocks, momentdict; indentedprin
 
     print_string(io, "#j_conj", cstrlenα, indentedprint=indentedprint)
     print_string(io, "j_expl", cstrlenβ, indentedprint=indentedprint)
+    print_string(io, "clique", 8, indentedprint=indentedprint)
     print_string(io, "Zi", blocklen, indentedprint=indentedprint)
     print_string(io, "k", rowlen, indentedprint=indentedprint)
     print_string(io, "l", collen, indentedprint=indentedprint)
@@ -142,6 +164,7 @@ function print_blocksfile(io::IO, sdpblocks::SDPBlocks, momentdict; indentedprin
     for (((α, β), blockname, γ, δ), λ) in sdpblocks
         print_string(io, momentdict[α], cstrlenα, indentedprint=indentedprint)
         print_string(io, momentdict[β], cstrlenβ, indentedprint=indentedprint)
+        print_string(io, "clique1", 8, indentedprint=indentedprint)
         print_string(io, blockname, blocklen, indentedprint=indentedprint)
         print_string(io, momentdict[γ], rowlen, indentedprint=indentedprint)
         print_string(io, momentdict[δ], collen, indentedprint=indentedprint)
@@ -154,7 +177,7 @@ function print_linfile(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym, momentdict;
     println(io, "## Description of the vectors b_j for the problem:")
     println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
     println(io, "##         s.t.    ∑ A_ji[k,l] × Zi[k,l] + ∑ b_j[k] × x[k] + c_j  ==  0")
-    println(io, "## Constraints keys are j → (j_conj, j_expl).")
+    println(io, "## Constraints keys are j → (j_conj, j_expl, clique).")
     println(io, "## Objective key is 0 → (1,1).")
     println(io, "#")
 
@@ -168,6 +191,7 @@ function print_linfile(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym, momentdict;
 
     print_string(io, "#j_conj", cstrlenα, indentedprint=indentedprint)
     print_string(io, "j_expl", cstrlenβ, indentedprint=indentedprint)
+    print_string(io, "clique", 8, indentedprint=indentedprint)
     print_string(io, "x[k]", varlen, indentedprint=indentedprint)
     print_string(io, "Real(b_j[k])", 23, indentedprint=indentedprint)
     print_string(io, "Imag(b_j[k])", 23, indentedprint=indentedprint)
@@ -177,6 +201,7 @@ function print_linfile(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym, momentdict;
         for (((α, β), var), λ) in sdplin
             print_string(io, momentdict[α], cstrlenα, indentedprint=indentedprint)
             print_string(io, momentdict[β], cstrlenβ, indentedprint=indentedprint)
+            print_string(io, "clique1", 8, indentedprint=indentedprint)
             print_string(io, format_string(var), varlen, indentedprint=indentedprint)
             @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
         end
@@ -185,6 +210,7 @@ function print_linfile(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym, momentdict;
         for (((α, β), blockname, var), λ) in sdplinsym
             print_string(io, momentdict[α], cstrlenα, indentedprint=indentedprint)
             print_string(io, momentdict[β], cstrlenβ, indentedprint=indentedprint)
+            print_string(io, "clique1", 8, indentedprint=indentedprint)
             print_string(io, format_string(var, blockname), varlen, indentedprint=indentedprint)
             @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
         end
@@ -192,11 +218,11 @@ function print_linfile(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym, momentdict;
 end
 
 
-function print_cstfile(io::IO, sdpcst::SDPCst, momentdict; indentedprint=false)
+function print_cstfile(io::IO, sdpcst::SDPCst, momentdict, ctr_keys::SortedSet{Tuple{Exponent, Exponent}}; indentedprint=false)
     println(io, "## Description of the scalars c_j for the problem:")
     println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
     println(io, "##         s.t.    ∑ A_ji[k,l] × Zi[k,l] + ∑ b_j[k] × x[k] + c_j  ==  0")
-    println(io, "## Constraints keys are j → (j_conj, j_expl).")
+    println(io, "## Constraints keys are j → (j_conj, j_expl, clique).")
     println(io, "## Objective key is 0 → (1,1).")
     println(io, "#")
 
@@ -207,13 +233,16 @@ function print_cstfile(io::IO, sdpcst::SDPCst, momentdict; indentedprint=false)
 
     print_string(io, "#j_conj", cstrlenα, indentedprint=indentedprint)
     print_string(io, "j_expl", cstrlenβ, indentedprint=indentedprint)
+    print_string(io, "clique", 8, indentedprint=indentedprint)
     print_string(io, "Real(c_j)", 23, indentedprint=indentedprint)
     print_string(io, "Imag(c_j)", 23, indentedprint=indentedprint)
     println(io)
 
-    for ((α, β), λ) in sdpcst
+    for (α, β) in ctr_keys
+        λ = haskey(sdpcst, (α, β))?sdpcst[(α, β)]:0
         print_string(io, momentdict[α], cstrlenα, indentedprint=indentedprint)
         print_string(io, momentdict[β], cstrlenβ, indentedprint=indentedprint)
+        print_string(io, "clique1", 8, indentedprint=indentedprint)
         @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
     end
 end
@@ -230,7 +259,7 @@ function print_typesfile(io::IO, block_to_vartype)
     cstrlen = maximum(x->length(x), keys(block_to_vartype))
     cstrlen = max(cstrlen, length("#Zi"))
 
-    print_string(io, "#Zi", cstrlen); println(io, " type")
+    print_string(io, "#Zi", cstrlen, alignright=false); println(io, " type")
 
     for (blockname, vartype) in block_to_vartype
         if vartype in Set([:SDP, :SDPC])
@@ -247,7 +276,7 @@ function print_namesfile(io::IO, momentdict)
     println(io, "## Description of the scalars c_j for the problem:")
     println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
     println(io, "##         s.t.    ∑ A_ji[k,l] × Zi[k,l] + ∑ b_j[k] × x[k] + c_j  ==  0")
-    println(io, "## Constraints keys are j → (j_conj, j_expl).")
+    println(io, "## Constraints keys are j → (j_conj, j_expl, clique).")
     println(io, "## Objective key is 0 → (1,1).")
     println(io, "#")
     println(io, "#shortname  Explicit_name")
