@@ -252,7 +252,6 @@ function print_cstfile(io::IO, sdpcst::SDPCst, momentdict, ctr_keys::SortedSet{M
     println(io)
 
     for moment in ctr_keys
-        println("--> $moment")
         α, β = moment.conj_part, moment.expl_part
         λ = haskey(sdpcst, moment)?sdpcst[moment]:0
         print_string(io, momentdict[α], cstrlenα, indentedprint=indentedprint)
@@ -260,6 +259,14 @@ function print_cstfile(io::IO, sdpcst::SDPCst, momentdict, ctr_keys::SortedSet{M
         print_string(io, moment.clique, cliquelen, indentedprint=indentedprint)
         @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
     end
+
+    # ctr_keys_ = collect(ctr_keys)
+    # @show ctr_keys_[1] == ctr_keys_[2]
+    # @show ctr_keys_[2] == ctr_keys_[3]
+    # @show ctr_keys_[3] == ctr_keys_[4]
+    # @show ctr_keys_[4] == ctr_keys_[5]
+
+    # @show ctr_keys_[1:5]
 end
 
 

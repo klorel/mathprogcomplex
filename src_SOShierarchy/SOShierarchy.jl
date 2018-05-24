@@ -56,6 +56,8 @@ function print(io::IO, mom::Moment)
     print(io, "$(mom.expl_part * mom.conj_part) ($(mom.clique))")
 end
 
+==(mom1::Moment, mom2::Moment) = ((mom1.conj_part, mom1.expl_part, mom1.clique) == (mom2.conj_part, mom2.expl_part, mom2.clique))
+
 """
     MomentMatrix(mm, vars, order)
 
@@ -125,6 +127,8 @@ type SDP_Block
   SDP_Block(id::Int64, name::String) = new(id, name, SortedDict{String, Int64}())
 end
 
+const SDP_Moment = Tuple{String, String, String}
+
 type SDP_Problem
   # SDP vars
   name_to_sdpblock::SortedDict{String, SDP_Block}
@@ -134,23 +138,23 @@ type SDP_Problem
   scalvar_to_id::Dict{String, Int64}
 
   # Objective / constraints
-  obj_name::Tuple{String, String}
-  name_to_ctr::SortedDict{Tuple{String, String}, Tuple{Int64, String, Float64, Float64}} # Id, type et bornes des contraintes
-  id_to_ctr::SortedDict{Int64, Tuple{String, String}}
+  obj_keys::SortedSet{SDP_Moment}
+  name_to_ctr::SortedDict{SDP_Moment, Tuple{Int64, String, Float64, Float64}} # Id, type et bornes des contraintes
+  id_to_ctr::SortedDict{Int64, SDP_Moment}
 
-  matrices::SortedDict{Tuple{Tuple{String, String}, String, String, String}, Float64} # Matrices SDP du corps des contraintes / objectif
-  linear::SortedDict{Tuple{Tuple{String, String}, String}, Float64} # Matrice portant les parties linéaires des contraintes
-  cst_ctr::SortedDict{Tuple{String, String}, Float64} # Constante du corps des contraintes
+  matrices::SortedDict{Tuple{SDP_Moment, String, String, String}, Float64} # Matrices SDP du corps des contraintes / objectif
+  linear::SortedDict{Tuple{SDP_Moment, String}, Float64} # Matrice portant les parties linéaires des contraintes
+  cst_ctr::SortedDict{SDP_Moment, Float64} # Constante du corps des contraintes
 
   SDP_Problem() = new(SortedDict{String, SDP_Block}(),
                       SortedDict{Int64, SDP_Block}(),
                       Dict{String, Int64}(),
-                      obj_key(),
-                      SortedDict{Tuple{String, String}, Tuple{Int64, String, Float64, Float64}}(),
-                      SortedDict{Int64, Tuple{String, String}}(),
-                      SortedDict{Tuple{Tuple{String, String}, String, String, String}, Float64}(),
-                      SortedDict{Tuple{Tuple{String, String}, String}, Float64}(),
-                      SortedDict{Tuple{String, String}, Float64}()
+                      SortedSet{SDP_Moment}(),
+                      SortedDict{SDP_Moment, Tuple{Int64, String, Float64, Float64}}(),
+                      SortedDict{Int64, SDP_Moment}(),
+                      SortedDict{Tuple{SDP_Moment, String, String, String}, Float64}(),
+                      SortedDict{Tuple{SDP_Moment, String}, Float64}(),
+                      SortedDict{SDP_Moment, Float64}()
                       )
 end
 

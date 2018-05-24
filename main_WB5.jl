@@ -63,7 +63,6 @@ function main()
     mkpath(path)
     export_SDP(relax_ctx, sdpinstance, path)
 
-    error()
     sdp_instance = read_SDPInstance(path)
 
     println("VAR_TYPES size:     $(size(sdp_instance.VAR_TYPES))")

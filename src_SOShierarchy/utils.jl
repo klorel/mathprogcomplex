@@ -92,10 +92,6 @@ function change_eq_to_ineq!(problem::Problem)
     end
 end
 
-## Mosek
-obj_key() = ("1", "1")
-
-
 
 ## Misc
 function print_cmat(mat::AbstractArray, round = 1e-3)

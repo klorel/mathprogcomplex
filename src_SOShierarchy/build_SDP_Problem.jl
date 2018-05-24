@@ -23,19 +23,25 @@ Build `name_to_ctr` with explicit constraint parameters from instance with ==0 a
 """
 function set_constraints!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   # Collect constraints names
-  ctr_names = SortedSet{Tuple{String, String}}([(instance.BLOCKS[i, 1], instance.BLOCKS[i, 2]) for i=1:size(instance.BLOCKS, 1)])
-  union!(ctr_names, [(instance.LINEAR[i, 1], instance.LINEAR[i, 2]) for i=1:size(instance.LINEAR, 1)])
-  union!(ctr_names, [(instance.CONST[i, 1], instance.CONST[i, 2]) for i=1:size(instance.CONST, 1)])
+  # ctr_names = SortedSet{Tuple{String, String, String}}([(instance.BLOCKS[i, 1], instance.BLOCKS[i, 2], instance.BLOCKS[i, 3]) for i=1:size(instance.BLOCKS, 1)])
+  # union!(ctr_names, [(instance.LINEAR[i, 1], instance.LINEAR[i, 2], instance.LINEAR[i, 3]) for i=1:size(instance.LINEAR, 1)])
+  # union!(ctr_names, [(instance.CONST[i, 1], instance.CONST[i, 2], instance.CONST[i, 3]) for i=1:size(instance.CONST, 1)])
 
-  if haskey(ctr_names, obj_key())
-    delete!(ctr_names, obj_key())
-  else
-    warn("No ctrkey matching objective key $(obj_key())")
+ctr_names = SortedSet{SDP_Moment}([(instance.CONST[i, 1], instance.CONST[i, 2], instance.CONST[i, 3]) for i=1:size(instance.CONST, 1)])
+
+  obj_keys = SortedSet{SDP_Moment}()
+  for ctr_name in ctr_names
+    if (ctr_name[1:2] == ("1", "1"))
+      push!(obj_keys, ctr_name)
+      delete!(ctr_names, ctr_name)
+    end
   end
 
-  # Default contraint is EQ, == 0
-  # TODO: is that ok ?
-  # TODO : should there be sparse storage here ?
+  @show length(obj_keys)
+  @show collect(obj_keys)
+  length(obj_keys) == 0 && error("No ctrkey matching objective key (\"1\", \"1\", .)")
+  sdp.obj_keys = obj_keys
+
   ctr_id = 1
   for ctr_name in ctr_names
     sdp.name_to_ctr[ctr_name] = (ctr_id, "EQ", 0, 0)
@@ -44,7 +50,6 @@ function set_constraints!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   end
 
   if debug
-
   end
 end
 
@@ -120,7 +125,7 @@ end
 
 function set_matrices!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   for i=1:size(instance.BLOCKS, 1)
-    ctr_name = (instance.BLOCKS[i, 1], instance.BLOCKS[i, 2])
+    ctr_name = (instance.BLOCKS[i, 1], instance.BLOCKS[i, 2], instance.BLOCKS[i, 3])
     (block_name, var1, var2, coeff) = instance.BLOCKS[i, 4:7]
 
     # Sort variables for triangular matrix storage
@@ -146,7 +151,7 @@ end
 function set_linear!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   if length(instance.LINEAR) != 0
     for i=1:size(instance.LINEAR, 1)
-      ctr_name = (instance.LINEAR[i, 1], instance.LINEAR[i, 2])
+      ctr_name = (instance.LINEAR[i, 1], instance.LINEAR[i, 2], instance.LINEAR[i, 3])
       (var, coeff) = instance.LINEAR[i, 4:5]
 
       if !haskey(sdp.linear, (ctr_name, var))
@@ -163,7 +168,7 @@ end
 
 function set_const!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   for i=1:size(instance.CONST, 1)
-    ctr_name = (instance.CONST[i, 1], instance.CONST[i, 2])
+    ctr_name = (instance.CONST[i, 1], instance.CONST[i, 2], instance.CONST[i, 3])
     coeff = instance.CONST[i, 4]
 
     @assert !haskey(sdp.cst_ctr, ctr_name)
@@ -181,7 +186,7 @@ function print(io::IO, sdp::SDP_Problem)
     println(io, "  sdp   : $cstr -> $block")
   end
 
-  println(io, "  objk  : $(sdp.obj_name)")
+  println(io, "  objk  : $(sdp.obj_keys)")
 
   for (name, ctr) in sdp.name_to_ctr
     println(io, "  ctr   : $name \t $ctr")

@@ -8,7 +8,7 @@ function get_SDPtriplets(problem::SDP_Problem; debug = false)
   nza = 0
   for ((objctr, block, var1, var2), coeff) in problem.matrices
 
-      if objctr == obj_key()
+      if objctr in problem.obj_keys
         nzc += 1
       else
         nza += 1
@@ -33,7 +33,7 @@ function get_SDPtriplets(problem::SDP_Problem; debug = false)
     sdp_block = problem.name_to_sdpblock[block]
     lower = min(sdp_block.var_to_id[var1], sdp_block.var_to_id[var2])
     upper = max(sdp_block.var_to_id[var1], sdp_block.var_to_id[var2])
-    if objctr == problem.obj_name
+    if objctr in problem.obj_keys
       nzc+=1
       barcj[nzc] = sdp_block.id
       barck[nzc] = upper
@@ -70,7 +70,7 @@ function get_linterms(problem; debug=debug)
 
   nza, nzc = 0, 0
   for (objctr, var) in keys(problem.linear)
-    if objctr == problem.obj_name
+    if objctr in problem.obj_keys
       nzc += 1
     else
       nza += 1
@@ -84,14 +84,14 @@ function get_linterms(problem; debug=debug)
   cjval = zeros(Float64, nzc)
 
   nza, nzc = 0, 0
-  for ((ctrname, var), coeff) in problem.linear
-    if ctrname == problem.obj_name
+  for ((objctr, var), coeff) in problem.linear
+    if objctr in problem.obj_keys
       nzc += 1
       cj[nzc] = problem.scalvar_to_id[var]
       cjval[nzc] = coeff
     else
       nza += 1
-      ai[nza] = problem.name_to_ctr[ctrname][1]
+      ai[nza] = problem.name_to_ctr[objctr][1]
       aj[nza] = problem.scalvar_to_id[var]
       aij[nza] = coeff
     end
@@ -221,9 +221,14 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
       # Objective matrices and constant
       putbarcblocktriplet(task, length(barcj), barcj, barck, barcl, barcjkl)
       putclist(task, cj, cjval)
-      if haskey(problem.cst_ctr, problem.obj_name)
-        putcfix(task, problem.cst_ctr[problem.obj_name])
+
+      obj_cst = 0
+      for objmoment in problem.obj_keys
+        if haskey(problem.cst_ctr, objmoment)
+          obj_cst += problem.cst_ctr[objmoment]
+        end
       end
+      obj_cst != 0 && putcfix(task, obj_cst)
 
       # putintparam(task, MSK_IPAR_INTPNT_SCALING, MSK_SCALING_NONE)
       # putintparam(task, MSK_IPAR_INTPNT_SCALING, MSK_SCALING_AGGRESSIVE)
