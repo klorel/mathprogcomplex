@@ -66,8 +66,8 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
             println("    Adding to $curmoment : $var*-1")
             @assert !haskey(sdplin, (refmoment, var))
             @assert !haskey(sdplin, (curmoment, var))
-            sdplin[(refmoment, var)] =  1
-            sdplin[(curmoment, var)] = -1
+            # sdplin[(refmoment, var)] =  1
+            # sdplin[(curmoment, var)] = -1
         end
     end
 

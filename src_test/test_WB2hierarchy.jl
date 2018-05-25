@@ -44,7 +44,7 @@ function main()
         problem = buildPOP_WB2(v2max=v2max, rmeqs=true)
 
         for d=2:2:2*dmax  # Complex d definition, twice real one...
-            info("Working on WB2, no ineqs, v2max=$v2max, d=$d")
+            info("Working on WB2, no eqs, v2max=$v2max, d=$d")
             logpath = joinpath(testfolder, "WB2_v2max_$(v2max)_d_$(d)_noeq")
             ispath(logpath) && rm(logpath, recursive=true); mkpath(logpath)
             println("Saving file at $logpath")
@@ -64,7 +64,7 @@ function main()
         problem = buildPOP_WB2(v2max=v2max, rmeqs=false)
 
         for d=2:2:2*dmax  # Complex d definition, twice real one...
-            info("Working on WB2, ineqs, v2max=$v2max, d=$d")
+            info("Working on WB2, eqs, v2max=$v2max, d=$d")
             logpath = joinpath(testfolder, "WB2_v2max_$(v2max)_d_$(d)_eq")
             ispath(logpath) && rm(logpath, recursive=true); mkpath(logpath)
             println("Saving file at $logpath")
