@@ -141,7 +141,7 @@ function print_blocksfile(io::IO, sdpblocks::SDPBlocks, momentdict; indentedprin
     println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
     println(io, "##         s.t.    ∑ A_ji[k,l] × Zi[k,l] + ∑ b_j[k] × x[k] + c_j  ==  0")
     println(io, "## Constraints keys are j → (j_conj, j_expl, clique).")
-    println(io, "## Objective key is 0 → (1,1).")
+    println(io, "## Objective keys are 0 → (1,1, *) for any *.")
     println(io, "#")
 
     cstrlenα = maximum(x->length(momentdict[x[1].conj_part]), keys(sdpblocks))
@@ -185,7 +185,7 @@ function print_linfile(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym, momentdict;
     println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
     println(io, "##         s.t.    ∑ A_ji[k,l] × Zi[k,l] + ∑ b_j[k] × x[k] + c_j  ==  0")
     println(io, "## Constraints keys are j → (j_conj, j_expl, clique).")
-    println(io, "## Objective key is 0 → (1,1).")
+    println(io, "## Objective keys are 0 → (1,1, *) for any *.")
     println(io, "#")
 
     cstrlenα = 0
@@ -242,7 +242,7 @@ function print_cstfile(io::IO, sdpcst::SDPCst, momentdict, ctr_keys::SortedSet{M
     println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
     println(io, "##         s.t.    ∑ A_ji[k,l] × Zi[k,l] + ∑ b_j[k] × x[k] + c_j  ==  0")
     println(io, "## Constraints keys are j → (j_conj, j_expl, clique).")
-    println(io, "## Objective key is 0 → (1,1).")
+    println(io, "## Objective keys are 0 → (1,1, *) for any *.")
     println(io, "#")
 
     cstrlenα = maximum(x->length(momentdict[x.conj_part]), ctr_keys)
@@ -267,14 +267,6 @@ function print_cstfile(io::IO, sdpcst::SDPCst, momentdict, ctr_keys::SortedSet{M
         print_string(io, moment.clique, cliquelen, indentedprint=indentedprint)
         @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
     end
-
-    # ctr_keys_ = collect(ctr_keys)
-    # @show ctr_keys_[1] == ctr_keys_[2]
-    # @show ctr_keys_[2] == ctr_keys_[3]
-    # @show ctr_keys_[3] == ctr_keys_[4]
-    # @show ctr_keys_[4] == ctr_keys_[5]
-
-    # @show ctr_keys_[1:5]
 end
 
 
@@ -307,7 +299,7 @@ function print_namesfile(io::IO, momentdict)
     println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
     println(io, "##         s.t.    ∑ A_ji[k,l] × Zi[k,l] + ∑ b_j[k] × x[k] + c_j  ==  0")
     println(io, "## Constraints keys are j → (j_conj, j_expl, clique).")
-    println(io, "## Objective key is 0 → (1,1).")
+    println(io, "## Objective keys are 0 → (1,1, *) for any *.")
     println(io, "#")
     println(io, "#shortname  Explicit_name")
 

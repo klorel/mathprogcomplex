@@ -2,6 +2,10 @@ ROOT = pwd()
 include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
 
 function main()
+    repo = LibGit2.GitRepo(pwd()); branch = LibGit2.shortname(LibGit2.head(repo))
+    date = String(Dates.format(now(), "mm_dd-HHhMM"))
+    testfolder = joinpath("Mosek_runs", branch, "testWB2extensive", date)
+    ispath(testfolder) && rm(testfolder, recursive=true)
 
     params = OrderedSet([(1.028, 2, true, 885.71),
                          (1.028, 4, true, NaN),
@@ -20,7 +24,7 @@ function main()
         relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         d = d)
 
-        logpath = joinpath("Mosek_runs", "test_WB2simple", "v2max_$(v2max)_d_$(d)_"*(rmeqs?"noeqs":"eqs"))
+        logpath = joinpath(testfolder, "v2max_$(v2max)_d_$(d)_"*(rmeqs?"noeqs":"eqs"))
         !ispath(logpath) || rm(logpath, recursive=true)
         mkpath(logpath)
 

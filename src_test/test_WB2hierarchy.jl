@@ -21,7 +21,9 @@ function print_primobj(io::IO, primobjectives, sols)
 end
 
 function main()
-    testfolder = joinpath("Mosek_runs", "testWB2extensive")
+    repo = LibGit2.GitRepo(pwd()); branch = LibGit2.shortname(LibGit2.head(repo))
+    date = String(Dates.format(now(), "mm_dd-HHhMM"))
+    testfolder = joinpath("Mosek_runs", branch, "testWB2extensive", date)
     ispath(testfolder) && rm(testfolder, recursive=true)
 
     sols = SortedDict(0.976 => (2, 905.76, 905.76),
@@ -82,6 +84,7 @@ function main()
     print_primobj(STDOUT, primobjectives_eqs, sols)
 
     logfile = joinpath(testfolder, "test_WB2.txt")
+
     isfile(logfile) && rm(logfile)
 
     info("Writing results to $logfile")
