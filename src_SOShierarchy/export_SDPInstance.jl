@@ -11,7 +11,7 @@ function export_SDP(relax_ctx, sdp::SDPInstance, path; indentedprint=true, renam
     !isfile(blocks_file) || rm(blocks_file)
 
     fblocks = open(blocks_file, "a")
-    print_blocksfile(fblocks, sdp.blocks, momentdict, indentedprint=indentedprint)
+    print_blocksfile(fblocks, sdp.blocks, momentdict=momentdict, indentedprint=indentedprint)
     close(fblocks)
 
     # Export linear part of constraints
@@ -19,7 +19,7 @@ function export_SDP(relax_ctx, sdp::SDPInstance, path; indentedprint=true, renam
     !isfile(lin_file) || rm(lin_file)
 
     flin = open(lin_file, "a")
-    print_linfile(flin, sdp.lin, sdp.linsym, momentdict, indentedprint=indentedprint)
+    print_linfile(flin, sdp.lin, sdp.linsym, momentdict=momentdict, indentedprint=indentedprint)
     close(flin)
 
     # Export constants of constraints
@@ -27,7 +27,7 @@ function export_SDP(relax_ctx, sdp::SDPInstance, path; indentedprint=true, renam
     !isfile(cst_file) || rm(cst_file)
 
     fcst = open(cst_file, "a")
-    print_cstfile(fcst, sdp.cst, momentdict, ctr_keys, indentedprint=indentedprint)
+    print_cstfile(fcst, sdp.cst, momentdict=momentdict, ctr_keys=ctr_keys, indentedprint=indentedprint)
     close(fcst)
 
 
