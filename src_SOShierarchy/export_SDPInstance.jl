@@ -136,25 +136,29 @@ function build_ctrkeysset(sdp)
 end
 
 
-function print_blocksfile(io::IO, sdpblocks::SDPBlocks, momentdict; indentedprint=false)
-    println(io, "## Description of the matrices A_ji for the problem:")
-    println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
-    println(io, "##         s.t.    ∑ A_ji[k,l] × Zi[k,l] + ∑ b_j[k] × x[k] + c_j  ==  0")
-    println(io, "## Constraints keys are j → (j_conj, j_expl, clique).")
-    println(io, "## Objective keys are 0 → (1,1, *) for any *.")
-    println(io, "#")
+function print_blocksfile(io::IO, sdpblocks::SDPBlocks; momentdict::SortedDict{Exponent, String}=SortedDict{Exponent, String}(),
+                                                        indentedprint=false,
+                                                        print_header=true)
+    if print_header
+        println(io, "## Description of the matrices A_ji for the problem:")
+        println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
+        println(io, "##         s.t.    ∑ A_ji[k,l] × Zi[k,l] + ∑ b_j[k] × x[k] + c_j  ==  0")
+        println(io, "## Constraints keys are j → (j_conj, j_expl, clique).")
+        println(io, "## Objective keys are 0 → (1,1, *) for any *.")
+        println(io, "#")
+    end
 
-    cstrlenα = maximum(x->length(momentdict[x[1].conj_part]), keys(sdpblocks))
+    cstrlenα = maximum(x->length(haskey(momentdict, x[1].conj_part)?momentdict[x[1].conj_part]: string(x[1].conj_part)), keys(sdpblocks))
     cstrlenα= max(cstrlenα, length("#j_conj"))
-    cstrlenβ = maximum(x->length(momentdict[x[1].expl_part]), keys(sdpblocks))
+    cstrlenβ = maximum(x->length(haskey(momentdict, x[1].expl_part)?momentdict[x[1].expl_part]: string(x[1].expl_part)), keys(sdpblocks))
     cstrlenβ= max(cstrlenβ, length("j_expl"))
     cliquelen = maximum(x->length(x[1].clique), keys(sdpblocks))
     cliquelen= max(cliquelen, length("clique"))
     blocklen = maximum(x->length(x[2]), keys(sdpblocks))
     blocklen= max(blocklen, length("Zi"))
-    rowlen = maximum(x->length(momentdict[x[3]]), keys(sdpblocks))
+    rowlen = maximum(x->length(haskey(momentdict, x[3])?momentdict[x[3]]:string(x[3])), keys(sdpblocks))
     rowlen = max(rowlen, length("k"))
-    collen = maximum(x->length(momentdict[x[4]]), keys(sdpblocks))
+    collen = maximum(x->length(haskey(momentdict, x[4])?momentdict[x[4]]:string(x[4])), keys(sdpblocks))
     collen = max(collen, length("l"))
 
     print_string(io, "#j_conj", cstrlenα, indentedprint=indentedprint)
@@ -169,24 +173,28 @@ function print_blocksfile(io::IO, sdpblocks::SDPBlocks, momentdict; indentedprin
 
     for ((moment, blockname, γ, δ), λ) in sdpblocks
         α, β = moment.conj_part, moment.expl_part
-        print_string(io, momentdict[α], cstrlenα, indentedprint=indentedprint)
-        print_string(io, momentdict[β], cstrlenβ, indentedprint=indentedprint)
+        print_string(io, haskey(momentdict, α)?momentdict[α]: string(α), cstrlenα, indentedprint=indentedprint)
+        print_string(io, haskey(momentdict, β)?momentdict[β]: string(β), cstrlenβ, indentedprint=indentedprint)
         print_string(io, moment.clique, cliquelen, indentedprint=indentedprint)
         print_string(io, blockname, blocklen, indentedprint=indentedprint)
-        print_string(io, momentdict[γ], rowlen, indentedprint=indentedprint)
-        print_string(io, momentdict[δ], collen, indentedprint=indentedprint)
+        print_string(io, haskey(momentdict, γ)?momentdict[γ]: string(γ), rowlen, indentedprint=indentedprint)
+        print_string(io, haskey(momentdict, δ)?momentdict[δ]: string(δ), collen, indentedprint=indentedprint)
         @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
     end
 end
 
 
-function print_linfile(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym, momentdict; indentedprint=false)
-    println(io, "## Description of the vectors b_j for the problem:")
-    println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
-    println(io, "##         s.t.    ∑ A_ji[k,l] × Zi[k,l] + ∑ b_j[k] × x[k] + c_j  ==  0")
-    println(io, "## Constraints keys are j → (j_conj, j_expl, clique).")
-    println(io, "## Objective keys are 0 → (1,1, *) for any *.")
-    println(io, "#")
+function print_linfile(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym; momentdict::SortedDict{Exponent, String}=SortedDict{Exponent, String}(),
+                                                                     indentedprint=false,
+                                                                     print_header=true)
+    if print_header
+        println(io, "## Description of the vectors b_j for the problem:")
+        println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
+        println(io, "##         s.t.    ∑ A_ji[k,l] × Zi[k,l] + ∑ b_j[k] × x[k] + c_j  ==  0")
+        println(io, "## Constraints keys are j → (j_conj, j_expl, clique).")
+        println(io, "## Objective keys are 0 → (1,1, *) for any *.")
+        println(io, "#")
+    end
 
     cstrlenα = 0
     cstrlenβ = 0
@@ -194,8 +202,8 @@ function print_linfile(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym, momentdict;
     varlen = varlensym = 0
 
     if length(union(keys(sdplin), keys(sdplinsym))) > 0
-        cstrlenα = maximum(x->length(momentdict[x[1].conj_part]), union(keys(sdplin), keys(sdplinsym)))
-        cstrlenβ = maximum(x->length(momentdict[x[1].expl_part]), union(keys(sdplin), keys(sdplinsym)))
+        cstrlenα = maximum(x->length(haskey(momentdict, x[1].conj_part)?momentdict[x[1].conj_part]: string(x[1].conj_part)), union(keys(sdplin), keys(sdplinsym)))
+        cstrlenβ = maximum(x->length(haskey(momentdict, x[1].expl_part)?momentdict[x[1].expl_part]: string(x[1].expl_part)), union(keys(sdplin), keys(sdplinsym)))
         cliquelen = maximum(x->length(x[1].clique), union(keys(sdplin), keys(sdplinsym)))
         varlen = length(sdplin)!=0 ? maximum(x->length(format_string(x[2])), keys(sdplin)) : 0
         varlensym = length(sdplinsym)!=0 ? maximum(x->length(format_string(x[3], x[2])), keys(sdplinsym)) : 0
@@ -217,8 +225,8 @@ function print_linfile(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym, momentdict;
     if length(sdplin)!=0
         for ((moment, var), λ) in sdplin
             α, β = moment.conj_part, moment.expl_part
-            print_string(io, momentdict[α], cstrlenα, indentedprint=indentedprint)
-            print_string(io, momentdict[β], cstrlenβ, indentedprint=indentedprint)
+            print_string(io, haskey(momentdict, α)?momentdict[α]: string(α), cstrlenα, indentedprint=indentedprint)
+            print_string(io, haskey(momentdict, β)?momentdict[β]: string(β), cstrlenβ, indentedprint=indentedprint)
             print_string(io, moment.clique, cliquelen, indentedprint=indentedprint)
             print_string(io, format_string(var), varlen, indentedprint=indentedprint)
             @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
@@ -227,8 +235,8 @@ function print_linfile(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym, momentdict;
     if length(sdplinsym) != 0
         for ((moment, blockname, var), λ) in sdplinsym
             α, β = moment.conj_part, moment.expl_part
-            print_string(io, momentdict[α], cstrlenα, indentedprint=indentedprint)
-            print_string(io, momentdict[β], cstrlenβ, indentedprint=indentedprint)
+            print_string(io, haskey(momentdict, α)?momentdict[α]: string(α), cstrlenα, indentedprint=indentedprint)
+            print_string(io, haskey(momentdict, β)?momentdict[β]: string(β), cstrlenβ, indentedprint=indentedprint)
             print_string(io, moment.clique, cliquelen, indentedprint=indentedprint)
             print_string(io, format_string(var, blockname), varlen, indentedprint=indentedprint)
             @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
@@ -237,19 +245,24 @@ function print_linfile(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym, momentdict;
 end
 
 
-function print_cstfile(io::IO, sdpcst::SDPCst, momentdict, ctr_keys::SortedSet{Moment}; indentedprint=false)
-    println(io, "## Description of the scalars c_j for the problem:")
-    println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
-    println(io, "##         s.t.    ∑ A_ji[k,l] × Zi[k,l] + ∑ b_j[k] × x[k] + c_j  ==  0")
-    println(io, "## Constraints keys are j → (j_conj, j_expl, clique).")
-    println(io, "## Objective keys are 0 → (1,1, *) for any *.")
-    println(io, "#")
+function print_cstfile(io::IO, sdpcst::SDPCst; momentdict::SortedDict{Exponent, String}=SortedDict{Exponent, String}(),
+                                               ctr_keys::SortedSet{Moment}=SortedSet{Moment}(),
+                                               indentedprint=false,
+                                               print_header=true)
+    if print_header
+        println(io, "## Description of the scalars c_j for the problem:")
+        println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
+        println(io, "##         s.t.    ∑ A_ji[k,l] × Zi[k,l] + ∑ b_j[k] × x[k] + c_j  ==  0")
+        println(io, "## Constraints keys are j → (j_conj, j_expl, clique).")
+        println(io, "## Objective keys are 0 → (1,1, *) for any *.")
+        println(io, "#")
+    end
 
-    cstrlenα = maximum(x->length(momentdict[x.conj_part]), ctr_keys)
+    cstrlenα = maximum(x->length(haskey(momentdict, x.conj_part)?momentdict[x.conj_part]: string(x.conj_part)), union(ctr_keys, keys(sdpcst)))
     cstrlenα= max(cstrlenα, length("#j_conj"))
-    cstrlenβ = maximum(x->length(momentdict[x.expl_part]), ctr_keys)
+    cstrlenβ = maximum(x->length(haskey(momentdict, x.expl_part)?momentdict[x.expl_part]: string(x.expl_part)), union(ctr_keys, keys(sdpcst)))
     cstrlenβ= max(cstrlenβ, length("j_expl"))
-    cliquelen = maximum(x->length(x.clique), ctr_keys)
+    cliquelen = maximum(x->length(x.clique), union(ctr_keys, keys(sdpcst)))
     cliquelen= max(cliquelen, length("clique"))
 
     print_string(io, "#j_conj", cstrlenα, indentedprint=indentedprint)
@@ -259,11 +272,11 @@ function print_cstfile(io::IO, sdpcst::SDPCst, momentdict, ctr_keys::SortedSet{M
     print_string(io, "Imag(c_j)", 23, indentedprint=indentedprint)
     println(io)
 
-    for moment in ctr_keys
+    for moment in SortedSet(union(ctr_keys, keys(sdpcst)))
         α, β = moment.conj_part, moment.expl_part
         λ = haskey(sdpcst, moment)?sdpcst[moment]:0
-        print_string(io, momentdict[α], cstrlenα, indentedprint=indentedprint)
-        print_string(io, momentdict[β], cstrlenβ, indentedprint=indentedprint)
+        print_string(io, haskey(momentdict, α)?momentdict[α]: string(α), cstrlenα, indentedprint=indentedprint)
+        print_string(io, haskey(momentdict, β)?momentdict[β]: string(β), cstrlenβ, indentedprint=indentedprint)
         print_string(io, moment.clique, cliquelen, indentedprint=indentedprint)
         @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
     end

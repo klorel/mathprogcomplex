@@ -7,9 +7,8 @@ function SDPInstance_cplx2real(sdp::SDPInstance)
     block_to_vartype = SortedDict{String, Symbol}()
 
     ## Complex blocks to real
-    for (((α, β), block_name, γ, δ), coeff) in sdp.blocks
-        ctr_re, ctr_im = cplx2real_sdpctr(α, β)
-        β_re, β_im = cplx2real_sdpctr(β)
+    for ((moment, block_name, γ, δ), coeff) in sdp.blocks
+        ctr_re, ctr_im = cplx2real_sdpctr(moment)
         γ_re, γ_im = cplx2real_sdpctr(γ)
         δ_re, δ_im = cplx2real_sdpctr(δ)
 
@@ -29,8 +28,8 @@ function SDPInstance_cplx2real(sdp::SDPInstance)
     end
 
     ## Complex symetric blocks to real
-    for (((α, β), block_name, var), coeff) in sdp.linsym
-        ctr_re, ctr_im = cplx2real_sdpctr(α, β)
+    for ((moment, block_name, var), coeff) in sdp.linsym
+        ctr_re, ctr_im = cplx2real_sdpctr(moment)
         var_re, var_im = cplx2real_sdpctr(var)
 
         sdplinsym[(ctr_re, block_name, var_re)] = real(coeff)
@@ -41,8 +40,8 @@ function SDPInstance_cplx2real(sdp::SDPInstance)
     end
 
     ## Complex vectors to real
-    for (((α, β), var), coeff) in sdp.lin
-        ctr_re, ctr_im = cplx2real_sdpctr(α, β)
+    for ((moment, var), coeff) in sdp.lin
+        ctr_re, ctr_im = cplx2real_sdpctr(moment)
         var_re, var_im = cplx2real_sdpctr(var)
 
         sdplin[(ctr_re, var_re)] = real(coeff)
@@ -53,8 +52,8 @@ function SDPInstance_cplx2real(sdp::SDPInstance)
     end
 
     ## Complex coeff to real
-    for ((α, β), coeff) in sdp.cst
-        ctr_re, ctr_im = cplx2real_sdpctr(α, β)
+    for (moment, coeff) in sdp.cst
+        ctr_re, ctr_im = cplx2real_sdpctr(moment)
 
         sdpcst[ctr_re] = real(coeff)
         sdpcst[ctr_im] = imag(coeff)
@@ -76,23 +75,26 @@ end
 
 
 
-function cplx2real_sdpctr(α, β)
-    ctr_re = Exponent(Variable(string(α, "_Re"), Real)), Exponent(Variable(string(β, "_Re"), Real))
-    ctr_im = Exponent(Variable(string(α, "_Im"), Real)), Exponent(Variable(string(β, "_Im"), Real))
+function cplx2real_sdpctr(moment::Moment)
+    ctr_re = Moment(moment.conj_part, moment.expl_part, moment.clique*"_Re")
+    ctr_im = Moment(moment.conj_part, moment.expl_part, moment.clique*"_Im")
+
     return ctr_re, ctr_im
 end
 
-function cplx2real_sdpctr(expo)
+function cplx2real_sdpctr(expo::Exponent)
     expo_re, expo_im = Exponent(), Exponent()
     expo_re = Exponent(Variable(string(expo, "_Re"), Real))
     expo_im = Exponent(Variable(string(expo, "_Im"), Real))
     return expo_re, expo_im
 end
 
-function get_Xictrname_re(block_name, γ, δ)
-    return Exponent(Variable(block_name*"_Re", Real)), Exponent(Variable(string(γ, "_", δ), Real))
+function get_Xictrname_re(block_name::String, γ::Exponent, δ::Exponent)
+    return Moment(product(γ, δ), block_name*"_ReCtr")
+    # return Exponent(Variable(block_name*"_Re", Real)), Exponent(Variable(string(γ, "_", δ), Real))
 end
 
-function get_Xictrname_im(block_name, γ, δ)
-    return Exponent(Variable(block_name*"_Im", Real)), Exponent(Variable(string(γ, "_", δ), Real))
+function get_Xictrname_im(block_name::String, γ::Exponent, δ::Exponent)
+    return Moment(product(γ, δ), block_name*"_ImCtr")
+    # return Exponent(Variable(block_name*"_Im", Real)), Exponent(Variable(string(γ, "_", δ), Real))
 end

@@ -277,15 +277,22 @@ end
 
 function print(io::IO, momentrelax::MomentRelaxationPb)
     println(io, "Moment Relaxation Problem:")
-    println(io, "▶ Objective: ", momentrelax.objective)
+    println(io, "▶ Objective: ")
+    momentlen = maximum(x->length(string(x)), keys(momentrelax.objective))
+    for (moment, coeff) in momentrelax.objective
+        print_string(io, string(moment), momentlen)
+        println(io, " $coeff")
+    end
+
     println(io, "▶ Constraints:")
     for ((cstrname, blocname), mmtmat) in momentrelax.constraints
         println(io, " → $cstrname, $blocname")
         println(io, mmtmat)
     end
+
     println(io, "▶ Moments clique overlap:")
-    mmtlength = maximum(x->length(string(x)), keys(momentrelax.moments_overlap))
     if length(momentrelax.moments_overlap) > 0
+        mmtlength = maximum(x->length(string(x)), keys(momentrelax.moments_overlap))
         for (moment, cliquenames) in momentrelax.moments_overlap
             print(io, " → ")
             print_string(io, string(moment), mmtlength)

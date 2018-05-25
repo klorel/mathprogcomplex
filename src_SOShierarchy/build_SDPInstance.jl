@@ -104,7 +104,7 @@ function print(io::IO, sdpinst::SDPInstance)
     println(io, " -- SDP Blocks:")
     print(io, sdpinst.blocks)
     println(io, " -- linear part:")
-    length(sdpinst.lin) == 0 ? println("") : print(io, sdpinst.lin)
+    print(io, sdpinst.lin, sdpinst.linsym)
     println(io, " -- const part:")
     print(io, sdpinst.cst)
     println(io, " -- mat var types:")
@@ -113,96 +113,15 @@ function print(io::IO, sdpinst::SDPInstance)
     end
 end
 
-function print(io::IO, sdpblocks::SDPBlocks; indentedprint=false)
-    cstrlenα = maximum(x->length(format_string(x[1][1])), keys(sdpblocks))
-    cstrlenα= max(cstrlenα, length("#j_conj"))
-    cstrlenβ = maximum(x->length(format_string(x[1][2])), keys(sdpblocks))
-    cstrlenβ= max(cstrlenβ, length("j_expl"))
-    blocklen = maximum(x->length(x[2]), keys(sdpblocks))
-    blocklen= max(blocklen, length("Zi"))
-    rowlen = maximum(x->length(format_string(x[3])), keys(sdpblocks))
-    rowlen = max(rowlen, length("k"))
-    collen = maximum(x->length(format_string(x[4])), keys(sdpblocks))
-    collen = max(collen, length("l"))
-
-    print_string(io, "#j_conj", cstrlenα, indentedprint=indentedprint)
-    print_string(io, "j_expl", cstrlenβ, indentedprint=indentedprint)
-    print_string(io, "Zi", blocklen, indentedprint=indentedprint)
-    print_string(io, "k", rowlen, indentedprint=indentedprint)
-    print_string(io, "l", collen, indentedprint=indentedprint)
-    print_string(io, "Real(A_ij[k, l])", 23, indentedprint=indentedprint)
-    print_string(io, "Imag(A_ij[k, l])", 23, indentedprint=indentedprint)
-    println(io)
-
-    for (((α, β), blockname, γ, δ), λ) in sdpblocks
-        print_string(io, format_string(α), cstrlenα, indentedprint=indentedprint)
-        print_string(io, format_string(β), cstrlenβ, indentedprint=indentedprint)
-        print_string(io, blockname, blocklen, indentedprint=indentedprint)
-        print_string(io, format_string(γ), rowlen, indentedprint=indentedprint)
-        print_string(io, format_string(δ), collen, indentedprint=indentedprint)
-        @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
-    end
+function print(io::IO, sdpblocks::SDPBlocks; indentedprint=true)
+    print_blocksfile(io, sdpblocks; indentedprint=indentedprint, print_header=false)
 end
 
-function print(io::IO, sdplinsym::SDPLinSym, sdplin::SDPLin; indentedprint=false)
-    cstrlenα = length(sdplin)!=0 ? maximum(x->length(format_string(x[1][1])), union(keys(sdplin), keys(sdplinsym))) : 0
-    cstrlenα= max(cstrlenα, length("#j_conj"))
-    cstrlenβ = length(sdplinsym)!=0 ? maximum(x->length(format_string(x[1][2])), union(keys(sdplin), keys(sdplinsym))) : 0
-    cstrlenβ= max(cstrlenβ, length("j_expl"))
-
-    varlen = length(sdplin)!=0 ? maximum(x->length(format_string(x[2])), keys(sdplin)) : 0
-    varlensym = length(sdplinsym)!=0 ? maximum(x->length(format_string(x[3], x[2])), keys(sdplinsym)) : 0
-    varlen = max(varlen, varlensym, length("x[k]"))
-
-    print_string(io, "#j_conj", cstrlenα, indentedprint=indentedprint)
-    print_string(io, "j_expl", cstrlenβ, indentedprint=indentedprint)
-    print_string(io, "x[k]", varlen, indentedprint=indentedprint)
-    print_string(io, "Real(b_j[k])", 23, indentedprint=indentedprint)
-    print_string(io, "Imag(b_j[k])", 23, indentedprint=indentedprint)
-    println(io)
-
-    if length(sdplin)!=0
-        for (((α, β), var), λ) in sdplin
-            print_string(io, format_string(α), cstrlenα, indentedprint=indentedprint)
-            print_string(io, format_string(β), cstrlenβ, indentedprint=indentedprint)
-            print_string(io, format_string(var), varlen, indentedprint=indentedprint)
-            @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
-        end
-    end
-    if length(sdplinsym) != 0
-        for (((α, β), blockname, var), λ) in sdplinsym
-            print_string(io, format_string(α), cstrlenα, indentedprint=indentedprint)
-            print_string(io, format_string(β), cstrlenβ, indentedprint=indentedprint)
-            print_string(io, format_string(var, blockname), varlen, indentedprint=indentedprint)
-            @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
-        end
-    end
+function print(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym; indentedprint=true)
+    print_linfile(io, sdplin, sdplinsym; indentedprint=indentedprint, print_header=false)
 end
 
 
-function print(io::IO, sdpcst::SDPCst; indentedprint=false)
-    cstrlenα = maximum(x->length(format_string(x[1])), keys(sdpcst))
-    cstrlenα= max(cstrlenα, length("#j_conj"))
-    cstrlenβ = maximum(x->length(format_string(x[2])), keys(sdpcst))
-    cstrlenβ= max(cstrlenβ, length("j_expl"))
-
-    print_string(io, "#j_conj", cstrlenα, indentedprint=indentedprint)
-    print_string(io, "j_expl", cstrlenβ, indentedprint=indentedprint)
-    print_string(io, "Real(c_j)", 23, indentedprint=indentedprint)
-    print_string(io, "Imag(c_j)", 23, indentedprint=indentedprint)
-    println(io)
-
-    for ((α, β), λ) in sdpcst
-        print_string(io, format_string(α), cstrlenα, indentedprint=indentedprint)
-        print_string(io, format_string(β), cstrlenβ, indentedprint=indentedprint)
-        @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
-    end
-end
-
-function get_maxlenkey(dict::SortedDict{String, U}) where U
-    return maximum(map(x->length(x), keys(dict)))
-end
-
-function get_maxlenkey(dict::SortedDict{Tuple{Exponent,Exponent}, U}) where U
-    return maximum(map(x->((α, β)=x; length("($α, $β)")), keys(dict)))
+function print(io::IO, sdpcst::SDPCst; indentedprint=true)
+    print_cstfile(io, sdpcst; indentedprint=indentedprint, print_header=false)
 end
