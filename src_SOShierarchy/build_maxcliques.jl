@@ -220,6 +220,14 @@ function collect_cliquesvars(clique_keys, max_cliques)
     end
     return vars, blocname[1:end-1]
 end
+
+function print(io::IO, max_cliques::SortedDict{String, SortedSet{Variable}})
+    for (cliquename, vars) in max_cliques
+        print(io, "$cliquename = ")
+        for var in vars print(io, "$var, ") end
+        @printf(io, "\b\b \n")
+    end
+end
 #################################################################################
 ## Old stuff
 

@@ -45,7 +45,7 @@ function main()
         dmax = 1 ## To Be Removed
         for d=2:2:2*dmax  # Complex d definition, twice real one...
             info("Working on WB5, no eqs, q5min=$q5min, d=$d")
-            logpath = joinpath(testfolder, "WB5_v2max_$(q5min)_d_$(d)_noeq")
+            logpath = joinpath(testfolder, "WB5_q5min_$(q5min)_d_$(d)_noeq")
             ispath(logpath) && rm(logpath, recursive=true); mkpath(logpath)
             println("Saving file at $logpath")
 
@@ -67,7 +67,7 @@ function main()
         dmax = 1 ## To Be Removed
         for d=2:2:2*dmax  # Complex d definition, twice real one...
             info("Working on WB5, eqs, q5min=$q5min, d=$d")
-            logpath = joinpath(testfolder, "WB5_v2max_$(q5min)_d_$(d)_eq")
+            logpath = joinpath(testfolder, "WB5_q5min_$(q5min)_d_$(d)_eq")
             ispath(logpath) && rm(logpath, recursive=true); mkpath(logpath)
             println("Saving file at $logpath")
 

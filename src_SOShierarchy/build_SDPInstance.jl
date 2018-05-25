@@ -53,6 +53,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
     ## Build linear dict
     # Enforce clique coupling constraints on moments
     for (expo, cliques) in mmtrelax_pb.moments_overlap
+        expo == Exponent() && continue
         print_with_color(:light_cyan, "-> $expo - $(collect(cliques))\n")
         @assert length(cliques)>1
         cliqueref = first(cliques)
@@ -66,8 +67,8 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
             println("    Adding to $curmoment : $var*-1")
             @assert !haskey(sdplin, (refmoment, var))
             @assert !haskey(sdplin, (curmoment, var))
-            # sdplin[(refmoment, var)] =  1
-            # sdplin[(curmoment, var)] = -1
+            sdplin[(refmoment, var)] =  1
+            sdplin[(curmoment, var)] = -1
         end
     end
 
