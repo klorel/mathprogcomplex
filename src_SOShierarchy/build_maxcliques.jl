@@ -103,7 +103,7 @@ function get_locctrcliques(p::Polynomial, max_cliques::SortedDict{String, Sorted
 
         # Hopefully all variables are treated that way. Else repeat this process by choosing a clique. Again, which one ?
         if length(unaffected_vars) != 0
-            warn("get_locctrcliques(): length(unaffected_vars) = $(length(unaffected_vars))")
+            # warn("get_locctrcliques(): length(unaffected_vars) = $(length(unaffected_vars))") # TODO: better logging system...
             cliques_from_unaffvar = SortedDict{String, Int}()
             for var in unaffected_vars
                 for clique in var_to_cliques[var]

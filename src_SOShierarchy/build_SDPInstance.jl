@@ -17,27 +17,20 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
                 @assert expo.degree.conjvar == moment.conj_part.degree.conjvar
                 # Check the current monomial has correct degree
                 if (relaxctx.hierarchykind==:Complex) && ((expo.degree.explvar > relaxctx.di[cstrname]) || (expo.degree.conjvar > relaxctx.di[cstrname]))
-                    warn("convertMMtobase(): Found exponent pair of degree $(expo.degree) > $(relaxctx.di[cstrname]) for Complex hierarchy.\n($(expo), at $((γ, δ)) of MM matrix)")
+                    warn("build_SDPInstance(): Found exponent pair of degree $(expo.degree) > $(relaxctx.di[cstrname]) for Complex hierarchy.\n($(expo), at $((γ, δ)) of MM matrix)")
                 elseif (relaxctx.hierarchykind==:Real) && ((expo.degree.explvar > 2*relaxctx.di[cstrname]) || (expo.degree.conjvar != 0))
-                    warn("convertMMtobase(): Found exponent pair of degree $(expo.degree) > 2*$(relaxctx.di[cstrname]) for Real hierarchy.\n($(expo), at $((γ, δ)) of MM matrix)")
+                    warn("build_SDPInstance(): Found exponent pair of degree $(expo.degree) > 2*$(relaxctx.di[cstrname]) for Real hierarchy.\n($(expo), at $((γ, δ)) of MM matrix)")
                 end
-                !isnan(λ) || warn("convertMMtobase(): isNaN ! constraint $cstrname - clique $blocname - mm entry $((γ, δ)) - moment $(expo)")
-
-                # Determine which moment to affect the current coefficient.
-                # α, β = split_expo(relaxctx, expo)
-                # moment = Moment(expo, cliquename)
-                #### TODO : Handle one ctr several cliques case...
+                !isnan(λ) || warn("build_SDPInstance(): isNaN ! constraint $cstrname - clique $blocname - mm entry $((γ, δ)) - moment $(expo)")
 
                 # Add the current coeff to the SDP problem
                 # Constraints are fα - ∑ Bi.Zi = 0
                 if mmt.matrixkind == :SDP || mmt.matrixkind == :SDPC
-                    # key = ((α, β), block_name, γ, δ)
                     key = (moment, block_name, γ, δ)
                     @assert !haskey(sdpblocks, key)
 
                     sdpblocks[key] = -λ
                 elseif mmt.matrixkind == :Sym || mmt.matrixkind == :SymC
-                    # key = ((α, β), block_name, product(γ, δ))
                     key = (moment, block_name, product(γ, δ))
                     haskey(sdplinsym, key) || (sdplinsym[key] = 0)
 
@@ -54,7 +47,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
     # Enforce clique coupling constraints on moments
     for (expo, cliques) in mmtrelax_pb.moments_overlap
         expo == Exponent() && continue
-        print_with_color(:light_cyan, "-> $expo - $(collect(cliques))\n")
+        # print_with_color(:light_cyan, "-> $expo - $(collect(cliques))\n")
         @assert length(cliques)>1
         cliqueref = first(cliques)
 
@@ -63,8 +56,6 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
             curmoment = Moment(expo, clique)
             var = Exponent(get_ccmultvar(relaxctx, expo, cliqueref, clique))
 
-            println("  - Adding to $refmoment : $var*1")
-            println("    Adding to $curmoment : $var*-1")
             @assert !haskey(sdplin, (refmoment, var))
             @assert !haskey(sdplin, (curmoment, var))
             sdplin[(refmoment, var)] =  1
@@ -75,15 +66,12 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
     ## Build constants dict
     for (moment, fαβ) in mmtrelax_pb.objective
         # Determine which moment to affect the current coefficient.
-        # α, β = split_expo(relaxctx, expo)
 
         if !haskey(sdpcst, moment)
-            # sdpcst[(α, β)] = 0.0
             sdpcst[moment] = 0.0
         end
 
         # Constraints are fα - ∑ Bi.Zi = 0
-        # sdpcst[(α, β)] += fαβ
         sdpcst[moment] += fαβ
     end
 

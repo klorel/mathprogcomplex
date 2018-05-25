@@ -175,7 +175,6 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
   dualobj = NaN
 
   nbarvar = length(problem.id_to_sdpblock)
-  println("nbarvar = ",   nbarvar)
 
   barvardim = [ length(problem.id_to_sdpblock[block].var_to_id) for block in 1:nbarvar ]
 
@@ -183,8 +182,6 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
 
   numcon, bkc, blc, buc = get_ctrbounds(problem)
   sub, bkx, blx, bux = get_varbounds(problem)
-  println("numcon = ",   numcon)
-  println("numvar = ",   numvar)
 
   barcj, barck, barcl, barcjkl , barai, baraj, barak, baral, baraijkl = get_SDPtriplets(problem, debug=debug)
 

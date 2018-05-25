@@ -37,8 +37,6 @@ ctr_names = SortedSet{SDP_Moment}([(instance.CONST[i, 1], instance.CONST[i, 2], 
     end
   end
 
-  @show length(obj_keys)
-  @show collect(obj_keys)
   length(obj_keys) == 0 && error("No ctrkey matching objective key (\"1\", \"1\", .)")
   sdp.obj_keys = obj_keys
 
@@ -75,7 +73,6 @@ function set_vartypes!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   end
 
   if debug
-    warn("TBD")
   end
 end
 

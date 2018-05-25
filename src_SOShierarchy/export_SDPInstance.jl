@@ -287,9 +287,8 @@ function print_typesfile(io::IO, block_to_vartype)
         if vartype in Set([:SDP, :SDPC])
             print_string(io, blockname, cstrlen)
             println(io, " $(string(vartype))")
-        else
-            warn("Ignoring variable $blockname of type $vartype")
         end
+        # warn("Ignoring variable $blockname of type $vartype") ## NOTE: better logging system.
     end
 end
 

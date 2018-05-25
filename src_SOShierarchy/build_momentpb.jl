@@ -81,7 +81,7 @@ function get_exponentclique(expo, var_to_cliques)
     length(cliques) == 0 && error("get_exponentclique(): $expo is split amongst several cliques.\nMaximal cliques provided are not suitable for this relaxation.")
 
     clique = first(cliques)
-    length(cliques) > 1 && warn("get_exponentclique(): $expo appears in $(length(cliques)) cliques : $cliques.\nChoosing first one $clique")
+    # length(cliques) > 1 && warn("get_exponentclique(): $expo appears in $(length(cliques)) cliques : $cliques.\nChoosing first one $clique") ## TODO: better logging system
     return clique
 end
 
@@ -124,15 +124,6 @@ function product(mmt, expo, var_to_cliques)
     return Moment(resexpo, clique)
 end
 
-# ## Number type
-# function product!(λ::Number, mm::MomentMatrix)
-#     for (key, momentpoly) in mm.mm
-#         for (moment, val) in momentpoly
-#             momentpoly[moment] = λ*val
-#         end
-#     end
-# end
-
 # function evaluate(mm::MomentMatrix, pt::Point)
 #     mm_eval = SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
 #     for (key, p) in mm.mm
@@ -167,16 +158,10 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
         end
     end
 
-    for (var, cliques) in var_to_cliques
-        @show var, collect(cliques)
-    end
-
     ## Building linear-in-moments objective
-    @show "building objective"
     objective = SortedDict{Moment, Number}()
     for (expo, val) in problem.objective
         clique = get_exponentclique(expo, var_to_cliques)
-        @show expo, clique
         objective[Moment(expo, clique)] = val
     end
 
@@ -184,19 +169,14 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
     ## Building linear matrix inequalities
     momentmatrices = SortedDict{Tuple{String, String}, MomentMatrix}()
 
-    @show "building moment matrices"
     ## Build moment matrix
     for (cliquename, vars) in max_cliques
         dcl = momentmat_param[cliquename]
         momentmatrices[(get_momentcstrname(), cliquename)] = MomentMatrix(relax_ctx, vars, dcl, relax_ctx.symmetries,
                                                                                                 relax_ctx.cstrtypes[get_momentcstrname()],
                                                                                                 default_clique = cliquename)
-        # @show cliquename
-        # print(momentmatrices[(get_momentcstrname(), cliquename)])
-        # sleep(3)
     end
 
-    @show "Building localizing matrices"
     ## Build localizing matrices
     for (cstrname, cstr) in problem.constraints
 
@@ -212,16 +192,9 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
             mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries,
                                                        relax_ctx.cstrtypes[cstrname_lo],
                                                        var_to_cliques = var_to_cliques)
-            print_with_color(:green, "$cstrname, :Lo\n")
-            @show length(mmt.mm)
-            warn("$cstrname - Initial mmt is")
-            println(mmt)
+            # print_with_color(:green, "$cstrname, :Lo\n") ##NOTE: find better logging system.
             product!(mmt, cstr.p - cstr.lb, var_to_cliques)
-            warn("$cstrname - New mmt is below. p = $(cstr.p - cstr.lb)")
-            @show length(cstr.p - cstr.lb)
-            println(mmt)
             momentmatrices[(cstrname_lo, cliquename)] = mmt
-            # sleep(3)
 
             # Deal with upper inequality
             clique_keys, order = localizingmat_param[cstrname_up]
@@ -231,16 +204,9 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
             mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries,
                                                        relax_ctx.cstrtypes[cstrname_up],
                                                        var_to_cliques = var_to_cliques)
-            print_with_color(:green, "$cstrname, :Up\n")
-            @show length(mmt.mm)
-            warn("$cstrname - Initial mmt is")
-            println(mmt)
+            # print_with_color(:green, "$cstrname, :Up\n") ##NOTE: find better logging system.
             product!(mmt, cstr.ub - cstr.p, var_to_cliques)
-            warn("$cstrname - New mmt is below. p = $(cstr.p - cstr.lb)")
-            @show length(cstr.ub - cstr.p)
-            println(mmt)
             momentmatrices[(cstrname_up, cliquename)] = mmt
-            # sleep(3)
 
             # # Deal with upper inequality, no recomputing of variables or moment matrix if possible
             # clique_keys_up, order_up = localizingmat_param[cstrname_up]
@@ -271,17 +237,10 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
                                                        var_to_cliques = var_to_cliques)
 
 
-            print_with_color(:green, "$cstrname, :Up\n")
-            @show length(mmt.mm)
-            warn("$cstrname - Initial mmt is")
-            println(mmt)
+            # print_with_color(:green, "$cstrname, :Up\n") ##NOTE: find better logging system.
             product!(mmt, get_normalizedpoly(cstr, cstrtype), var_to_cliques)
-            warn("$cstrname - New mmt is below. p = $(get_normalizedpoly(cstr, cstrtype))")
-            @show length(get_normalizedpoly(cstr, cstrtype))
-            println(mmt)
 
             momentmatrices[(get_cstrname(cstrname, cstrtype), cliquename)] = mmt
-            # sleep(3)
         end
     end
 
@@ -302,18 +261,15 @@ function MomentRelaxationPb(relax_ctx, problem, momentmat_param::SortedDict{Stri
         end
     end
 
-    @show length(expo_to_cliques)
+    nb_expos = length(expo_to_cliques)
     for (expo, cliques) in expo_to_cliques
-        if length(cliques) > 1
-            # print_with_color(:light_cyan, "$expo  -> $(collect(cliques))\n")
-        else
-            # print("$expo  -> $(collect(cliques))\n")
-        end
-
         length(cliques) > 1 || delete!(expo_to_cliques, expo)
     end
 
-    @show length(expo_to_cliques)
+    nb_overlap_expos = length(expo_to_cliques)
+    if nb_overlap_expos > 0
+        info("Nb exponents coupled: $nb_overlap_expos (over $nb_expos)")
+    end
 
     return MomentRelaxationPb(objective, momentmatrices, expo_to_cliques)
 end
