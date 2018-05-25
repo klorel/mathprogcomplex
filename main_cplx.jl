@@ -55,16 +55,17 @@ function main()
 
     path = joinpath(pwd(), "Mosek_runs", "worksdp_cplx")
     mkpath(path)
-    export_SDP(relax_ctx, sdpinstance, path)
+    export_SDP(relax_ctx, sdpinstance, path, renamemoments=false)
 
     ## Real instance
     sdpreal = SDPInstance_cplx2real(sdpinstance)
     println("\n--------------------------------------------------------")
-    println("sdpinstance REAL = \n$sdpinstance")
+    println("sdpinstance REAL = \n$sdpreal")
 
     path = joinpath(pwd(), "Mosek_runs", "worksdp_real")
+    ispath(path) && rm(path, recursive=true)
     mkpath(path)
-    export_SDP(relax_ctx, sdpreal, path)
+    export_SDP(relax_ctx, sdpreal, path, renamemoments=false)
 
     sdp_instance = read_SDPInstance(path)
 
