@@ -47,6 +47,8 @@ end
 function print(io::IO, mm::MomentMatrix)
     keylen = maximum(x->length("($(x[1]), $(x[2])) ⟶  "), keys(mm.mm))
 
+    maxorder = 0
+
     for (key, momentpoly) in mm.mm
         print_string(io, "($(key[1]), $(key[2])) ⟶  ", keylen)
 
@@ -54,10 +56,13 @@ function print(io::IO, mm::MomentMatrix)
         println(io, "$(moment_first.clique) -- $(moment_first.conj_part) × $(moment_first.expl_part) × $val_first")
 
         for (moment, val) in momentpoly
+            maxorder = max(maxorder, moment.expl_part.degree.explvar)
+
             (moment_first, val_first) == (moment, val) && continue
-            println(io, " "^keylen, "$(moment.clique) -- $(moment.conj_part) × $(moment.expl_part) × $val")
+            println(io, " "^(keylen+1), "$(moment.clique) -- $(moment.conj_part) × $(moment.expl_part) × $val")
         end
     end
+    info(io, "maxorder is $maxorder")
     print(io, " $(mm.matrixkind)")
 end
 

@@ -4,11 +4,15 @@ include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
 
 function main()
 
-    problem = buildPOP_WB2(rmeqs=false) #v2max=0.983
-
+    problem = buildPOP_WB2(v2max=1.022, setnetworkphase=false)
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         # symmetries=[PhaseInvariance],
-                                        d = 2)
+                                        d = 1)
+
+    problem = buildPOP_WB2(v2max=1.022, setnetworkphase=true)
+    relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+                                        # symmetries=[PhaseInvariance],
+                                        d = 1)
 
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")
@@ -54,8 +58,8 @@ function main()
     # Convert to a primal SDP problem
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
 
-    println("\n--------------------------------------------------------")
-    println("sdpinstance = \n$sdpinstance")
+    # println("\n--------------------------------------------------------")
+    # println("sdpinstance = \n$sdpinstance")
 
     path = joinpath(pwd(), "Mosek_runs", "worksdp")
     mkpath(path)

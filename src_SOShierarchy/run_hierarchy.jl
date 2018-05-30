@@ -1,6 +1,7 @@
 
 function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath; indentedprint=false,
-                                                                                max_cliques::SortedDict{String, SortedSet{Variable}}=SortedDict{String, SortedSet{Variable}}())
+                                                                                max_cliques::SortedDict{String, SortedSet{Variable}}=SortedDict{String, SortedSet{Variable}}(),
+                                                                                save_mmtpb=false)
 
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
@@ -13,8 +14,14 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath; 
     momentmat_param, localizingmat_param = build_sparsity(relax_ctx, problem, max_cliques)
 
     ########################################
-    # Calcul des matrices de moment
+    # Compute moment and localization matrices
     mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
+
+    if save_mmtpb
+        open(joinpath(logpath, "mmt_pb.log"), "w") do fout
+            print(fout, mmtrel_pb)
+        end
+    end
 
     ########################################
     # Convert to a primal SDP problem
