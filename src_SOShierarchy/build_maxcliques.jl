@@ -17,11 +17,21 @@ function build_sparsity(relax_ctx, problem, max_cliques::SortedDict{String, Sort
             ctrname_lo, ctrname_up = get_cstrname(ctrname, ctrtype)
             di_lo, ki_lo = relax_ctx.di[ctrname_lo], relax_ctx.ki[ctrname_lo]
             di_up, ki_up = relax_ctx.di[ctrname_up], relax_ctx.ki[ctrname_up]
-            localizingmat_param[ctrname_lo] = (ctrcliques, di_lo-ki_lo)
-            localizingmat_param[ctrname_up] = (ctrcliques, di_up-ki_up)
+
+            if relax_ctx.hierarchykind==:Cplx
+                localizingmat_param[ctrname_lo] = (ctrcliques, di_lo-ki_lo)
+                localizingmat_param[ctrname_up] = (ctrcliques, di_up-ki_up)
+            elseif relax_ctx.hierarchykind==:Real
+                localizingmat_param[ctrname_lo] = (ctrcliques, di_lo-ceil(ki_lo/2))
+                localizingmat_param[ctrname_up] = (ctrcliques, di_up-ceil(ki_up/2))
+            end
         else # :ineqlo, :ineqhi, :eq
             di, ki = relax_ctx.di[get_cstrname(ctrname, ctrtype)], relax_ctx.ki[get_cstrname(ctrname, ctrtype)]
-            localizingmat_param[get_cstrname(ctrname, ctrtype)] = (ctrcliques, di-ki)
+            if relax_ctx.hierarchykind == :Cplx
+                localizingmat_param[get_cstrname(ctrname, ctrtype)] = (ctrcliques, di-ki)
+            elseif relax_ctx.hierarchykind == :Real
+                localizingmat_param[get_cstrname(ctrname, ctrtype)] = (ctrcliques, di-ceil(ki/2))
+            end
         end
     end
 

@@ -61,7 +61,7 @@ end
 ### OPF problems
 ############################
 
-function buildPOP_WB2(; v2max = 0.976, rmeqs = false)
+function buildPOP_WB2(; v2max = 0.976, rmeqs = false, fixvariable=true)
     OPFpbs = load_OPFproblems(MatpowerInput, joinpath("..", "data", "data_Matpower", "matpower", "WB2.m"))
     problem_c = build_globalpb!(OPFpbs)
 
@@ -69,16 +69,21 @@ function buildPOP_WB2(; v2max = 0.976, rmeqs = false)
     !rmeqs || change_eq_to_ineq!(problem_c)
     problem = pb_cplx2real(problem_c)
 
-    ## Fixing volt phase of last bus to 0
-    lastctr = problem.constraints["BaseCase_2_Volt_VOLTM_Re"]
-    rm_constraint!(problem, "BaseCase_2_Volt_VOLTM_Re")
+    if fixvariable
+        ## Fixing volt phase of last bus to 0
+        lastctr = problem.constraints["BaseCase_2_Volt_VOLTM_Re"]
+        rm_constraint!(problem, "BaseCase_2_Volt_VOLTM_Re")
 
-    ## Setting imag part to 0
-    pt = Point(SortedDict(Variable("BaseCase_2_VOLT_Im", Real)=>0.0), isdense=true)
-    infer_problem!(problem, pt)
+        ## Setting imag part to 0
+        # pt = Point(SortedDict(Variable("BaseCase_2_VOLT_Im", Real)=>0.0), isdense=true)
+        # infer_problem!(problem, pt)
 
-    add_constraint!(problem, "BaseCase_2_Volt_VOLTM", sqrt(lastctr.lb) << Variable("BaseCase_2_VOLT_Re", Real) << v2max)
-    problem.constraints["BaseCase_2_Volt_VOLTM"].ub = v2max
+        add_constraint!(problem, "BaseCase_2_Volt_VOLTM_Re", sqrt(lastctr.lb) << Variable("BaseCase_2_VOLT_Re", Real) << v2max)
+        add_constraint!(problem, "BaseCase_2_Volt_VOLTM_Im", Variable("BaseCase_2_VOLT_Im", Real) == 0)
+    else
+        problem.constraints["BaseCase_2_Volt_VOLTM_Re"].ub = v2max^2
+    end
+
     return problem
 end
 
