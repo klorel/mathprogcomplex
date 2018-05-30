@@ -26,7 +26,7 @@ function main()
                                             # symmetries=[PhaseInvariance],
                                             d = d)
 
-        logpath = joinpath(testfolder, "v2max_$(v2max)_d_$(d)_"*(phaseset?"phaseset":"phasefree"))
+        logpath = joinpath(testfolder, "v2max_$(v2max)_d_$(d)_"*(phaseset?"phaseset":"phasefree")*"_noeqs")
         !ispath(logpath) || rm(logpath, recursive=true)
         mkpath(logpath)
 
@@ -47,7 +47,7 @@ function main()
                                             # symmetries=[PhaseInvariance],
                                             d = d)
 
-        logpath = joinpath(testfolder, "v2max_$(v2max)_d_$(d)_"*(phaseset?"phaseset":"phasefree"))
+        logpath = joinpath(testfolder, "v2max_$(v2max)_d_$(d)_"*(phaseset?"phaseset":"phasefree")*"_noeqs")
         !ispath(logpath) || rm(logpath, recursive=true)
         mkpath(logpath)
 
@@ -67,7 +67,7 @@ function main()
                                             # symmetries=[PhaseInvariance],
                                             d = d)
 
-        logpath = joinpath(testfolder, "v2max_$(v2max)_d_$(d)_"*(phaseset?"phaseset":"phasefree"))
+        logpath = joinpath(testfolder, "v2max_$(v2max)_d_$(d)_"*(phaseset?"phaseset":"phasefree")*"_eqs")
         !ispath(logpath) || rm(logpath, recursive=true)
         mkpath(logpath)
 
@@ -88,7 +88,7 @@ function main()
                                             # symmetries=[PhaseInvariance],
                                             d = d)
 
-        logpath = joinpath(testfolder, "v2max_$(v2max)_d_$(d)_"*(phaseset?"phaseset":"phasefree"))
+        logpath = joinpath(testfolder, "v2max_$(v2max)_d_$(d)_"*(phaseset?"phaseset":"phasefree")*"_eqs")
         !ispath(logpath) || rm(logpath, recursive=true)
         mkpath(logpath)
 
