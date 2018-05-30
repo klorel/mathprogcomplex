@@ -3,9 +3,11 @@ include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
 
 
 function main()
+    rmeqs = true
 
     OPFpbs = load_OPFproblems(MatpowerInput, joinpath("..", "data", "data_Matpower", "matpower", "WB2.m"))
     problem = build_globalpb!(OPFpbs)
+    !rmeqs || change_eq_to_ineq!(problem)
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Complex,
                                         # symmetries=[PhaseInvariance],
@@ -67,6 +69,51 @@ function main()
     mkpath(path)
     export_SDP(relax_ctx, sdpreal, path, renamemoments=false)
 
+    # sdp_instance = read_SDPInstance(path)
+
+    # println("VAR_TYPES size:     $(size(sdp_instance.VAR_TYPES))")
+    # println("BLOCKS size:        $(size(sdp_instance.BLOCKS))")
+    # println("LINEAR size:        $(size(sdp_instance.LINEAR))")
+    # println("CONST size:         $(size(sdp_instance.CONST))")
+
+    # sdp = SDP_Problem()
+
+    # set_constraints!(sdp, sdp_instance)
+    # set_vartypes!(sdp, sdp_instance)
+    # set_blocks!(sdp, sdp_instance)
+    # set_linvars!(sdp, sdp_instance)
+
+    # set_matrices!(sdp, sdp_instance)
+    # set_linear!(sdp, sdp_instance)
+    # set_const!(sdp, sdp_instance)
+
+    # # println(sdp)
+
+    # primal = SortedDict{Tuple{String,String,String}, Float64}()
+    # dual = SortedDict{Tuple{String, String, String}, Float64}()
+
+    # primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual)
+
+    # # println("Primal solution")
+    # # for ((blockname, var1, var2), val) in primal
+    # # @printf("%15s %5s %5s %f\n", blockname, var1, var2, val)
+    # # end
+
+    # # println("\nDual solution NEGATED")
+    # # for var in problem.variables
+    # #     ctrname = get_momentcstrname()
+    # #     var1 = var[1]
+    # #     var2 = "1"
+    # #     val = dual[(ctrname, var1, var2)]
+    # #     println("($(ctrname), $(var1), $(var2)) = $(-val)")
+    # # end
+
+    # println("Objectives : $primobj, $dualobj")
+    return path
+end
+
+function run_mosek(path::String)
+
     sdp_instance = read_SDPInstance(path)
 
     println("VAR_TYPES size:     $(size(sdp_instance.VAR_TYPES))")
@@ -91,22 +138,6 @@ function main()
     dual = SortedDict{Tuple{String, String, String}, Float64}()
 
     primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual)
-
-    # # println("Primal solution")
-    # # for ((blockname, var1, var2), val) in primal
-    # # @printf("%15s %5s %5s %f\n", blockname, var1, var2, val)
-    # # end
-
-    # # println("\nDual solution NEGATED")
-    # # for var in problem.variables
-    # #     ctrname = get_momentcstrname()
-    # #     var1 = var[1]
-    # #     var2 = "1"
-    # #     val = dual[(ctrname, var1, var2)]
-    # #     println("($(ctrname), $(var1), $(var2)) = $(-val)")
-    # # end
-
-    # println("Objectives : $primobj, $dualobj")
 end
 
-main()
+# main()
