@@ -1,7 +1,11 @@
 
 function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath; indentedprint=false,
                                                                                 max_cliques::SortedDict{String, SortedSet{Variable}}=SortedDict{String, SortedSet{Variable}}(),
-                                                                                save_mmtpb=false)
+                                                                                save_pbs=false)
+
+    open(joinpath(logpath, "pb_opt.log"), "w") do fout
+        print(fout, problem)
+    end
 
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
@@ -17,7 +21,7 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath; 
     # Compute moment and localization matrices
     mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
 
-    if save_mmtpb
+    if save_pbs
         open(joinpath(logpath, "mmt_pb.log"), "w") do fout
             print(fout, mmtrel_pb)
         end

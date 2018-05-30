@@ -30,7 +30,7 @@ function main()
         !ispath(logpath) || rm(logpath, recursive=true)
         mkpath(logpath)
 
-        (cur_obj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, save_mmtpb=true)
+        (cur_obj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, save_pbs=true)
 
         outstream = outstream * @sprintf("%15f  %6i  %15f  %15f  %15f  | %15f  %20f  %15f\n", v2max, d, cur_obj, CJobj, abs(cur_obj-CJobj), t, bytes/10^6, gctime)
     end
@@ -51,7 +51,7 @@ function main()
         !ispath(logpath) || rm(logpath, recursive=true)
         mkpath(logpath)
 
-        (cur_obj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, save_mmtpb=true)
+        (cur_obj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, save_pbs=true)
 
         outstream = outstream * @sprintf("%15f  %6i  %15f  %15f  %15f  | %15f  %20f  %15f\n", v2max, d, cur_obj, CJobj, abs(cur_obj-CJobj), t, bytes/10^6, gctime)
     end
@@ -71,7 +71,7 @@ function main()
         !ispath(logpath) || rm(logpath, recursive=true)
         mkpath(logpath)
 
-        (cur_obj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, save_mmtpb=true)
+        (cur_obj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, save_pbs=true)
 
         outstream = outstream * @sprintf("%15f  %6i  %15f  %15f  %15f  | %15f  %20f  %15f\n", v2max, d, cur_obj, CJobj, abs(cur_obj-CJobj), t, bytes/10^6, gctime)
     end
@@ -92,7 +92,7 @@ function main()
         !ispath(logpath) || rm(logpath, recursive=true)
         mkpath(logpath)
 
-        (cur_obj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, save_mmtpb=true)
+        (cur_obj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, save_pbs=true)
 
         outstream = outstream * @sprintf("%15f  %6i  %15f  %15f  %15f  | %15f  %20f  %15f\n", v2max, d, cur_obj, CJobj, abs(cur_obj-CJobj), t, bytes/10^6, gctime)
     end

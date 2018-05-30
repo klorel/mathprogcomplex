@@ -50,10 +50,7 @@ function main()
         relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                             d = d)
 
-        open(joinpath(logpath, "pb_opt.log"), "w") do fout
-            print(fout, problem)
-        end
-        (primobj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, save_mmtpb=true);
+        (primobj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, save_pbs=true);
         primobjectives_noeqs[(v2max, d)] = (primobj, t, bytes / 10^6, gctime)
 
         ## Minimal CV order of Phase-fixed OPF according to Josz
@@ -68,10 +65,7 @@ function main()
         relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                             d = d)
 
-        open(joinpath(logpath, "pb_opt.log"), "w") do fout
-            print(fout, problem)
-        end
-        (primobj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, save_mmtpb=true);
+        (primobj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, save_pbs=true);
         primobjectives_noeqs[(v2max, d)] = (primobj, t, bytes / 10^6, gctime)
     end
 
