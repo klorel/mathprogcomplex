@@ -43,9 +43,9 @@ function main(args)
     problem = pb_cplx2real(problem_C)
 
     ## Build relaxation
-    @show input_params["d"]*2
+    @show input_params["d"]
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        d = input_params["d"]*2) ## NOTE: to be corrected.
+                                        d = input_params["d"])
 
     max_cliques = get_maxcliques(relax_ctx, problem)
 
