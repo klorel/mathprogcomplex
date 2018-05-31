@@ -1,3 +1,8 @@
+using Base.Test
+ROOT = pwd()
+include(joinpath("..", "src_SOShierarchy", "SOShierarchy.jl"))
+
+
 ## Application of the Moment–SOS Approach to Global Optimization of the OPF Problem
 # C. Josz, J. Maeght, P. Panciatici, and J. Ch. Gilbert
 # https://arxiv.org/pdf/1311.6370.pdf

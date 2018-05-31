@@ -1,3 +1,7 @@
+using Base.Test
+ROOT = pwd()
+include(joinpath("..", "src_SOShierarchy", "SOShierarchy.jl"))
+
 function run_pb_orders(problem, order_to_obj)
     data = SortedDict()
     for d in keys(order_to_obj)

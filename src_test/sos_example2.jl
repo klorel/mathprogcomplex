@@ -1,3 +1,8 @@
+using Base.Test
+ROOT = pwd()
+include(joinpath("..", "src_SOShierarchy", "SOShierarchy.jl"))
+
+
 ## GLOBAL OPTIMIZATION WITH POLYNOMIALS AND THE PROBLEM OF MOMENTS
 # JEAN B. LASSERRE, 2001
 # http://www.ii.uib.no/~lennart/drgrad/Lasserre2001.pdf
