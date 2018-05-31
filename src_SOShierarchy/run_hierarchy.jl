@@ -9,7 +9,7 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath; 
 
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
-    if max_cliques == Dict{String, SortedSet{Variable}}()
+    if max_cliques == SortedDict{String, SortedSet{Variable}}()
         max_cliques = get_maxcliques(relax_ctx, problem)
     end
 
@@ -63,4 +63,28 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath; 
     end
 
     return primobj, dualobj
+end
+
+function build_relaxation(problem::Problem, relax_ctx::RelaxationContext; max_cliques::SortedDict{String, SortedSet{Variable}} = SortedDict{String, SortedSet{Variable}}())
+
+    ########################################
+    # Construction du sparsity pattern, extension chordale, cliques maximales.
+    if max_cliques == Dict{String, SortedSet{Variable}}()
+        max_cliques = get_maxcliques(relax_ctx, problem)
+    end
+
+    ########################################
+    # Compute moment matrices parameters: order et variables
+    momentmat_param, localizingmat_param = build_sparsity(relax_ctx, problem, max_cliques)
+
+    ########################################
+    # Compute moment and localization matrices
+    mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
+
+    ########################################
+    # Convert to a primal SDP problem
+    sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
+
+    return sdpinstance
+
 end
