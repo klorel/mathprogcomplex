@@ -21,16 +21,16 @@
                                             d = 1)
 
         primobj, dualobj =run_hierarchy(problem, relax_ctx, logpath)
-        @test primobj ≈ -3 atol=0.6
-        @test dualobj ≈ -3 atol=0.6
+        @test primobj ≈ -3 atol=1e-6
+        @test dualobj ≈ -3 atol=1e-6
 
         ## Order 2
         relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                             d = 2)
 
         primobj, dualobj =run_hierarchy(problem, relax_ctx, logpath)
-        @test primobj ≈ -2 atol=0.6
-        @test dualobj ≈ -2 atol=0.6
+        @test primobj ≈ -2 atol=1e-6
+        @test dualobj ≈ -2 atol=1e-6
 
         rm(logpath, recursive = true)
     end

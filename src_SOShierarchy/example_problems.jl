@@ -61,7 +61,7 @@ end
 ### OPF problems
 ############################
 
-function buildPOP_WB2(; v2max = 0.976, rmeqs = false, setnetworkphase=true, addball=true)
+function buildPOP_WB2(; v2max = 0.976, rmeqs = false, setnetworkphase=false, addball=false)
     OPFpbs = load_OPFproblems(MatpowerInput, joinpath("..", "data", "data_Matpower", "matpower", "WB2.m"))
     problem_c = build_globalpb!(OPFpbs)
 
