@@ -39,34 +39,34 @@ function main()
         dmax = vals[1]
 
         ## Rank relaxation of WB2 vanilla
-        problem = buildPOP_WB2(v2max=v2max, rmeqs=true, setnetworkphase=false)
-        d = 1
+        problem = buildPOP_WB2(v2max=v2max, setnetworkphase=true)
 
-        info("Working on WB2, no eqs, v2max=$v2max, d=$d")
-        logpath = joinpath(testfolder, "WB2_v2max_$(v2max)_d_$(d)_noeq")
-        ispath(logpath) && rm(logpath, recursive=true); mkpath(logpath)
-        println("Saving file at $logpath")
+        for d = 1:dmax
+            info("Working on WB2, no eqs, v2max=$v2max, d=$d")
+            logpath = joinpath(testfolder, "WB2_v2max_$(v2max)_d_$(d)_noeq")
+            ispath(logpath) && rm(logpath, recursive=true); mkpath(logpath)
+            println("Saving file at $logpath")
 
-        relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                            d = d)
+            relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+                                                d = d)
 
-        (primobj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, save_pbs=true);
-        primobjectives_noeqs[(v2max, d)] = (primobj, t, bytes / 10^6, gctime)
+            (primobj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, save_pbs=true);
+            primobjectives_noeqs[(v2max, d)] = (primobj, t, bytes / 10^6, gctime)
+        end
+        # ## Minimal CV order of Phase-fixed OPF according to Josz
+        # problem = buildPOP_WB2(v2max=v2max, rmeqs=true, setnetworkphase=true)
+        # d = dmax
 
-        ## Minimal CV order of Phase-fixed OPF according to Josz
-        problem = buildPOP_WB2(v2max=v2max, rmeqs=true, setnetworkphase=true)
-        d = dmax
+        # info("Working on WB2, no eqs, v2max=$v2max, d=$d")
+        # logpath = joinpath(testfolder, "WB2_v2max_$(v2max)_d_$(d)_noeq")
+        # ispath(logpath) && rm(logpath, recursive=true); mkpath(logpath)
+        # println("Saving file at $logpath")
 
-        info("Working on WB2, no eqs, v2max=$v2max, d=$d")
-        logpath = joinpath(testfolder, "WB2_v2max_$(v2max)_d_$(d)_noeq")
-        ispath(logpath) && rm(logpath, recursive=true); mkpath(logpath)
-        println("Saving file at $logpath")
+        # relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+        #                                     d = d)
 
-        relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                            d = d)
-
-        (primobj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, save_pbs=true);
-        primobjectives_noeqs[(v2max, d)] = (primobj, t, bytes / 10^6, gctime)
+        # (primobj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, save_pbs=true);
+        # primobjectives_noeqs[(v2max, d)] = (primobj, t, bytes / 10^6, gctime)
     end
 
     # primobjectives_eqs = SortedDict()
