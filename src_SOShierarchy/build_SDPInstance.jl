@@ -31,6 +31,8 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
 
                     sdpblocks[key] = -λ
                 elseif mmt.matrixkind == :Sym || mmt.matrixkind == :SymC
+                    ## TODO: look into ht_keyindex2!, ht_keyindex for avoiding two dict table lookup
+                    # Maybe implement this operation (if haskey add, else set) using 'setindex!(h::Dict{K,V}, v0, key::K) where V where K' as inspiration
                     key = (moment, block_name, product(γ, δ))
                     haskey(sdplinsym, key) || (sdplinsym[key] = 0)
 
@@ -79,25 +81,25 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
 end
 
 
-"""
-    α, β = split_expo(expo::Exponent)
+# """
+#     α, β = split_expo(expo::Exponent)
 
-    Split the exponent into two exponents of conjugated and explicit variables in the complex case.
-    Real case is not supported yet.
-"""
-function split_expo(relaxctx::RelaxationContext, expo::Exponent)
-    α, β = Exponent(), Exponent()
+#     Split the exponent into two exponents of conjugated and explicit variables in the complex case.
+#     Real case is not supported yet.
+# """
+# function split_expo(relaxctx::RelaxationContext, expo::Exponent)
+#     α, β = Exponent(), Exponent()
 
-    for (var, deg) in expo
-        product!(α, Exponent(SortedDict(var=>Degree(0, deg.conjvar))))
-        product!(β, Exponent(SortedDict(var=>Degree(deg.explvar, 0))))
-    end
+#     for (var, deg) in expo
+#         product!(α, Exponent(SortedDict(var=>Degree(0, deg.conjvar))))
+#         product!(β, Exponent(SortedDict(var=>Degree(deg.explvar, 0))))
+#     end
 
-    if (relaxctx.hierarchykind == :Real) && (α.degree != Degree(0,0))
-        error("split_expo(): Inconsistent degree $α, $β found for $(relaxctx.hierarchykind) hierarchy.")
-    end
-    return α, β
-end
+#     if (relaxctx.hierarchykind == :Real) && (α.degree != Degree(0,0))
+#         error("split_expo(): Inconsistent degree $α, $β found for $(relaxctx.hierarchykind) hierarchy.")
+#     end
+#     return α, β
+# end
 
 
 function print(io::IO, sdpinst::SDPInstance)

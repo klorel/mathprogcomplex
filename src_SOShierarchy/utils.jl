@@ -106,3 +106,88 @@ function print_cmat(mat::AbstractArray, round = 1e-3)
         @printf("\n")
     end
 end
+
+import Base: hashindex, isslotempty, isslotmissing, _setindex!
+
+
+
+### Efficient dict manipulation
+"""
+    addindex!(h::Dict{K,V}, v0, key::K) where V<:Number where K
+
+    Add the value `v0` to `h[key]` if `key` is already a key, else add the pair `key=>v0`.
+"""
+function addindex!(h::Dict{K,V}, v0, key::K) where V<:Number where K
+    v = convert(V, v0)
+    index = ht_keyindex2!(h, key)
+
+    if index > 0
+        h.age += 1
+        @inbounds h.keys[index] = key
+        @inbounds h.vals[index] += v
+    else
+        @inbounds _setindex!(h, v, key, -index)
+    end
+
+    return h
+end
+
+
+
+
+#####################################################################################
+###  Utils functions, duplicate from base/dict.jl ... (TODO: fix this ducplicate)
+#####################################################################################
+
+# get the index where a key is stored, or -pos if not present
+# and the key would be inserted at pos
+# This version is for use by setindex! and get!
+function ht_keyindex2!(h::Dict{K,V}, key) where V where K
+    age0 = h.age
+    sz = length(h.keys)
+    iter = 0
+    maxprobe = h.maxprobe
+    index = hashindex(key, sz)
+    avail = 0
+    keys = h.keys
+
+    @inbounds while true
+        if isslotempty(h,index)
+            if avail < 0
+                return avail
+            end
+            return -index
+        end
+
+        if isslotmissing(h,index)
+            if avail == 0
+                # found an available slot, but need to keep scanning
+                # in case "key" already exists in a later collided slot.
+                avail = -index
+            end
+        elseif key === keys[index] || isequal(key, keys[index])
+            return index
+        end
+
+        index = (index & (sz-1)) + 1
+        iter += 1
+        iter > maxprobe && break
+    end
+
+    avail < 0 && return avail
+
+    maxallowed = max(maxallowedprobe, sz>>maxprobeshift)
+    # Check if key is not present, may need to keep searching to find slot
+    @inbounds while iter < maxallowed
+        if !isslotfilled(h,index)
+            h.maxprobe = iter
+            return -index
+        end
+        index = (index & (sz-1)) + 1
+        iter += 1
+    end
+
+    rehash!(h, h.count > 64000 ? sz*2 : sz*4)
+
+    return ht_keyindex2!(h, key)
+end
