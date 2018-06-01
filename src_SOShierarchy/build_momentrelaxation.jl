@@ -38,7 +38,7 @@ function MomentRelaxation(relax_ctx, problem, momentmat_param::SortedDict{String
     end
 
     ## Build localizing matrices
-    for (cstrname, cstr) in problem.constraints
+    @showprogress for (cstrname, cstr) in problem.constraints
 
         cstrtype = get_cstrtype(cstr)
         if cstrtype == :ineqdouble
