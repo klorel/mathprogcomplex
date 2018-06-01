@@ -9,7 +9,7 @@ problem, relax_ctx = lasserre_ex1()
 max_cliques = get_maxcliques(relax_ctx, problem)
 moments_params = build_sparsity(relax_ctx, problem, max_cliques)
 
-mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, moments_params, max_cliques)
+mmtrel_pb = MomentRelaxation(relax_ctx, problem, moments_params, max_cliques)
 
 sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
 sdp_instance = read_SDPInstance(pwd())
@@ -58,7 +58,7 @@ problem, relax_ctx = lasserre_ex2()
 max_cliques = get_maxcliques(relax_ctx, problem)
 moments_params = build_sparsity(relax_ctx, problem, max_cliques)
 
-mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, moments_params, max_cliques)
+mmtrel_pb = MomentRelaxation(relax_ctx, problem, moments_params, max_cliques)
 
 sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
 sdp_instance = read_SDPInstance(pwd())

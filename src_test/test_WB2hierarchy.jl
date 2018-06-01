@@ -39,7 +39,7 @@ function main()
         dmax = vals[1]
 
         ## Rank relaxation of WB2 vanilla
-        problem = buildPOP_WB2(v2max=v2max, setnetworkphase=true)
+        problem = buildPOP_WB2(v2max=v2max, setnetworkphase=false)
 
         for d = 1:dmax
             info("Working on WB2, no eqs, v2max=$v2max, d=$d")
@@ -48,6 +48,7 @@ function main()
             println("Saving file at $logpath")
 
             relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+                                                symmetries=[PhaseInvariance],
                                                 d = d)
 
             (primobj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, save_pbs=true);

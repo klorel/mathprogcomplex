@@ -16,18 +16,12 @@ mutable struct RelaxationContext
     cstrtypes
 end
 
-"""
-    SparsityPattern
-
-    Type for storing and working on sparsitty patterns.
-"""
-type SparsityPattern end
 
 include("build_relctx.jl")
 include("build_maxcliques.jl")
 
-abstract type AbstractSymetry end
-type PhaseInvariance <: AbstractSymetry end
+abstract type AbstractSymmetry end
+type PhaseInvariance <: AbstractSymmetry end
 include("symmetries.jl")
 
 ###############################################################################
@@ -39,24 +33,7 @@ struct Moment
     clique::String
 end
 
-function Moment(expo::Exponent, clique::String)
-    α, β = Exponent(), Exponent()
-
-    for (var, deg) in expo
-        add_expod!(α, Exponent(SortedDict(var=>Degree(0, deg.conjvar))))
-        add_expod!(β, Exponent(SortedDict(var=>Degree(deg.explvar, 0))))
-    end
-    return Moment(α, β, clique)
-end
-
-isless(mom1::Moment, mom2::Moment) = isless((mom1.conj_part, mom1.expl_part, mom1.clique),
-                                            (mom2.conj_part, mom2.expl_part, mom2.clique))
-
-function print(io::IO, mom::Moment)
-    print(io, "$(mom.expl_part * mom.conj_part) ($(mom.clique))")
-end
-
-==(mom1::Moment, mom2::Moment) = ((mom1.conj_part, mom1.expl_part, mom1.clique) == (mom2.conj_part, mom2.expl_part, mom2.clique))
+include("moment.jl")
 
 """
     MomentMatrix(mm, vars, order)
@@ -71,18 +48,20 @@ mutable struct MomentMatrix
     matrixkind::Symbol            # Either :SDP or :Sym
 end
 
+include("momentmatrix.jl")
+
 """
-    momentrel = MomentRelaxationPb(obj, cstrs)
+    momentrel = MomentRelaxation(obj, cstrs)
 
     Store a Moment Relaxation problem.
 """
-struct MomentRelaxationPb
+struct MomentRelaxation
     objective::SortedDict{Moment, Number}
     constraints::SortedDict{Tuple{String, String}, MomentMatrix}
     moments_overlap::SortedDict{Exponent, SortedSet{String}}
 end
 
-include("build_momentpb.jl")
+include("build_momentrelaxation.jl")
 
 
 

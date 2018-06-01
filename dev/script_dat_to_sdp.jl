@@ -52,7 +52,7 @@ function main(args)
     ########################################
     # Calcul des matrices de moment
     momentmat_param, localizingmat_param = build_sparsity(relax_ctx, problem, max_cliques)
-    mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
+    mmtrel_pb = MomentRelaxation(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
 
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
 

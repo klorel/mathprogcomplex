@@ -238,9 +238,16 @@ function print(io::IO, max_cliques::SortedDict{String, SortedSet{Variable}})
         @printf(io, "\b\b \n")
     end
 end
+
+
 #################################################################################
 ## Old stuff
+"""
+    SparsityPattern
 
+    Type for storing and working on sparsitty patterns.
+"""
+type SparsityPattern end
 
 """
     sparsity_pattern = compute_sparsitypattern(problem, di, ki)

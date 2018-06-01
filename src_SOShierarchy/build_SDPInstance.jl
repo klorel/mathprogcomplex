@@ -1,4 +1,4 @@
-function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxationPb)
+function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxation; debug=false)
     sdpblocks = SDPBlocks()
     sdplin = SDPLin()
     sdplinsym = SDPLinSym()
@@ -12,22 +12,22 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
 
         for ((γ, δ), poly) in mmt.mm
             for (moment, λ) in poly
-                expo = product(moment.conj_part, moment.expl_part)
-                @assert expo.degree.explvar == moment.expl_part.degree.explvar
-                @assert expo.degree.conjvar == moment.conj_part.degree.conjvar
+                debug && (expo = product(moment.conj_part, moment.expl_part))
+                debug && (@assert expo.degree.explvar == moment.expl_part.degree.explvar)
+                debug && (@assert expo.degree.conjvar == moment.conj_part.degree.conjvar)
                 # Check the current monomial has correct degree
-                if (relaxctx.hierarchykind==:Complex) && ((expo.degree.explvar > relaxctx.di[cstrname]) || (expo.degree.conjvar > relaxctx.di[cstrname]))
+                if (relaxctx.hierarchykind==:Complex) && ((moment.expl_part.degree.explvar > relaxctx.di[cstrname]) || (moment.conj_part.degree.conjvar > relaxctx.di[cstrname]))
                     warn("build_SDPInstance(): Found exponent pair of degree $(expo.degree) > $(relaxctx.di[cstrname]) for Complex hierarchy.\n($(expo), at $((γ, δ)) of MM matrix)")
-                elseif (relaxctx.hierarchykind==:Real) && ((expo.degree.explvar > 2*relaxctx.di[cstrname]) || (expo.degree.conjvar != 0))
+                elseif (relaxctx.hierarchykind==:Real) && ((moment.expl_part.degree.explvar > 2*relaxctx.di[cstrname]) || (moment.conj_part.degree.conjvar != 0))
                     warn("build_SDPInstance(): Found exponent pair of degree $(expo.degree) > 2*$(relaxctx.di[cstrname]) for Real hierarchy.\n($(expo), at $((γ, δ)) of MM matrix)")
                 end
-                !isnan(λ) || warn("build_SDPInstance(): isNaN ! constraint $cstrname - clique $blocname - mm entry $((γ, δ)) - moment $(expo)")
+                !isnan(λ) || warn("build_SDPInstance(): isNaN ! constraint $cstrname - clique $blocname - mm entry $((γ, δ)) - moment $(moment)")
 
                 # Add the current coeff to the SDP problem
                 # Constraints are fα - ∑ Bi.Zi = 0
                 if mmt.matrixkind == :SDP || mmt.matrixkind == :SDPC
                     key = (moment, block_name, γ, δ)
-                    @assert !haskey(sdpblocks, key)
+                    debug && (@assert !haskey(sdpblocks, key))
 
                     sdpblocks[key] = -λ
                 elseif mmt.matrixkind == :Sym || mmt.matrixkind == :SymC
@@ -89,8 +89,8 @@ function split_expo(relaxctx::RelaxationContext, expo::Exponent)
     α, β = Exponent(), Exponent()
 
     for (var, deg) in expo
-        add_expod!(α, Exponent(SortedDict(var=>Degree(0, deg.conjvar))))
-        add_expod!(β, Exponent(SortedDict(var=>Degree(deg.explvar, 0))))
+        product!(α, Exponent(SortedDict(var=>Degree(0, deg.conjvar))))
+        product!(β, Exponent(SortedDict(var=>Degree(deg.explvar, 0))))
     end
 
     if (relaxctx.hierarchykind == :Real) && (α.degree != Degree(0,0))

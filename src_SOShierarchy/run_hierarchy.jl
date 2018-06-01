@@ -19,7 +19,7 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath; 
 
     ########################################
     # Compute moment and localization matrices
-    mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
+    mmtrel_pb = MomentRelaxation(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
 
     if save_pbs
         open(joinpath(logpath, "mmt_pb.log"), "w") do fout
@@ -79,7 +79,7 @@ function build_relaxation(problem::Problem, relax_ctx::RelaxationContext; max_cl
 
     ########################################
     # Compute moment and localization matrices
-    mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
+    mmtrel_pb = MomentRelaxation(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
 
     ########################################
     # Convert to a primal SDP problem
