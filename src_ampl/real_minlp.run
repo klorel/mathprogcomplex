@@ -132,7 +132,7 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	write gphase1 ;
 	solve;
 
-	close D:\repo\data\data_Matpower\solutions\sol.txt ;
+	/* close D:\repo\data\data_Matpower\solutions\sol.txt ;
 	printf "%s %d\n", "# SCALE =", SCALE  > D:\repo\data\data_Matpower\solutions\sol.txt ;
 	printf "%s %d\n", "# scaling =", scaling  >> D:\repo\data\data_Matpower\solutions\sol.txt ;
 	printf "%s % 10.2e \n", "# FEASTOL =", FEASTOL  >> D:\repo\data\data_Matpower\solutions\sol.txt ;
@@ -146,7 +146,7 @@ if OPTIMIZATION_CHOICE == MPEC then {
 	}
 	close D:\repo\data\data_Matpower\solutions\sol.txt  ;
 
-	exit;
+	exit; */
 
 if scale_from_phase1 == 1 then {
 		let{i in 1.._ncons} _con[i].cscalefactor := if abs(_con[i])>1e-5 then 1/abs(_con[i]) else 1;
@@ -225,7 +225,7 @@ if scale_from_phase1 == 1 then {
 
 	display{i in 1.._ncons: _con[i].slack<-1e-6}(_conname [i], _con[i].slack);
 	fix{varname in BINARY_VARIABLES} y[varname];
-
+	option knitro_options ('outlev=3 maxit=600 scale=0 feastol=1e-06 opttol=0.001 feastolabs=1 opttolabs=1 bar_initpt=2 presolve=0 honorbnds=0 bar_initmu=1e-6 bar_slackboundpush=1e-6 bar_murule=1 bar_directinterval=0');
 	option knitro_options;
 	write gphase3;
 	solve;
