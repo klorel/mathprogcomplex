@@ -1,18 +1,45 @@
 ROOT = pwd()
 include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
+include(joinpath(ROOT, "dev", "get_cliques.jl"))
 
 
 function main()
 
-    problem = buildPOP_WB2(v2max=1.022, setnetworkphase=false)
-    relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        # symmetries=[PhaseInvariance],
-                                        d = 1)
+    # problem = buildPOP_WB2(v2max=1.022, setnetworkphase=false)
+    # relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+    #                                     # symmetries=[PhaseInvariance],
+    #                                     d = 1)
+    #
+    # problem = buildPOP_WB2(v2max=1.022, setnetworkphase=true)
+    # relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+    #                                     # symmetries=[PhaseInvariance],
+    #                                     d = 1)
 
-    problem = buildPOP_WB2(v2max=1.022, setnetworkphase=true)
+    ###GOC
+    data_path = joinpath("..", "data", "data_GOC")
+    folder = "Phase_0_IEEE14_1Scenario"
+    scenario = "scenario_1"
+    folder_path = joinpath(data_path, folder)
+    instance_path = joinpath(folder_path, scenario)
+    raw = "powersystem.raw"
+    gen = "generator.csv"
+    con = "contingency.csv"
+    rawfile = joinpath(instance_path,raw)
+    genfile = joinpath(instance_path, gen)
+    contfile = joinpath(instance_path, con)
+    OPFpbs = load_OPFproblems(rawfile, genfile, contfile)
+    introduce_Sgenvariables!(OPFpbs)
+    ## Bulding optimization problem
+    pb_global = build_globalpb!(OPFpbs)
+    pb_global_real = pb_cplx2real(pb_global)
+    problem = pb_global_real
+    # problem = convert_mipb_to_pb(pb_global_real)
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         # symmetries=[PhaseInvariance],
-                                        d = 1)
+                                        issparse=true,
+                                        d = 2)
+
+
 
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")
@@ -22,7 +49,8 @@ function main()
 
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
-    max_cliques = get_maxcliques(relax_ctx, problem)
+    # max_cliques = get_maxcliques(relax_ctx, problem)
+    max_cliques = get_cliques(problem)
 
     println("\n--------------------------------------------------------")
     println("max cliques =")

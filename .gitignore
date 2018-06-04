@@ -48,3 +48,4 @@ JuMP_runs
 Mosek_runs
 *.sdp
 *.zip
+*.txt
