@@ -47,7 +47,7 @@ function MomentRelaxation(relax_ctx, problem, momentmat_param::SortedDict{String
             # Deal with lower inequality
             clique_keys, order = localizingmat_param[cstrname_lo]
             vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
-            length(clique_keys) == 1 || error("MomentRelaxation(): constraint $cstrname spans several cliques ($clique_keys).\nNot supported yet.")
+            # length(clique_keys) == 1 || error("MomentRelaxation(): constraint $cstrname spans several cliques ($clique_keys).\nNot supported yet.")
 
             mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries,
                                                        relax_ctx.cstrtypes[cstrname_lo],
@@ -59,7 +59,7 @@ function MomentRelaxation(relax_ctx, problem, momentmat_param::SortedDict{String
             # Deal with upper inequality
             clique_keys, order = localizingmat_param[cstrname_up]
             vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
-            length(clique_keys) == 1 || error("MomentRelaxation(): constraint $cstrname spans several cliques ($clique_keys).\nNot supported yet.")
+            # length(clique_keys) == 1 || error("MomentRelaxation(): constraint $cstrname spans several cliques ($clique_keys).\nNot supported yet.")
 
             mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries,
                                                        relax_ctx.cstrtypes[cstrname_up],

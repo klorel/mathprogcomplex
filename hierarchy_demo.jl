@@ -19,6 +19,8 @@ function main()
     workdir = joinpath("Mosek_runs", "testfolder")
     ispath(workdir) && rm(workdir, recursive=true); mkpath(workdir)
 
+    println(problem)
+    readline()
 
     for d=1:2
         logpath = joinpath(workdir, "exmaple2_d_$d"); mkpath(logpath)
@@ -30,12 +32,12 @@ function main()
 
         println("\nRelaxation parameters:")
         println(relax_ctx)
-        chomp(readline())
+        readline()
 
         max_cliques = get_maxcliques(relax_ctx, problem)
         println("Maximal cliques:")
         println(max_cliques)
-        chomp(readline())
+        readline()
 
         ########################################
         # Compute moment matrices parameters: order et variables
@@ -46,14 +48,14 @@ function main()
         moment_relaxation_pb = MomentRelaxation(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
         println("Moment relaxation problem:")
         println(moment_relaxation_pb)
-        chomp(readline())
+        readline()
 
         ########################################
         # Convert to a primal SDP problem
         SOS_pb = build_SDPInstance(relax_ctx, moment_relaxation_pb)
         println("SOS problem:")
         println(SOS_pb)
-        chomp(readline())
+        readline()
 
         println("Mosek solve:")
         mosekpb = build_mosekpb(SOS_pb, logpath)
@@ -62,7 +64,7 @@ function main()
         dual = SortedDict{Tuple{String, String, String}, Float64}()
         primobj, dualobj = solve_mosek(mosekpb::SDP_Problem, primal, dual; logname = joinpath(logpath, "Mosek_run.log"))
 
-        chomp(readline())
+        readline()
     end
 end
 
