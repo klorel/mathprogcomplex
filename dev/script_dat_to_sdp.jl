@@ -56,7 +56,7 @@ function main(args)
 
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
 
-    export_SDP(relax_ctx, sdpinstance, output_dir)
+    export_SDP(sdpinstance, output_dir)
 end
 
 main(ARGS)

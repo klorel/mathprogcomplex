@@ -31,21 +31,9 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath; 
     # Convert to a primal SDP problem
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
 
-    export_SDP(relax_ctx, sdpinstance, logpath, indentedprint=indentedprint)
-    sdp_instance = read_SDPInstance(logpath)
+    export_SDP(sdpinstance, logpath, indentedprint=indentedprint)
 
-    ########################################
-    # Build Mosek-like structure for SDP problem
-    sdp = SDP_Problem()
-
-    set_constraints!(sdp, sdp_instance)
-    set_vartypes!(sdp, sdp_instance)
-    set_blocks!(sdp, sdp_instance)
-    set_linvars!(sdp, sdp_instance)
-
-    set_matrices!(sdp, sdp_instance)
-    set_linear!(sdp, sdp_instance)
-    set_const!(sdp, sdp_instance)
+    sdp = build_mosekpb(logpath)
 
     primal = SortedDict{Tuple{String,String,String}, Float64}()
     dual = SortedDict{Tuple{String, String, String}, Float64}()
@@ -88,3 +76,47 @@ function build_relaxation(problem::Problem, relax_ctx::RelaxationContext; max_cl
     return sdpinstance
 
 end
+
+
+"""
+    sdp = build_mosekpb(logpath)
+
+    Build the sdp problem described at `logpath` into the generic structure interfaced with SDP solvers (Mosek for now).
+"""
+function build_mosekpb(logpath::String)
+    sdp_instance = read_SDPInstance(logpath)
+
+    sdp = SDP_Problem()
+
+    set_constraints!(sdp, sdp_instance)
+    set_vartypes!(sdp, sdp_instance)
+    set_blocks!(sdp, sdp_instance)
+    set_linvars!(sdp, sdp_instance)
+
+    set_matrices!(sdp, sdp_instance)
+    set_linear!(sdp, sdp_instance)
+    set_const!(sdp, sdp_instance)
+    return sdp
+end
+
+
+function build_mosekpb(SOS_pb::SDPInstance, logpath::String; indentedprint=false)
+    export_SDP(SOS_pb, logpath, indentedprint=indentedprint)
+
+    sdp = build_mosekpb(logpath)
+
+    sdp_instance = read_SDPInstance(logpath)
+
+    sdp = SDP_Problem()
+
+    set_constraints!(sdp, sdp_instance)
+    set_vartypes!(sdp, sdp_instance)
+    set_blocks!(sdp, sdp_instance)
+    set_linvars!(sdp, sdp_instance)
+
+    set_matrices!(sdp, sdp_instance)
+    set_linear!(sdp, sdp_instance)
+    set_const!(sdp, sdp_instance)
+    return sdp
+end
+

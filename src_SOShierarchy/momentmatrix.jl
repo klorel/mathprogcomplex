@@ -45,12 +45,12 @@ function copy(mm::MomentMatrix)
 end
 
 function print(io::IO, mm::MomentMatrix)
-    keylen = maximum(x->length("($(x[1]), $(x[2])) ⟶  "), keys(mm.mm))
+    keylen = maximum(x->length("($(x[1]), $(x[2])) → "), keys(mm.mm))
 
     maxorder = 0
 
     for (key, momentpoly) in mm.mm
-        print_string(io, "($(key[1]), $(key[2])) ⟶  ", keylen)
+        print_string(io, "($(key[1]), $(key[2])) → ", keylen)
 
         (moment_first, val_first) = first(momentpoly)
         println(io, "$(moment_first.clique) -- $(moment_first.conj_part) × $(moment_first.expl_part) × $val_first")
@@ -76,7 +76,7 @@ function get_exponentclique(expo, var_to_cliques)
     cliques = SortedSet{String}()
 
     ## If expo is one, return default clique
-    expo == Exponent() && return "clique_un"
+    expo == Exponent() && return "clique1"
 
     union!(cliques, var_to_cliques[first(expo)[1]])
     for (var, deg) in expo

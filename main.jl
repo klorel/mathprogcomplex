@@ -91,7 +91,7 @@ function main()
 
     path = joinpath(pwd(), "Mosek_runs", "worksdp")
     mkpath(path)
-    export_SDP(relax_ctx, sdpinstance, path)
+    export_SDP(sdpinstance, path)
     sdp_instance = read_SDPInstance(path)
 
     println("VAR_TYPES size:     $(size(sdp_instance.VAR_TYPES))")
