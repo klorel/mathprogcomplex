@@ -50,7 +50,7 @@ function main()
         relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                 # symmetries=[PhaseInvariance],
                                 issparse=true,
-                                d = 2)
+                                d = 1)
 
         max_cliques = get_WB5cliques(relax_ctx, problem)
 
@@ -68,35 +68,6 @@ function main()
     end
 
     primobjectives_eqs = SortedDict()
-    for (q5min, vals) in sols
-
-        problem = buildPOP_WB5(q5min=q5min, rmeqs=false)
-        d = 2
-
-        info("Working on WB5, eqs, q5min=$q5min, d=$d")
-        logpath = joinpath(testfolder, "WB5_q5min_$(q5min)_d_$(d)_eq")
-        ispath(logpath) && rm(logpath, recursive=true); mkpath(logpath)
-        println("Saving file at $logpath")
-
-        relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                # symmetries=[PhaseInvariance],
-                                issparse=true,
-                                d = 2)
-
-        max_cliques = get_WB5cliques(relax_ctx, problem)
-
-        println("-------> $(now())")
-        (primobj, dualobj), t, bytes, gctime, memallocs = @timed run_hierarchy(problem, relax_ctx, logpath, max_cliques=max_cliques);
-        primobjectives_eqs[(q5min, d)] = (primobj, t, bytes / (10^6), gctime)
-
-        # Saving max_cliques
-        open(joinpath(logpath, "maxcliques_relaxctx.txt"), "w") do fcliques
-            println(fcliques, "max_cliques are:")
-            println(fcliques, max_cliques)
-            println(fcliques, "relaxation_ctx is:")
-            println(fcliques, relax_ctx)
-        end
-    end
 
     println("- No equality constraints:")
     print_primobj(STDOUT, primobjectives_noeqs, sols)
