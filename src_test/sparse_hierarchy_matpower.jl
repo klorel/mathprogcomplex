@@ -1,61 +1,21 @@
-ROOT = pwd()
-include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
-include(joinpath(ROOT, "dev", "get_cliques.jl"))
-include(joinpath(ROOT, "src_Matpower", "get_cliques_matpower.jl"))
+include(joinpath(pwd(),"src_PowSysMod", "PowSysMod_body.jl"))
 
-
-function main()
-
-    # problem = buildPOP_WB2(v2max=1.022, setnetworkphase=false)
-    # relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-    #                                     # symmetries=[PhaseInvariance],
-    #                                     d = 1)
-    #
-    # problem = buildPOP_WB2(v2max=1.022, setnetworkphase=true)
-    # relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-    #                                     # symmetries=[PhaseInvariance],
-    #                                     d = 1)
-    #
-    # ###GOC
-    # data_path = joinpath("..", "data", "data_GOC")
-    # folder = "Phase_0_IEEE14_1Scenario"
-    # scenario = "scenario_1"
-    # folder_path = joinpath(data_path, folder)
-    # instance_path = joinpath(folder_path, scenario)
-    # raw = "powersystem.raw"
-    # gen = "generator.csv"
-    # con = "contingency.csv"
-    # rawfile = joinpath(instance_path,raw)
-    # genfile = joinpath(instance_path, gen)
-    # contfile = joinpath(instance_path, con)
-    # OPFpbs = load_OPFproblems(rawfile, genfile, contfile)
-    # introduce_Sgenvariables!(OPFpbs)
-    # ## Bulding optimization problem
-    # pb_global = build_globalpb!(OPFpbs)
-    # pb_global_real = pb_cplx2real(pb_global)
-    # problem = pb_global_real
-    # # problem = convert_mipb_to_pb(pb_global_real)
-    # relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-    #                                     # symmetries=[PhaseInvariance],
-    #                                     issparse=true,
-    #                                     d = 2)
-
-    ##Matpower
-    instance = "case14.m"
-    sparse_param = true
+function build_and_solve_matpower_relaxation(instance::String, sparse_param::Bool, order::Int64, QCQP_param::Bool)
     instance_path = joinpath(pwd(),"..","data", "data_Matpower", "matpower", instance)
-    # OPFpbs = load_OPFproblems(MatpowerInput, instance_path)
-    # ## Bulding optimization problem
-    # pb_global = build_globalpb!(OPFpbs)
-    # problem = pb_cplx2real(pb_global)
-    problem_c, point = import_from_dat(joinpath("..", "data", "data_Matpower", "matpower_QCQP", instance[1:end-2]*".dat"))
-    problem = pb_cplx2real(problem_c)
+    if QCQP_param
+        problem_c, point = import_from_dat(joinpath("..", "data", "data_Matpower", "matpower_QCQP", instance[1:end-2]*".dat"))
+        problem = pb_cplx2real(problem_c)
+    else
+        OPFpbs = load_OPFproblems(MatpowerInput, instance_path)
+        ## Bulding optimization problem
+        pb_global = build_globalpb!(OPFpbs)
+        problem = pb_cplx2real(pb_global)
+    end
+
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         # symmetries=[PhaseInvariance],
                                         issparse=sparse_param,
-                                        d = 1)
-
-
+                                        d = order)
 
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")
@@ -67,18 +27,10 @@ function main()
     # Construction du sparsity pattern, extension chordale, cliques maximales.
     if sparse_param
         # max_cliques = get_cliques(problem)
-        # max_cliques = get_cliques_matpower(instance_path)
-        # max_cliques = get_cliques_matpower_forQCQP(instance_path)
-        max_cliques = SortedDict{String, SortedSet{Variable}}()
-        max_cliques["clique1"] = SortedSet{Variable}()
-        for var in problem.variables
-            push!(max_cliques["clique1"], Variable(var[1], var[2]))
-        end
+        max_cliques = get_cliques_matpower(instance_path)
     else
         max_cliques = get_maxcliques(relax_ctx, problem)
     end
-
-
 
     println("\n--------------------------------------------------------")
     println("max cliques =")
@@ -145,21 +97,8 @@ function main()
 
     primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual)
 
-    # # println("Primal solution")
-    # # for ((blockname, var1, var2), val) in primal
-    # # @printf("%15s %5s %5s %f\n", blockname, var1, var2, val)
-    # # end
-
-    # # println("\nDual solution NEGATED")
-    # # for var in problem.variables
-    # #     ctrname = get_momentcstrname()
-    # #     var1 = var[1]
-    # #     var2 = "1"
-    # #     val = dual[(ctrname, var1, var2)]
-    # #     println("($(ctrname), $(var1), $(var2)) = $(-val)")
-    # # end
-
-    # println("Objectives : $primobj, $dualobj")
 end
 
-main()
+
+instances = readir(joinpath("..","data", "data_Matpower", "blocks_AMD_clique"))
+println(instances)

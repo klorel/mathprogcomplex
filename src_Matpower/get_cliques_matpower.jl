@@ -21,6 +21,26 @@ function get_cliques_matpower(instance_path)
     return cliques
 end
 
+
+function get_cliques_matpower_forQCQP(instance_path)
+    instances_path, instance_name = splitdir(instance_path)
+    data_Matpower_path, ~ = splitdir(instances_path)
+    blocks = readdlm(joinpath(data_Matpower_path, "blocks_AMD_clique", "$(instance_name[1:end-2])_sdp_blocks.txt"))
+    cliques = SortedDict{String, SortedSet{Variable}}()
+    println(blocks)
+    println(size(blocks,1))
+    for i in 1:size(blocks,1)
+        block = blocks[i,1]
+        var = blocks[i,2]
+        variable = Variable(var,Real)
+        if !haskey(cliques, block)
+            cliques[block] = SortedSet{Variable}()
+        end
+        push!(cliques[block], variable)
+    end
+    return cliques
+end
+
 # instance = "case14.m"
 # instance_path = joinpath(pwd(),"..","data", "data_Matpower", "matpower", instance)
 #

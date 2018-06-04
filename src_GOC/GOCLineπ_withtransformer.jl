@@ -83,21 +83,21 @@ end
 
 
 ## 3. Constraints creation
-# function constraint(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T<:GOCLineπ_withtransformer
-#     cstrs = SortedDict{String, Constraint}()
-#
-#     Sor = Sorig(element, link, elemid, elem_formulation, link_vars)
-#     Sde = Sdest(element, link, elemid, elem_formulation, link_vars)
-#     Smax = element.power_magnitude_max
-#
-#     cstrs[get_Smax_orig_cstrname()] = (abs2(real(Sor)) + abs2(imag(Sor))) << Smax^2
-#     cstrs[get_Smax_dest_cstrname()] = (abs2(real(Sde)) + abs2(imag(Sde))) << Smax^2
-#
-#     cstrs[get_Smax_orig_cstrname()].precond = :sqrt
-#     cstrs[get_Smax_dest_cstrname()].precond = :sqrt
-#
-#     return cstrs
-# end
+function constraint(element::T, link::Link, elemid::String, elem_formulation::Symbol, link_vars::SortedDict{String, Variable}, scenario::String, OPFpbs::OPFProblems) where T<:GOCLineπ_withtransformer
+    cstrs = SortedDict{String, Constraint}()
+
+    Sor = Sorig(element, link, elemid, elem_formulation, link_vars)
+    Sde = Sdest(element, link, elemid, elem_formulation, link_vars)
+    Smax = element.power_magnitude_max
+
+    cstrs[get_Smax_orig_cstrname()] = (abs2(real(Sor)) + abs2(imag(Sor))) << Smax^2
+    cstrs[get_Smax_dest_cstrname()] = (abs2(real(Sde)) + abs2(imag(Sde))) << Smax^2
+
+    cstrs[get_Smax_orig_cstrname()].precond = :sqrt
+    cstrs[get_Smax_dest_cstrname()].precond = :sqrt
+
+    return cstrs
+end
 
 ##Util functions
 function get_IorigGOC(element::T, link_variables::SortedDict{String, Variable}) where T<: GOCLineπ_withtransformer
