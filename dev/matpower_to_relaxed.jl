@@ -29,7 +29,7 @@ function main()
 
             logpath = joinpath(export_path, instance[1:end-2])
             mkpath(logpath)
-            export_SDP(relax_ctx, sdpinstance, logpath, indentedprint=false)
+            export_SDP(sdpinstance, logpath, indentedprint=false)
         else
             warn("jumping $instance ($i/$(length(instances)))")
         end

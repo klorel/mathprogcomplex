@@ -6,7 +6,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
     block_to_vartype = SortedDict{String, Symbol}()
 
     ## Build blocks dict
-    @showprogress for ((cstrname, cliquename), mmt) in mmtrelax_pb.constraints
+    for ((cstrname, cliquename), mmt) in mmtrelax_pb.constraints
         block_name = get_blockname(cstrname, cliquename, mmtrelax_pb)
         block_to_vartype[block_name] = mmt.matrixkind
 
