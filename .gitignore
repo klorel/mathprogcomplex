@@ -47,3 +47,7 @@ src_modeler/Modeler/QCQP_ampl.jl
 JuMP_runs
 Mosek_runs
 *.sdp
+/log_IEEE14_scenario_1_cliques.txt
+/log_IEEE14_scenario_1_dense.txt
+/log_IEEE14_scenario_1_ordre2_cliques.txt
+/log_Mosek_case118_sparse_1clique.txt
