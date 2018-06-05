@@ -8,12 +8,12 @@
     *Sparsely* add `val` to the `key` entry of `dict` dictionnary (if not `isdense`). 
     That is creates the entry if needed, deletes it if the resulting value is null.
 """
-function add_to_dict!(dict::SortedDict{U, Number}, key::U, val::T; isdense = false) where T<:Number where U
-    if !haskey(dict, key)
-        dict[key] = 0
+function add_to_dict!(dict::SortedDict{U, V}, key::U, val::T; isdense = false) where T<:Number where U where V<:Number
+    if !haskey(dict, convert(U, key))
+        dict[key] = convert(V, 0)
     end
-    dict[key] += val
-    if dict[key] == 0 && !isdense
+    dict[key] += convert(V, val)
+    if isnull(dict[key]) && !isdense
         delete!(dict, key)
     end
 end

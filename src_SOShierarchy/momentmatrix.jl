@@ -113,9 +113,9 @@ function product(momentpoly::SortedDict{Moment, Number}, p::Polynomial, var_to_c
         for (moment, val2) in momentpoly
             resmoment = product(moment, expo, var_to_cliques)
 
-            haskey(resmpoly, resmoment) || (resmpoly[resmoment] = 0)
+            haskey(resmpoly, resmoment) || (resmpoly[resmoment] = 0.0)
             resmpoly[resmoment] += val1*val2
-            (resmpoly[resmoment] == 0) && delete!(resmpoly, resmoment)
+            isnull(resmpoly[resmoment]) && delete!(resmpoly, resmoment)
         end
     end
 
