@@ -31,6 +31,7 @@ address sizes   : 40 bits physical, 48 bits virtual
 Benchmarking results :
 
 order_1
+
 | instances |           1.POP_build |           2.pb_construction |           3.pb_build_SDPMosekstruct |           4.pb_mosek_solve |
 | --------- | ---------------------:| ---------------------------:| -----------------------------------:| --------------------------:|
 |       WB2 |             56.285 ms |                   28.250 ms |                            7.372 ms |                  29.601 ms |
@@ -40,6 +41,7 @@ order_1
 |     case9 |            224.405 ms |                  419.656 ms |                           45.620 ms |                 111.820 ms |
 
 order_2
+
 | instances |           1.POP_build |           2.pb_construction |           3.pb_build_SDPMosekstruct |           4.pb_mosek_solve |
 | --------- | ---------------------:| ---------------------------:| -----------------------------------:| --------------------------:|
 |       WB2 |             52.534 ms |                  407.634 ms |                           55.889 ms |                 131.921 ms |
@@ -171,3 +173,25 @@ build_SDPInstance(), case89pegase, d=1
   samples:          38
   evals/sample:     1
 ```
+
+### End of day timings
+order_1
+
+| instances |           1.POP_build |           2.pb_construction |           3.pb_build_SDPMosekstruct |           4.pb_mosek_solve |
+| --------- | ---------------------:| ---------------------------:| -----------------------------------:| --------------------------:|
+|       WB2 |             51.372 ms |                   16.967 ms |                            8.793 ms |                  31.642 ms |
+|     LMBM3 |            157.561 ms |                   41.722 ms |                           16.289 ms |                  44.674 ms |
+|       WB5 |            281.963 ms |                   60.528 ms |                           41.304 ms |                 111.494 ms |
+|   case6ww |            635.079 ms |                  115.655 ms |                          225.262 ms |                 189.157 ms |
+|     case9 |            327.359 ms |                   74.992 ms |                           88.304 ms |                 289.448 ms |
+
+
+order_2
+
+| instances |           1.POP_build |           2.pb_construction |           3.pb_build_SDPMosekstruct |           4.pb_mosek_solve |
+| --------- | ---------------------:| ---------------------------:| -----------------------------------:| --------------------------:|
+|       WB2 |             51.632 ms |                  108.792 ms |                           60.252 ms |                 150.116 ms |
+|     LMBM3 |            141.495 ms |                  737.637 ms |                          280.620 ms |                 455.741 ms |
+|       WB5 |            246.962 ms |                     2.804 s |                             1.001 s |                    3.781 s |
+|   case6ww |            543.881 ms |                     6.506 s |                             2.245 s |                    9.069 s |
+|     case9 |            253.338 ms |                    15.039 s |                             5.176 s |                  148.176 s |
