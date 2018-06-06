@@ -1,3 +1,8 @@
+using Base.Test
+ROOT = pwd()
+include(joinpath("..", "src_SOShierarchy", "SOShierarchy.jl"))
+
+
 ## GLOBAL OPTIMIZATION WITH POLYNOMIALS AND THE PROBLEM OF MOMENTS
 # JEAN B. LASSERRE, 2001
 # http://www.ii.uib.no/~lennart/drgrad/Lasserre2001.pdf
@@ -21,16 +26,16 @@
                                             d = 1)
 
         primobj, dualobj =run_hierarchy(problem, relax_ctx, logpath)
-        @test primobj ≈ -3 atol=0.6
-        @test dualobj ≈ -3 atol=0.6
+        @test primobj ≈ -3 atol=1e-6
+        @test dualobj ≈ -3 atol=1e-6
 
         ## Order 2
         relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                             d = 2)
 
         primobj, dualobj =run_hierarchy(problem, relax_ctx, logpath)
-        @test primobj ≈ -2 atol=0.6
-        @test dualobj ≈ -2 atol=0.6
+        @test primobj ≈ -2 atol=1e-6
+        @test dualobj ≈ -2 atol=1e-6
 
         rm(logpath, recursive = true)
     end

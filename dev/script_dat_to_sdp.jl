@@ -43,20 +43,20 @@ function main(args)
     problem = pb_cplx2real(problem_C)
 
     ## Build relaxation
-    @show input_params["d"]*2
+    @show input_params["d"]
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        d = input_params["d"]*2) ## NOTE: to be corrected.
+                                        d = input_params["d"])
 
     max_cliques = get_maxcliques(relax_ctx, problem)
 
     ########################################
     # Calcul des matrices de moment
     momentmat_param, localizingmat_param = build_sparsity(relax_ctx, problem, max_cliques)
-    mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
+    mmtrel_pb = MomentRelaxation(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
 
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
 
-    export_SDP(relax_ctx, sdpinstance, output_dir)
+    export_SDP(sdpinstance, output_dir)
 end
 
 main(ARGS)
