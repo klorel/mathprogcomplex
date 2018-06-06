@@ -31,17 +31,23 @@ address sizes   : 40 bits physical, 48 bits virtual
 Benchmarking results :
 
 order_1
-| instances |           POP_build |           pb_build_SDPMosekstruct |           pb_construction |           pb_mosek_solve |
-| --------- | -------------------:| ---------------------------------:| -------------------------:| ------------------------:|
-|       WB2 |           45.130 ms |                          5.915 ms |                 33.937 ms |                32.317 ms |
-|     LMBM3 |          147.365 ms |                         11.696 ms |                 80.194 ms |                48.073 ms |
+| instances |           1.POP_build |           2.pb_construction |           3.pb_build_SDPMosekstruct |           4.pb_mosek_solve |
+| --------- | ---------------------:| ---------------------------:| -----------------------------------:| --------------------------:|
+|       WB2 |             56.285 ms |                   28.250 ms |                            7.372 ms |                  29.601 ms |
+|     LMBM3 |            133.133 ms |                   94.086 ms |                           16.390 ms |                  45.613 ms |
+|       WB5 |            264.598 ms |                  147.907 ms |                           23.777 ms |                  73.157 ms |
+|   case6ww |            485.896 ms |                  325.370 ms |                           35.288 ms |                  64.492 ms |
+|     case9 |            224.405 ms |                  419.656 ms |                           45.620 ms |                 111.820 ms |
 
 
 order_2
-| instances |           POP_build |           pb_build_SDPMosekstruct |           pb_construction |           pb_mosek_solve |
-| --------- | -------------------:| ---------------------------------:| -------------------------:| ------------------------:|
-|       WB2 |           42.331 ms |                         48.805 ms |                341.357 ms |                88.134 ms |
-|     LMBM3 |          126.692 ms |                        221.792 ms |                   1.813 s |               194.405 ms |
+| instances |           1.POP_build |           2.pb_construction |           3.pb_build_SDPMosekstruct |           4.pb_mosek_solve |
+| --------- | ---------------------:| ---------------------------:| -----------------------------------:| --------------------------:|
+|       WB2 |             52.534 ms |                  407.634 ms |                           55.889 ms |                 131.921 ms |
+|     LMBM3 |            139.650 ms |                     2.571 s |                          256.090 ms |                 468.952 ms |
+|       WB5 |            227.937 ms |                    13.783 s |                          954.469 ms |                    3.274 s |
+|   case6ww |            485.768 ms |                    36.592 s |                             2.053 s |                    7.373 s |
+|     case9 |            267.784 ms |                    89.101 s |                             4.347 s |                  141.749 s |
 
 ### Specific benchmarks:
 
@@ -88,20 +94,6 @@ MomentRelaxation(), case30, d=1
   maximum time:     416.560 ms (48.47% GC)
   --------------
   samples:          17
-  evals/sample:     1
-```
-
-```
-MomentRelaxation(), case89pegase, d=1
-  memory estimate:  545.63 MiB
-  allocs estimate:  11182870
-  --------------
-  minimum time:     2.110 s (36.22% GC)
-  median time:      2.175 s (38.66% GC)
-  mean time:        2.309 s (42.06% GC)
-  maximum time:     2.640 s (49.54% GC)
-  --------------
-  samples:          3
   evals/sample:     1
 ```
 
