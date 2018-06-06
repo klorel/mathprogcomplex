@@ -72,7 +72,7 @@ end
     Determine which clique expo fits in, that is which cliques contain all variables of expo.
     Error if no such clique are found.
 """
-function get_exponentclique(expo, var_to_cliques)
+function get_exponentclique(expo, var_to_cliques::SortedDict{Variable, SortedSet{String}})
     cliques = SortedSet{String}()
 
     ## If expo is one, return default clique
@@ -95,18 +95,18 @@ end
 ##########################
 
 ## AbstractPolynomial types
-function product!(mm::MomentMatrix, p::T, var_to_cliques) where T<:Union{AbstractPolynomial, Number}
+function product!(mm::MomentMatrix, p::T, var_to_cliques::SortedDict{Variable, SortedSet{String}}) where T<:Union{AbstractPolynomial, Number}
     for (key, momentpoly) in mm.mm
         mm.mm[key] = product(momentpoly, p, var_to_cliques)
     end
-    return 0
+    return nothing
 end
 
-function product(momentpoly::SortedDict{Moment, Number}, p::T, var_to_cliques) where T<:Union{AbstractPolynomial, Number}
+function product(momentpoly::SortedDict{Moment, Number}, p::T, var_to_cliques::SortedDict{Variable, SortedSet{String}}) where T<:Union{AbstractPolynomial, Number}
     return product(momentpoly, convert(Polynomial, p), var_to_cliques)
 end
 
-function product(momentpoly::SortedDict{Moment, Number}, p::Polynomial, var_to_cliques)
+function product(momentpoly::SortedDict{Moment, Number}, p::Polynomial, var_to_cliques::SortedDict{Variable, SortedSet{String}})
     resmpoly = SortedDict{Moment, Number}()
 
     for (expo, val1) in p
@@ -119,10 +119,10 @@ function product(momentpoly::SortedDict{Moment, Number}, p::Polynomial, var_to_c
         end
     end
 
-    return resmpoly::SortedDict{Moment, Number}
+    return resmpoly
 end
 
-function product(moment::Moment, expo::Exponent, var_to_cliques)
+function product(moment::Moment, expo::Exponent, var_to_cliques::SortedDict{Variable, SortedSet{String}})
     resexpo = product(moment.conj_part, moment.expl_part)
     product!(resexpo, expo)
 
