@@ -21,4 +21,4 @@ momentmat_param, localizingmat_param = build_sparsity(relax_ctx, problem, max_cl
 
 mmtrel_pb = MomentRelaxation{Float64}(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
 
-@benchmark (sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb))
+@code_warntype build_SDPInstance(relax_ctx, mmtrel_pb)

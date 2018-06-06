@@ -185,7 +185,7 @@ function print_blocksfile(io::IO, sdpblocks::Dict{Tuple{Moment, String, Exponent
 end
 
 
-function print_linfile(io::IO, sdplin::Dict{Tuple{Moment, Exponent}, T}, sdplinsym::Dict{Tuple{Moment, Exponent, Exponent}, T};
+function print_linfile(io::IO, sdplin::Dict{Tuple{Moment, Exponent}, T}, sdplinsym::Dict{Tuple{Moment, String, Exponent}, T};
                                                                      momentdict::SortedDict{Exponent, String}=SortedDict{Exponent, String}(),
                                                                      indentedprint=false,
                                                                      print_header=true) where T

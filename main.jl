@@ -49,7 +49,7 @@ function main()
 
     ########################################
     # Build the moment relaxation problem
-    mmtrel_pb = MomentRelaxation(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
+    mmtrel_pb = MomentRelaxation{Float64}(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
 
     println("\n--------------------------------------------------------")
     println("mmtrel_pb = $mmtrel_pb")

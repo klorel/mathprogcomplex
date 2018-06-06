@@ -45,7 +45,7 @@ function main()
 
         ########################################
         # Compute moment and localization matrices
-        moment_relaxation_pb = MomentRelaxation(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
+        moment_relaxation_pb = MomentRelaxation{Float64}(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
         println("Moment relaxation problem:")
         println(moment_relaxation_pb)
         readline()
