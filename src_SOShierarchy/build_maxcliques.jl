@@ -3,7 +3,7 @@
 
     Build the sparsitty pattern and variables decomposition for laying out the moment or SOS hierarchy
 """
-function build_sparsity(relax_ctx, problem, max_cliques::SortedDict{String, SortedSet{Variable}})
+function build_sparsity(relax_ctx::RelaxationContext, problem::Problem, max_cliques::SortedDict{String, SortedSet{Variable}})
 
     ((relax_ctx.issparse == false) && (length(max_cliques) > 1)) && error("build_sparsity(): Relaxation is not sparse, one clique is expected (not $(length(max_cliques)))")
 
@@ -38,7 +38,7 @@ function build_sparsity(relax_ctx, problem, max_cliques::SortedDict{String, Sort
     # Build moment constraints order and variable set.
     momentmat_param = SortedDict{String, Int}()
     for (cliquename, cliquevars) in max_cliques
-        cur_d = -1
+        cur_d::Int = -1
         for (ctrname, (ctrcliques, _)) in localizingmat_param
             if length(ctrcliques) == 1 && cliquename == first(ctrcliques)
                 cur_d = max(cur_d, relax_ctx.di[ctrname])
@@ -81,7 +81,9 @@ function get_locctrcliques(p::Polynomial, max_cliques::SortedDict{String, Sorted
     var_to_cliques = SortedDict{Variable, SortedSet{String}}()
     for (clique, cliquevars) in max_cliques
         for var in intersect(cliquevars, ctrvars)
-            haskey(var_to_cliques, var) || (var_to_cliques[var] = SortedSet{String}())
+            if !haskey(var_to_cliques, var)
+                var_to_cliques[var] = SortedSet{String}()
+            end
             insert!(var_to_cliques[var], clique)
         end
     end
@@ -138,12 +140,8 @@ function get_locctrcliques(p::Polynomial, max_cliques::SortedDict{String, Sorted
 end
 
 function get_maxcliques(relax_ctx, problem)
-    if !relax_ctx.issparse
-        vars = SortedSet{Variable}([Variable(name, kind) for (name, kind) in problem.variables])
-        return SortedDict{String, SortedSet{Variable}}("clique1"=>vars)
-    else
-        error("Sparse relaxation is not supported yet")
-    end
+    vars = SortedSet{Variable}([Variable(name, kind) for (name, kind) in problem.variables])
+    return SortedDict{String, SortedSet{Variable}}("clique1"=>vars)
 end
 
 function get_WB5cliques(relax_ctx, problem)

@@ -7,14 +7,14 @@ include(joinpath(ROOT, "src_PolynomialOptim", "PolynomialOptim.jl"))
 ## Relaxation context, symmetries and cliques
 ###############################################################################
 mutable struct RelaxationContext
-    ismultiordered
-    issparse
+    ismultiordered::Bool
+    issparse::Bool
     symmetries::SortedSet{DataType} # ::SortedSet{DataType}
-    hierarchykind                   # :Complex or :Real
-    renamevars                      # Replace variables with by shorter named ones
-    di
-    ki
-    cstrtypes
+    hierarchykind::Symbol           # :Complex or :Real
+    renamevars::Bool                # Replace variables with by shorter named ones
+    di::SortedDict{String, Int}
+    ki::SortedDict{String, Int}
+    cstrtypes::SortedDict{String, Symbol}
 end
 
 

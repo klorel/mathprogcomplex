@@ -3,13 +3,13 @@
 
     Build a `relax_ctx` object containing relaxation choices and problem features : order by constraint, relaxation order by constraint...
 """
-function set_relaxation(pb::Problem; ismultiordered=false,
-                                     issparse=false,
-                                     symmetries=[],
-                                     hierarchykind=:Complex,
-                                     renamevars=false,
-                                     di=SortedDict{String, Int}(),
-                                     d=-1)
+function set_relaxation(pb::Problem; ismultiordered::Bool=false,
+                                     issparse::Bool=false,
+                                     symmetries::Array{Type, 1}=Type[],
+                                     hierarchykind::Symbol=:Complex,
+                                     renamevars::Bool=false,
+                                     di::SortedDict{String, Int}=SortedDict{String, Int}(),
+                                     d::Int=-1)
     println("\n=== set_relaxation(pb; ismultiordered=$ismultiordered, issparse=$issparse, symmetries=$symmetries, hierarchykind=$hierarchykind, renamevars=$renamevars, di=SortedDict of length $(length(di)), d=$d)")
 
     # Check that all variables have a type fitting the hierarchy kind
