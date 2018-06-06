@@ -1,5 +1,5 @@
 """
-    relax_ctx = set_relaxation(pb::Problem; ismultiordered=false, issparse=false, symmetries=SortedSet(), hierarchykind=:Complex, renamevars=false, di=SortedDict{String, Int}(), d=-1)
+    relax_ctx = set_relaxation(pb::Problem; ismultiordered=false, issparse=false, symmetries=Set(), hierarchykind=:Complex, renamevars=false, di=Dict{String, Int}(), d=-1)
 
     Build a `relax_ctx` object containing relaxation choices and problem features : order by constraint, relaxation order by constraint...
 """
@@ -8,9 +8,9 @@ function set_relaxation(pb::Problem; ismultiordered::Bool=false,
                                      symmetries::Array{Type, 1}=Type[],
                                      hierarchykind::Symbol=:Complex,
                                      renamevars::Bool=false,
-                                     di::SortedDict{String, Int}=SortedDict{String, Int}(),
+                                     di::Dict{String, Int}=Dict{String, Int}(),
                                      d::Int=-1)
-    println("\n=== set_relaxation(pb; ismultiordered=$ismultiordered, issparse=$issparse, symmetries=$symmetries, hierarchykind=$hierarchykind, renamevars=$renamevars, di=SortedDict of length $(length(di)), d=$d)")
+    println("\n=== set_relaxation(pb; ismultiordered=$ismultiordered, issparse=$issparse, symmetries=$symmetries, hierarchykind=$hierarchykind, renamevars=$renamevars, di=Dict of length $(length(di)), d=$d)")
 
     # Check that all variables have a type fitting the hierarchy kind
     for (varname, vartype) in pb.variables
@@ -20,7 +20,7 @@ function set_relaxation(pb::Problem; ismultiordered::Bool=false,
     end
 
     # Compute each constraint degree
-    ki = SortedDict{String, Int}()
+    ki = Dict{String, Int}()
     ki[get_momentcstrname()] = 0
     for (cstrname, cstr) in pb.constraints
         cstrtype = get_cstrtype(cstr)
@@ -34,7 +34,7 @@ function set_relaxation(pb::Problem; ismultiordered::Bool=false,
     end
 
     # Store each SDP multiplier type
-    cstrtypes = SortedDict{String, Symbol}()
+    cstrtypes = Dict{String, Symbol}()
     for (cstrname, cstr) in pb.constraints
         cstrtype = get_cstrtype(cstr)
         if cstrtype == :ineqdouble
@@ -50,8 +50,8 @@ function set_relaxation(pb::Problem; ismultiordered::Bool=false,
     cstrtypes[get_momentcstrname()] = (hierarchykind==:Complex ? :SDPC : :SDP)
 
     # Relaxation order management
-    di_relax = SortedDict{String, Int}()
-    !((di == SortedDict{String, Int}()) && (d==-1)) || error("RelaxationContext(): Either di or d should be provided as input.")
+    di_relax = Dict{String, Int}()
+    !((di == Dict{String, Int}()) && (d==-1)) || error("RelaxationContext(): Either di or d should be provided as input.")
 
     for (cstrname, cstr) in pb.constraints
         cur_order = haskey(di, cstrname) ? di[cstrname] : d
@@ -91,10 +91,10 @@ function set_relaxation(pb::Problem; ismultiordered::Bool=false,
     #     di_relax[get_momentcstrname()] = ceil(obj_degree/2)
     # end
 
-    relax_ctx = RelaxationContext(ismultiordered, issparse, SortedSet{DataType}(), hierarchykind, renamevars, di_relax, ki, cstrtypes)
+    relax_ctx = RelaxationContext(ismultiordered, issparse, Set{DataType}(), hierarchykind, renamevars, di_relax, ki, cstrtypes)
 
     # Check whether the problem has the suggested symmetries
-    pbsymmetries = SortedSet{DataType}()
+    pbsymmetries = Set{DataType}()
     isa(symmetries, Array) || error("set_relaxation(): symmetries should be an Array of types.")
     for symtype in symmetries
         if has_symmetry(relax_ctx, pb, symtype)
@@ -114,7 +114,7 @@ function set_relaxation(pb::Problem; ismultiordered::Bool=false,
     end
 
 
-    exposet = SortedSet()
+    exposet = Set()
     nb_expotot = 0
     degbycstr = Int64[]
     for (cstrname, cstr) in get_constraints(pb)

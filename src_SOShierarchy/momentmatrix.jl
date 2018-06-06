@@ -4,9 +4,9 @@
 #     Build the moment matrix corresponding to the moment of degree up to `d` of the `vars` polynomial algebra.
 #     Only monomials featuring all `symmetries` appear in the moment matrix.
 # """
-function MomentMatrix{T}(relax_ctx::RelaxationContext, vars::SortedSet{Variable},
+function MomentMatrix{T}(relax_ctx::RelaxationContext, vars::Set{Variable},
                                                        d::Int,
-                                                       symmetries::SortedSet{DataType},
+                                                       symmetries::Set{DataType},
                                                        matrixkind::Symbol;
                                                        default_clique::String="",
                                                        var_to_cliques::Dict{Variable, Set{String}}=Dict{Variable, Set{String}}()) where T<:Number

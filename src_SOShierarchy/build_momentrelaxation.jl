@@ -4,9 +4,9 @@
     Compute the `momentrelaxation` of `problem` corresponding to the clique decomposition `max_cliques` and parameters `moment_param`.
 """
 function MomentRelaxation{T}(relax_ctx::RelaxationContext, problem::Problem,
-                                                           momentmat_param::SortedDict{String, Int},
-                                                           localizingmat_param::SortedDict{String, Tuple{SortedSet{String}, Int}},
-                                                           max_cliques::SortedDict{String, SortedSet{Variable}}) where T<:Number
+                                                           momentmat_param::Dict{String, Int},
+                                                           localizingmat_param::Dict{String, Tuple{Set{String}, Int}},
+                                                           max_cliques::Dict{String, Set{Variable}}) where T<:Number
     println("\n=== MomentRelaxation(relax_ctx, problem, moment_param::Dict{String, Tuple{Set{String}, Int}}, max_cliques::Dict{String, Set{Variable}})")
     println("Compute the moment and localizing matrices associated with the problem constraints and clique decomposition and return a MomentRelaxation object.")
 
@@ -22,7 +22,7 @@ function MomentRelaxation{T}(relax_ctx::RelaxationContext, problem::Problem,
     objective = Dict{Moment, T}()
     for (expo, val) in problem.objective
         clique = get_exponentclique(expo, var_to_cliques)
-        objective[Moment(expo, clique)] = convert(T, val)
+        objective[Moment(expo, clique)] = val
     end
 
 
@@ -32,6 +32,7 @@ function MomentRelaxation{T}(relax_ctx::RelaxationContext, problem::Problem,
     ## Build moment matrix
     for (cliquename, vars) in max_cliques
         dcl = momentmat_param[cliquename]
+        @show typeof((relax_ctx, vars, dcl, relax_ctx.symmetries, relax_ctx.cstrtypes[get_momentcstrname()], cliquename))
         momentmatrices[(get_momentcstrname(), cliquename)] = MomentMatrix{T}(relax_ctx, vars, dcl, relax_ctx.symmetries,
                                                                                                    relax_ctx.cstrtypes[get_momentcstrname()],
                                                                                                    default_clique = cliquename)
@@ -42,7 +43,7 @@ function MomentRelaxation{T}(relax_ctx::RelaxationContext, problem::Problem,
 
         cstrtype = get_cstrtype(cstr)
         if cstrtype == :ineqdouble
-            cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
+            cstrname_lo, cstrname_up = get_cstrname_lower(cstrname), get_cstrname_upper(cstrname)
 
             # Deal with lower inequality
             clique_keys, order = localizingmat_param[cstrname_lo]
