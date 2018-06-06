@@ -1,14 +1,17 @@
-"""
-    mm = MomentMatrix(vars::SortedSet{Variable}, d, symmetries)
+# """
+#     mm = MomentMatrix(vars::SortedSet{Variable}, d, symmetries)
 
-    Build the moment matrix corresponding to the moment of degree up to `d` of the `vars` polynomial algebra.
-    Only monomials featuring all `symmetries` appear in the moment matrix.
-"""
-function MomentMatrix(relax_ctx, vars::SortedSet{Variable}, d::Int, symmetries::SortedSet{DataType},
-                                                                    matrixkind::Symbol;
-                                                                    default_clique::String="",
-                                                                    var_to_cliques::SortedDict{Variable, SortedSet{String}}=SortedDict{Variable, SortedSet{String}}())
-    mm = SortedDict{Tuple{Exponent, Exponent}, SortedDict{Moment, Number}}()
+#     Build the moment matrix corresponding to the moment of degree up to `d` of the `vars` polynomial algebra.
+#     Only monomials featuring all `symmetries` appear in the moment matrix.
+# """
+function MomentMatrix{T}(relax_ctx::RelaxationContext, vars::SortedSet{Variable},
+                                                       d::Int,
+                                                       symmetries::SortedSet{DataType},
+                                                       matrixkind::Symbol;
+                                                       default_clique::String="",
+                                                       var_to_cliques::SortedDict{Variable, SortedSet{String}}=SortedDict{Variable, SortedSet{String}}()) where T<:Number
+
+    mm = SortedDict{Tuple{Exponent, Exponent}, SortedDict{Moment, T}}()
 
     ## Computing exponents for available variables
     realexpos = compute_exponents(vars, d)
@@ -33,18 +36,18 @@ function MomentMatrix(relax_ctx, vars::SortedSet{Variable}, d::Int, symmetries::
                     expo_clique = get_exponentclique(expo, var_to_cliques)
                 end
 
-                mm[(cexp, rexp)] = SortedDict{Moment, Number}(Moment(expo, expo_clique)=>1)
+                mm[(cexp, rexp)] = SortedDict{Moment, T}(Moment(expo, expo_clique)=>convert(T, 1))
             end
         end
     end
-    return MomentMatrix(mm, SortedSet(vars), d, matrixkind)::MomentMatrix
+    return MomentMatrix{T}(mm, SortedSet(vars), d, matrixkind)
 end
 
-function copy(mm::MomentMatrix)
-    return MomentMatrix(copy(mm.mm), mm.vars, mm.order, mm.matrixkind)
-end
+# function copy(mm::MomentMatrix)
+#     return MomentMatrix(copy(mm.mm), mm.vars, mm.order, mm.matrixkind)
+# end
 
-function print(io::IO, mm::MomentMatrix)
+function print(io::IO, mm::MomentMatrix{T}) where T<:Number
     keylen = maximum(x->length("($(x[1]), $(x[2])) → "), keys(mm.mm))
 
     maxorder = 0
@@ -66,13 +69,15 @@ function print(io::IO, mm::MomentMatrix)
     print(io, " $(mm.matrixkind)")
 end
 
+
+
 """
     cliquename = get_exponentclique(expo, var_to_cliques)
 
     Determine which clique expo fits in, that is which cliques contain all variables of expo.
     Error if no such clique are found.
 """
-function get_exponentclique(expo, var_to_cliques::SortedDict{Variable, SortedSet{String}})
+function get_exponentclique(expo::Exponent, var_to_cliques::SortedDict{Variable, SortedSet{String}})
     cliques = SortedSet{String}()
 
     ## If expo is one, return default clique
@@ -90,30 +95,30 @@ function get_exponentclique(expo, var_to_cliques::SortedDict{Variable, SortedSet
     return clique
 end
 
-##########################
-## Moment matrix algebra
-##########################
+# ##########################
+# ## Moment matrix algebra
+# ##########################
 
 ## AbstractPolynomial types
-function product!(mm::MomentMatrix, p::T, var_to_cliques::SortedDict{Variable, SortedSet{String}}) where T<:Union{AbstractPolynomial, Number}
+function product!(mm::MomentMatrix{M}, p::T, var_to_cliques::SortedDict{Variable, SortedSet{String}}) where T<:Union{AbstractPolynomial, Number} where M<:Number
     for (key, momentpoly) in mm.mm
         mm.mm[key] = product(momentpoly, p, var_to_cliques)
     end
     return nothing
 end
 
-function product(momentpoly::SortedDict{Moment, Number}, p::T, var_to_cliques::SortedDict{Variable, SortedSet{String}}) where T<:Union{AbstractPolynomial, Number}
+function product(momentpoly::SortedDict{Moment, M}, p::T, var_to_cliques::SortedDict{Variable, SortedSet{String}}) where T<:Union{AbstractPolynomial, Number} where M<:Number
     return product(momentpoly, convert(Polynomial, p), var_to_cliques)
 end
 
-function product(momentpoly::SortedDict{Moment, Number}, p::Polynomial, var_to_cliques::SortedDict{Variable, SortedSet{String}})
-    resmpoly = SortedDict{Moment, Number}()
+function product(momentpoly::SortedDict{Moment, M}, p::Polynomial, var_to_cliques::SortedDict{Variable, SortedSet{String}}) where M<:Number
+    resmpoly = SortedDict{Moment, M}()
 
     for (expo, val1) in p
         for (moment, val2) in momentpoly
             resmoment = product(moment, expo, var_to_cliques)
 
-            haskey(resmpoly, resmoment) || (resmpoly[resmoment] = 0.0)
+            haskey(resmpoly, resmoment) || (resmpoly[resmoment] = convert(M, 0.0))
             resmpoly[resmoment] += val1*val2
             isnull(resmpoly[resmoment]) && delete!(resmpoly, resmoment)
         end
@@ -130,15 +135,15 @@ function product(moment::Moment, expo::Exponent, var_to_cliques::SortedDict{Vari
     return Moment(resexpo, clique)
 end
 
-# function evaluate(mm::MomentMatrix, pt::Point)
-#     mm_eval = SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
-#     for (key, p) in mm.mm
-#         res = evaluate(p, pt)
-#         if res == Polynomial()
-#             delete!(mm_eval, key)
-#         else
-#             mm_eval[key] = res
-#         end
-#     end
-#     return MomentMatrix(mm_eval, setdiff(mm.vars, SortedSet(keys(pt))), mm.order, mm.matrixkind)
-# end
+# # function evaluate(mm::MomentMatrix, pt::Point)
+# #     mm_eval = SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}()
+# #     for (key, p) in mm.mm
+# #         res = evaluate(p, pt)
+# #         if res == Polynomial()
+# #             delete!(mm_eval, key)
+# #         else
+# #             mm_eval[key] = res
+# #         end
+# #     end
+# #     return MomentMatrix(mm_eval, setdiff(mm.vars, SortedSet(keys(pt))), mm.order, mm.matrixkind)
+# # end

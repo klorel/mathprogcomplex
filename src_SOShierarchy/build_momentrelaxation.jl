@@ -3,10 +3,10 @@
 
     Compute the `momentrelaxation` of `problem` corresponding to the clique decomposition `max_cliques` and parameters `moment_param`.
 """
-function MomentRelaxation(relax_ctx, problem, momentmat_param::SortedDict{String, Int},
-                                                localizingmat_param::SortedDict{String, Tuple{SortedSet{String}, Int}},
-                                                max_cliques::SortedDict{String, SortedSet{Variable}})
-# function MomentRelaxation(relax_ctx, problem, momentmat_param::SortedDict{String, Int}, localizingmat_param::SortedDict{String, Tuple{SortedSet{String}, Int}}, max_cliques::SortedDict{String, SortedSet{Variable}})
+function MomentRelaxation{T}(relax_ctx::RelaxationContext, problem::Problem,
+                                                           momentmat_param::SortedDict{String, Int},
+                                                           localizingmat_param::SortedDict{String, Tuple{SortedSet{String}, Int}},
+                                                           max_cliques::SortedDict{String, SortedSet{Variable}}) where T<:Number
     println("\n=== MomentRelaxation(relax_ctx, problem, moment_param::SortedDict{String, Tuple{SortedSet{String}, Int}}, max_cliques::SortedDict{String, SortedSet{Variable}})")
     println("Compute the moment and localizing matrices associated with the problem constraints and clique decomposition and return a MomentRelaxation object.")
 
@@ -19,20 +19,20 @@ function MomentRelaxation(relax_ctx, problem, momentmat_param::SortedDict{String
     end
 
     ## Building linear-in-moments objective
-    objective = SortedDict{Moment, Number}()
+    objective = SortedDict{Moment, T}()
     for (expo, val) in problem.objective
         clique = get_exponentclique(expo, var_to_cliques)
-        objective[Moment(expo, clique)] = val
+        objective[Moment(expo, clique)] = convert(T, val)
     end
 
 
     ## Building linear matrix inequalities
-    momentmatrices = SortedDict{Tuple{String, String}, MomentMatrix}()
+    momentmatrices = SortedDict{Tuple{String, String}, MomentMatrix{T}}()
 
     ## Build moment matrix
     for (cliquename, vars) in max_cliques
         dcl = momentmat_param[cliquename]
-        momentmatrices[(get_momentcstrname(), cliquename)] = MomentMatrix(relax_ctx, vars, dcl, relax_ctx.symmetries,
+        momentmatrices[(get_momentcstrname(), cliquename)] = MomentMatrix{T}(relax_ctx, vars, dcl, relax_ctx.symmetries,
                                                                                                 relax_ctx.cstrtypes[get_momentcstrname()],
                                                                                                 default_clique = cliquename)
     end
@@ -49,9 +49,9 @@ function MomentRelaxation(relax_ctx, problem, momentmat_param::SortedDict{String
             vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
             # length(clique_keys) == 1 || error("MomentRelaxation(): constraint $cstrname spans several cliques ($clique_keys).\nNot supported yet.")
 
-            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries,
-                                                       relax_ctx.cstrtypes[cstrname_lo],
-                                                       var_to_cliques = var_to_cliques)
+            mmt = MomentMatrix{T}(relax_ctx, vars, order, relax_ctx.symmetries,
+                                                          relax_ctx.cstrtypes[cstrname_lo],
+                                                          var_to_cliques = var_to_cliques)
             # print_with_color(:green, "$cstrname, :Lo\n") ##NOTE: find better logging system.
             product!(mmt, cstr.p - cstr.lb, var_to_cliques)
             momentmatrices[(cstrname_lo, cliquename)] = mmt
@@ -61,9 +61,9 @@ function MomentRelaxation(relax_ctx, problem, momentmat_param::SortedDict{String
             vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
             # length(clique_keys) == 1 || error("MomentRelaxation(): constraint $cstrname spans several cliques ($clique_keys).\nNot supported yet.")
 
-            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries,
-                                                       relax_ctx.cstrtypes[cstrname_up],
-                                                       var_to_cliques = var_to_cliques)
+            mmt = MomentMatrix{T}(relax_ctx, vars, order, relax_ctx.symmetries,
+                                                          relax_ctx.cstrtypes[cstrname_up],
+                                                          var_to_cliques = var_to_cliques)
             # print_with_color(:green, "$cstrname, :Up\n") ##NOTE: find better logging system.
             product!(mmt, cstr.ub - cstr.p, var_to_cliques)
             momentmatrices[(cstrname_up, cliquename)] = mmt
@@ -92,9 +92,9 @@ function MomentRelaxation(relax_ctx, problem, momentmat_param::SortedDict{String
             vars, cliquename = collect_cliquesvars(clique_keys, max_cliques)
             # length(clique_keys) == 1 || error("MomentRelaxation(): constraint $cstrname spans several cliques ($clique_keys).\nNot supported yet.")
 
-            mmt = MomentMatrix(relax_ctx, vars, order, relax_ctx.symmetries,
-                                                       relax_ctx.cstrtypes[get_cstrname(cstrname, cstrtype)],
-                                                       var_to_cliques = var_to_cliques)
+            mmt = MomentMatrix{T}(relax_ctx, vars, order, relax_ctx.symmetries,
+                                                          relax_ctx.cstrtypes[get_cstrname(cstrname, cstrtype)],
+                                                          var_to_cliques = var_to_cliques)
 
 
             # print_with_color(:green, "$cstrname, :Up\n") ##NOTE: find better logging system.
@@ -131,11 +131,11 @@ function MomentRelaxation(relax_ctx, problem, momentmat_param::SortedDict{String
         info("Nb exponents coupled: $nb_overlap_expos (over $nb_expos)")
     end
 
-    return MomentRelaxation(objective, momentmatrices, expo_to_cliques)
+    return MomentRelaxation{T}(objective, momentmatrices, expo_to_cliques)
 end
 
 
-function print(io::IO, momentrelax::MomentRelaxation)
+function print(io::IO, momentrelax::MomentRelaxation{T}) where T
     println(io, "Moment Relaxation Problem:")
     println(io, "→ Objective: ")
     momentlen = maximum(x->length(string(x)), keys(momentrelax.objective))
