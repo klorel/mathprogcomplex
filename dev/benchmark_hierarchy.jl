@@ -23,14 +23,14 @@ function main()
 
     sols = OrderedDict("WB2"        => (2, 885.71, 905.73, true),
                     #    "WB3"        => (1, 417.25, 417.25, false),
-                       "LMBM3"      => (1, 386.42, 386.42, false))#,
-                    #    "WB5"        => (2, 954.82, 1146.4, true),
-                    #    "case6ww"    => (1, 2986, 2986, false),
-                    #    "case9"      => (2, 373.8, 1458.8, true),
-                    #    "case9mod"   => (2, 234.6, 1320.4, true),
-                    #    "case14"     => (2, 721.5, 5371.5, true))#,
+                       "LMBM3"      => (1, 386.42, 386.42, false)),
+                       "WB5"        => (2, 954.82, 1146.4, true),
+                       "case6ww"    => (1, 2986, 2986, false),
+                       "case9"      => (2, 373.8, 1458.8, true),
+                       "case9mod"   => (2, 234.6, 1320.4, true),
+                       "case14"     => (2, 721.5, 5371.5, true)),
                     #    "case22loop" => (1, 4538.8, 4538.8, false), ## Absent in data repo...
-                    #    "case30"     => (2, 268.915, 316.49, true))
+                       "case30"     => (2, 268.915, 316.49, true))
 
 
     suite = BenchmarkGroup()
@@ -71,6 +71,18 @@ function main()
             suite["order_$d"]["pb_mosek_solve"][instance] = @benchmarkable ((primobj, dualobj) = solve_mosek($sdpinstance, $primal, $dual; logname = joinpath($logpath, "Mosek_run.log")))
             primobj, dualobj = solve_mosek(sdpinstance, primal, dual; logname = joinpath(logpath, "Mosek_run.log"))
         end
+    end
+
+    # If a cache of tuned parameters already exists, use it, otherwise, tune and cache
+    # the benchmark parameters. Reusing cached parameters is faster and more reliable
+    # than re-tuning `suite` every time the file is included.
+    paramspath = joinpath(dirname(@__FILE__), "params.json")
+
+    if isfile(paramspath)
+        loadparams!(suite, BenchmarkTools.load(paramspath)[1], :evals);
+    else
+        tune!(suite)
+        BenchmarkTools.save(paramspath, params(suite));
     end
 
     return suite
