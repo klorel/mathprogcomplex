@@ -32,7 +32,6 @@ function MomentRelaxation{T}(relax_ctx::RelaxationContext, problem::Problem,
     ## Build moment matrix
     for (cliquename, vars) in max_cliques
         dcl = momentmat_param[cliquename]
-        @show typeof((relax_ctx, vars, dcl, relax_ctx.symmetries, relax_ctx.cstrtypes[get_momentcstrname()], cliquename))
         momentmatrices[(get_momentcstrname(), cliquename)] = MomentMatrix{T}(relax_ctx, vars, dcl, relax_ctx.symmetries,
                                                                                                    relax_ctx.cstrtypes[get_momentcstrname()],
                                                                                                    default_clique = cliquename)

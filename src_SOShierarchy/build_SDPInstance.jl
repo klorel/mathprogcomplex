@@ -3,7 +3,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
     sdplin = SDPLin()
     sdplinsym = SDPLinSym()
     sdpcst = SDPCst()
-    block_to_vartype = SortedDict{String, Symbol}()
+    block_to_vartype = Dict{String, Symbol}()
 
     ## Build blocks dict
     for ((cstrname, cliquename), mmt) in mmtrelax_pb.constraints
@@ -91,8 +91,8 @@ end
 #     α, β = Exponent(), Exponent()
 
 #     for (var, deg) in expo
-#         product!(α, Exponent(SortedDict(var=>Degree(0, deg.conjvar))))
-#         product!(β, Exponent(SortedDict(var=>Degree(deg.explvar, 0))))
+#         product!(α, Exponent(Dict(var=>Degree(0, deg.conjvar))))
+#         product!(β, Exponent(Dict(var=>Degree(deg.explvar, 0))))
 #     end
 
 #     if (relaxctx.hierarchykind == :Real) && (α.degree != Degree(0,0))

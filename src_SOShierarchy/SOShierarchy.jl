@@ -69,13 +69,13 @@ include("build_momentrelaxation.jl")
 ###############################################################################
 ## SOS Problem
 ###############################################################################
-const SDPBlocks = SortedDict{Tuple{Moment, String, Exponent, Exponent}, Number} # ((α, β), block_name, γ, δ) -> coeff
-const SDPLinSym = SortedDict{Tuple{Moment, String, Exponent}, Number}           # ((α, β), block_name, var) -> coeff
-const SDPLin = SortedDict{Tuple{Moment, Exponent}, Number}                      # ((α, β), var) -> coeff
-const SDPCst = SortedDict{Moment, Number}                                       # (α, β) -> coeff
+const SDPBlocks = Dict{Tuple{Moment, String, Exponent, Exponent}, Number} # ((α, β), block_name, γ, δ) -> coeff
+const SDPLinSym = Dict{Tuple{Moment, String, Exponent}, Number}           # ((α, β), block_name, var) -> coeff
+const SDPLin = Dict{Tuple{Moment, Exponent}, Number}                      # ((α, β), var) -> coeff
+const SDPCst = Dict{Moment, Number}                                       # (α, β) -> coeff
 
 mutable struct SDPInstance
-    block_to_vartype::SortedDict{String, Symbol}  # Either :SDP, :Sym, :SDPc, :SymC
+    block_to_vartype::Dict{String, Symbol}  # Either :SDP, :Sym, :SDPc, :SymC
     blocks::SDPBlocks
     linsym::SDPLinSym
     lin::SDPLin

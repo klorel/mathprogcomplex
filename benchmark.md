@@ -49,9 +49,9 @@ order_2
 |   case6ww |            485.768 ms |                    36.592 s |                             2.053 s |                    7.373 s |
 |     case9 |            267.784 ms |                    89.101 s |                             4.347 s |                  141.749 s |
 
-### Specific benchmarks:
+### Specific benchmarks: MomentRelaxation()
 
-#### Initial benchmark results
+#### Before any improvements
 MomentRelaxation(), case30, d=1
 ```
   memory estimate:  374.77 MiB
@@ -66,8 +66,8 @@ MomentRelaxation(), case30, d=1
   evals/sample:     1
 ```
 
-```
 MomentRelaxation(), case89pegase, d=1
+```
 BenchmarkTools.Trial:
   memory estimate:  3.61 GiB
   allocs estimate:  80377019
@@ -107,5 +107,67 @@ MomentRelaxation(), case30, d=1
   maximum time:     2.590 s (50.08% GC)
   --------------
   samples:          3
+  evals/sample:     1
+```
+
+### Specific benchmarks: build_SDPInstance()
+
+#### Before improvements
+
+build_SDPInstance(), case30, d=1
+```
+  memory estimate:  123.22 MiB
+  allocs estimate:  2846439
+  --------------
+  minimum time:     397.124 ms (10.93% GC)
+  median time:      416.186 ms (11.33% GC)
+  mean time:        417.275 ms (11.44% GC)
+  maximum time:     444.241 ms (13.60% GC)
+  --------------
+  samples:          13
+  evals/sample:     1
+```
+
+build_SDPInstance(), case89pegase, d=1
+```
+  memory estimate:  1.06 GiB
+  allocs estimate:  25103390
+  --------------
+  minimum time:     3.824 s (15.38% GC)
+  median time:      3.865 s (15.81% GC)
+  mean time:        3.865 s (15.81% GC)
+  maximum time:     3.905 s (16.23% GC)
+  --------------
+  samples:          2
+  evals/sample:     1
+```
+
+#### Removing Sorted Structures:
+
+build_SDPInstance(), case30, d=1
+```
+  memory estimate:  2.13 MiB
+  allocs estimate:  63165
+  --------------
+  minimum time:     11.314 ms (0.00% GC)
+  median time:      13.707 ms (0.00% GC)
+  mean time:        15.624 ms (4.61% GC)
+  maximum time:     40.133 ms (0.00% GC)
+  --------------
+  samples:          320
+  evals/sample:     1
+```
+
+build_SDPInstance(), case89pegase, d=1
+```
+  memory estimate:  15.57 MiB
+  allocs estimate:  479607
+  --------------
+  minimum time:     119.698 ms (0.00% GC)
+  median time:      142.063 ms (14.05% GC)
+  mean time:        138.118 ms (11.25% GC)
+  maximum time:     159.937 ms (21.56% GC)
+  --------------
+  samples:          37
   evals/sample:     1
 ```
