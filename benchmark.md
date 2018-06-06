@@ -42,3 +42,78 @@ order_2
 | --------- | -------------------:| ---------------------------------:| -------------------------:| ------------------------:|
 |       WB2 |           42.331 ms |                         48.805 ms |                341.357 ms |                88.134 ms |
 |     LMBM3 |          126.692 ms |                        221.792 ms |                   1.813 s |               194.405 ms |
+
+### Specific benchmarks:
+
+#### Initial benchmark results
+MomentRelaxation(), case30, d=1
+```
+  memory estimate:  374.77 MiB
+  allocs estimate:  8117070
+  --------------
+  minimum time:     1.077 s (17.42% GC)
+  median time:      1.187 s (22.11% GC)
+  mean time:        1.213 s (24.76% GC)
+  maximum time:     1.346 s (31.57% GC)
+  --------------
+  samples:          5
+  evals/sample:     1
+```
+
+```
+MomentRelaxation(), case89pegase, d=1
+BenchmarkTools.Trial:
+  memory estimate:  3.61 GiB
+  allocs estimate:  80377019
+  --------------
+  minimum time:     14.887 s (22.51% GC)
+  median time:      14.887 s (22.51% GC)
+  mean time:        14.887 s (22.51% GC)
+  maximum time:     14.887 s (22.51% GC)
+  --------------
+  samples:          1
+  evals/sample:     1
+```
+
+#### Removing Sorted Structures:
+
+```
+MomentRelaxation(), case30, d=1
+  memory estimate:  83.77 MiB
+  allocs estimate:  1707556
+  --------------
+  minimum time:     254.627 ms (15.71% GC)
+  median time:      292.712 ms (24.97% GC)
+  mean time:        309.915 ms (29.00% GC)
+  maximum time:     416.560 ms (48.47% GC)
+  --------------
+  samples:          17
+  evals/sample:     1
+```
+
+```
+MomentRelaxation(), case89pegase, d=1
+  memory estimate:  545.63 MiB
+  allocs estimate:  11182870
+  --------------
+  minimum time:     2.110 s (36.22% GC)
+  median time:      2.175 s (38.66% GC)
+  mean time:        2.309 s (42.06% GC)
+  maximum time:     2.640 s (49.54% GC)
+  --------------
+  samples:          3
+  evals/sample:     1
+```
+
+```
+  memory estimate:  509.83 MiB
+  allocs estimate:  10403116
+  --------------
+  minimum time:     2.032 s (37.80% GC)
+  median time:      2.078 s (39.65% GC)
+  mean time:        2.233 s (43.12% GC)
+  maximum time:     2.590 s (50.08% GC)
+  --------------
+  samples:          3
+  evals/sample:     1
+```
