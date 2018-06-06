@@ -23,12 +23,12 @@ function main()
 
     sols = OrderedDict("WB2"        => (2, 885.71, 905.73, true),
                     #    "WB3"        => (1, 417.25, 417.25, false),
-                       "LMBM3"      => (1, 386.42, 386.42, false)),
+                       "LMBM3"      => (1, 386.42, 386.42, false),
                        "WB5"        => (2, 954.82, 1146.4, true),
                        "case6ww"    => (1, 2986, 2986, false),
                        "case9"      => (2, 373.8, 1458.8, true),
                        "case9mod"   => (2, 234.6, 1320.4, true),
-                       "case14"     => (2, 721.5, 5371.5, true)),
+                       "case14"     => (2, 721.5, 5371.5, true),
                     #    "case22loop" => (1, 4538.8, 4538.8, false), ## Absent in data repo...
                        "case30"     => (2, 268.915, 316.49, true))
 
@@ -43,10 +43,10 @@ function main()
 
     for d=1:2
 
-        suite["order_$d"]["POP_build"] = BenchmarkGroup()
-        suite["order_$d"]["pb_construction"] = BenchmarkGroup()
-        suite["order_$d"]["pb_build_SDPMosekstruct"] = BenchmarkGroup()
-        suite["order_$d"]["pb_mosek_solve"] = BenchmarkGroup()
+        suite["order_$d"]["1.POP_build"] = BenchmarkGroup()
+        suite["order_$d"]["2.pb_construction"] = BenchmarkGroup()
+        suite["order_$d"]["3.pb_build_SDPMosekstruct"] = BenchmarkGroup()
+        suite["order_$d"]["4.pb_mosek_solve"] = BenchmarkGroup()
 
 
         for (instance, (dcv, obj_rankrel, obj_opt, lackconstant)) in sols
@@ -55,20 +55,20 @@ function main()
             mkpath(logpath)
 
             dat_path = joinpath("..", "data", "data_Matpower", "matpower_QCQP", instance*".dat")
-            suite["order_$d"]["POP_build"][instance] = @benchmarkable (problem = build_pb_from_dat($dat_path))
+            suite["order_$d"]["1.POP_build"][instance] = @benchmarkable (problem = build_pb_from_dat($dat_path))
             problem = build_pb_from_dat(dat_path)
 
             relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                                 d = d)
 
-            suite["order_$d"]["pb_construction"][instance] = @benchmarkable (SOS_pb = build_relaxation($problem, $relax_ctx))
+            suite["order_$d"]["2.pb_construction"][instance] = @benchmarkable (SOS_pb = build_relaxation($problem, $relax_ctx))
             SOS_pb = build_relaxation(problem, relax_ctx)
             export_SDP(SOS_pb, logpath)
 
-            suite["order_$d"]["pb_build_SDPMosekstruct"][instance] = @benchmarkable (sdpinstance = build_mosekpb($logpath))
+            suite["order_$d"]["3.pb_build_SDPMosekstruct"][instance] = @benchmarkable (sdpinstance = build_mosekpb($logpath))
             sdpinstance = build_mosekpb(logpath)
 
-            suite["order_$d"]["pb_mosek_solve"][instance] = @benchmarkable ((primobj, dualobj) = solve_mosek($sdpinstance, $primal, $dual; logname = joinpath($logpath, "Mosek_run.log")))
+            suite["order_$d"]["4.pb_mosek_solve"][instance] = @benchmarkable ((primobj, dualobj) = solve_mosek($sdpinstance, $primal, $dual; logname = joinpath($logpath, "Mosek_run.log")))
             primobj, dualobj = solve_mosek(sdpinstance, primal, dual; logname = joinpath(logpath, "Mosek_run.log"))
         end
     end
@@ -86,4 +86,42 @@ function main()
     end
 
     return suite
+end
+
+function showresults(results)
+    data = OrderedDict()
+
+    orders = Set()
+    instances = Set()
+    measurekinds = SortedSet()
+
+    for (order, val1) in results
+        for (measurekind, val2) in val1
+            for (instance, t) in val2
+                !haskey(data, instance) && (data[instance] = Dict())
+                data[instance][(order, measurekind)] = t
+
+                push!(orders, order)
+                push!(instances, instance)
+                push!(measurekinds, measurekind)
+            end
+        end
+    end
+
+    orders = OrderedSet(sort(collect(orders), by=x->parse(matchall(r"\d+", x)[1])))
+    instances = OrderedSet(sort(collect(instances), by=x->parse(matchall(r"\d+", x)[1])))
+
+    @show orders
+    @show instances
+
+    for instance in instances
+        for order in orders
+            for measurekind in measurekinds
+                print("($instance, $order, $measurekind)  ")
+            end
+            print(" | ")
+        end
+        print("\b\b \n")
+    end
+
 end
