@@ -1,4 +1,4 @@
-@testset "WB2 real formulation, fixed phase" begin
+@testset "WB2 real formulation, fixed phase, order 2" begin
     sols = SortedDict(0.976 => (2, 905.76, 905.76),
                     0.983 => (2, 905.73, 903.12),
                     0.989 => (2, 905.73, 900.84),
@@ -25,7 +25,12 @@
 
         primobj, dualobj = run_hierarchy(problem, relax_ctx, logpath, save_pbs=true);
         @show primobj, dualobj, obj_fixedphase
-        @test primobj ≈ obj_fixedphase atol=1e-2
-        @test dualobj ≈ obj_fixedphase atol=1e-2
+        if (0.983 ≤ v2max ≤ 1.028)
+            @test_broken primobj ≈ obj_fixedphase atol=1e-2
+            @test_broken dualobj ≈ obj_fixedphase atol=1e-2
+        else
+            @test primobj ≈ obj_fixedphase atol=1e-2
+            @test dualobj ≈ obj_fixedphase atol=1e-2
+        end
     end
 end
