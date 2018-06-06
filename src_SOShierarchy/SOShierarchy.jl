@@ -43,8 +43,8 @@ include("moment.jl")
     **Note** that the matrix is indexed by a tuple of exponents, *the first of which contains only conjugated variables*, et second only real ones.
 """
 mutable struct MomentMatrix{T}
-    mm::SortedDict{Tuple{Exponent, Exponent}, SortedDict{Moment, T}}
-    vars::SortedSet{Variable}
+    mm::Dict{Tuple{Exponent, Exponent}, Dict{Moment, T}}
+    vars::Set{Variable}
     order::Int
     matrixkind::Symbol            # Either :SDP or :Sym
 end
@@ -57,9 +57,9 @@ include("momentmatrix.jl")
     Store a Moment Relaxation problem.
 """
 struct MomentRelaxation{T}
-    objective::SortedDict{Moment, T}
-    constraints::SortedDict{Tuple{String, String}, MomentMatrix{T}}
-    moments_overlap::SortedDict{Exponent, SortedSet{String}}
+    objective::Dict{Moment, T}
+    constraints::Dict{Tuple{String, String}, MomentMatrix{T}}
+    moments_overlap::Dict{Exponent, Set{String}}
 end
 
 include("build_momentrelaxation.jl")

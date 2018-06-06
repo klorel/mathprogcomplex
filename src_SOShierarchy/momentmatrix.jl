@@ -9,9 +9,9 @@ function MomentMatrix{T}(relax_ctx::RelaxationContext, vars::SortedSet{Variable}
                                                        symmetries::SortedSet{DataType},
                                                        matrixkind::Symbol;
                                                        default_clique::String="",
-                                                       var_to_cliques::SortedDict{Variable, SortedSet{String}}=SortedDict{Variable, SortedSet{String}}()) where T<:Number
+                                                       var_to_cliques::Dict{Variable, Set{String}}=Dict{Variable, Set{String}}()) where T<:Number
 
-    mm = SortedDict{Tuple{Exponent, Exponent}, SortedDict{Moment, T}}()
+    mm = Dict{Tuple{Exponent, Exponent}, Dict{Moment, T}}()
 
     ## Computing exponents for available variables
     realexpos = compute_exponents(vars, d)
@@ -28,19 +28,19 @@ function MomentMatrix{T}(relax_ctx::RelaxationContext, vars::SortedSet{Variable}
 
             ## Storing only lower triangular matrix
             if issym && cexp ≥ rexp
-                @assert default_clique!="" || var_to_cliques!=SortedDict{Variable, SortedSet{String}}()
+                @assert default_clique!="" || var_to_cliques!=Dict{Variable, Set{String}}()
 
                 # Get exponent clique
                 expo_clique = default_clique
-                if var_to_cliques!=SortedDict{Variable, SortedSet{String}}()
+                if var_to_cliques!=Dict{Variable, Set{String}}()
                     expo_clique = get_exponentclique(expo, var_to_cliques)
                 end
 
-                mm[(cexp, rexp)] = SortedDict{Moment, T}(Moment(expo, expo_clique)=>convert(T, 1))
+                mm[(cexp, rexp)] = Dict{Moment, T}(Moment(expo, expo_clique)=>convert(T, 1))
             end
         end
     end
-    return MomentMatrix{T}(mm, SortedSet(vars), d, matrixkind)
+    return MomentMatrix{T}(mm, Set(vars), d, matrixkind)
 end
 
 # function copy(mm::MomentMatrix)
@@ -77,8 +77,8 @@ end
     Determine which clique expo fits in, that is which cliques contain all variables of expo.
     Error if no such clique are found.
 """
-function get_exponentclique(expo::Exponent, var_to_cliques::SortedDict{Variable, SortedSet{String}})
-    cliques = SortedSet{String}()
+function get_exponentclique(expo::Exponent, var_to_cliques::Dict{Variable, Set{String}})
+    cliques = Set{String}()
 
     ## If expo is one, return default clique
     expo == Exponent() && return "clique1"
@@ -100,19 +100,19 @@ end
 # ##########################
 
 ## AbstractPolynomial types
-function product!(mm::MomentMatrix{M}, p::T, var_to_cliques::SortedDict{Variable, SortedSet{String}}) where T<:Union{AbstractPolynomial, Number} where M<:Number
+function product!(mm::MomentMatrix{M}, p::T, var_to_cliques::Dict{Variable, Set{String}}) where T<:Union{AbstractPolynomial, Number} where M<:Number
     for (key, momentpoly) in mm.mm
         mm.mm[key] = product(momentpoly, p, var_to_cliques)
     end
     return nothing
 end
 
-function product(momentpoly::SortedDict{Moment, M}, p::T, var_to_cliques::SortedDict{Variable, SortedSet{String}}) where T<:Union{AbstractPolynomial, Number} where M<:Number
+function product(momentpoly::Dict{Moment, M}, p::T, var_to_cliques::Dict{Variable, Set{String}}) where T<:Union{AbstractPolynomial, Number} where M<:Number
     return product(momentpoly, convert(Polynomial, p), var_to_cliques)
 end
 
-function product(momentpoly::SortedDict{Moment, M}, p::Polynomial, var_to_cliques::SortedDict{Variable, SortedSet{String}}) where M<:Number
-    resmpoly = SortedDict{Moment, M}()
+function product(momentpoly::Dict{Moment, M}, p::Polynomial, var_to_cliques::Dict{Variable, Set{String}}) where M<:Number
+    resmpoly = Dict{Moment, M}()
 
     for (expo, val1) in p
         for (moment, val2) in momentpoly
@@ -127,7 +127,7 @@ function product(momentpoly::SortedDict{Moment, M}, p::Polynomial, var_to_clique
     return resmpoly
 end
 
-function product(moment::Moment, expo::Exponent, var_to_cliques::SortedDict{Variable, SortedSet{String}})
+function product(moment::Moment, expo::Exponent, var_to_cliques::Dict{Variable, Set{String}})
     resexpo = product(moment.conj_part, moment.expl_part)
     product!(resexpo, expo)
 
