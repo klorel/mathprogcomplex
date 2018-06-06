@@ -76,7 +76,7 @@ function main()
     # If a cache of tuned parameters already exists, use it, otherwise, tune and cache
     # the benchmark parameters. Reusing cached parameters is faster and more reliable
     # than re-tuning `suite` every time the file is included.
-    paramspath = joinpath(dirname(@__FILE__), "params.json")
+    paramspath = joinpath(dirname(@__FILE__), "params_hierarchybenchmark.json")
 
     if isfile(paramspath)
         loadparams!(suite, BenchmarkTools.load(paramspath)[1], :evals);
