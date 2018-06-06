@@ -88,7 +88,7 @@ function main()
     return suite
 end
 
-function showresults(results)
+function showresults(results; io=STDOUT)
     data = OrderedDict()
 
     orders = Set()
@@ -111,17 +111,44 @@ function showresults(results)
     orders = OrderedSet(sort(collect(orders), by=x->parse(matchall(r"\d+", x)[1])))
     instances = OrderedSet(sort(collect(instances), by=x->parse(matchall(r"\d+", x)[1])))
 
-    @show orders
-    @show instances
+    colofset = 10
+    instanceslen = maximum(map(x->length(x), instances))
+    instanceslen = max(instanceslen, length("instances"))
+    ordercollen = sum([length(mkind)+colofset+3 for mkind in measurekinds])-3
 
-    for instance in instances
-        for order in orders
-            for measurekind in measurekinds
-                print("($instance, $order, $measurekind)  ")
-            end
-            print(" | ")
+    for order in orders
+        print(io, order, "\n")
+
+        print(io, "| ")
+        print_string(io, "instances", instanceslen)
+        print(io, "| ")
+        for measurekind in measurekinds
+            print_string(io, measurekind, length(measurekind)+colofset)
+            print(io, "| ")
         end
-        print("\b\b \n")
-    end
+        print(io, "\n")
 
+        print(io, "| ")
+        print(io, "-"^instanceslen)
+        print(io, " | ")
+        for measurekind in measurekinds
+            print(io, "-"^(length(measurekind)+colofset), ":")
+            print(io, "| ")
+        end
+        print(io, "\n")
+
+
+        for instance in instances
+            print(io, "| ")
+            print_string(io, instance, instanceslen)
+            print(io, "| ")
+            for measurekind in measurekinds
+                t = mean(results[order][measurekind][instance].times)
+                print_string(io, BenchmarkTools.prettytime(t), length(measurekind)+colofset)
+                print(io, "| ")
+            end
+            print(io, "\n")
+        end
+        print(io, "\n\n")
+    end
 end
