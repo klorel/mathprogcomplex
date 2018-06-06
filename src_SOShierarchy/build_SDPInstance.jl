@@ -1,7 +1,8 @@
-function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxationPb)
+function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxation; debug=false)
     sdpblocks = SDPBlocks()
     sdplin = SDPLin()
-    sdpcst = SDPcst()
+    sdplinsym = SDPLinSym()
+    sdpcst = SDPCst()
     block_to_vartype = SortedDict{String, Symbol}()
 
     ## Build blocks dict
@@ -10,74 +11,102 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
         block_to_vartype[block_name] = mmt.matrixkind
 
         for ((γ, δ), poly) in mmt.mm
-            for (expo, λ) in poly
+            for (moment, λ) in poly
+                debug && (expo = product(moment.conj_part, moment.expl_part))
+                debug && (@assert expo.degree.explvar == moment.expl_part.degree.explvar)
+                debug && (@assert expo.degree.conjvar == moment.conj_part.degree.conjvar)
                 # Check the current monomial has correct degree
-                if (relaxctx.hierarchykind==:Complex) && ((expo.degree.explvar > relaxctx.di[cstrname]) || (expo.degree.conjvar > relaxctx.di[cstrname]))
-                    warn("convertMMtobase(): Found exponent pair of degree $(expo.degree) > $(relaxctx.di[cstrname]) for Complex hierarchy.\n($(expo), at $((γ, δ)) of MM matrix)")
-                elseif (relaxctx.hierarchykind==:Real) && ((expo.degree.explvar > 2*relaxctx.di[cstrname]) || (expo.degree.conjvar != 0))
-                    warn("convertMMtobase(): Found exponent pair of degree $(expo.degree) > 2*$(relaxctx.di[cstrname]) for Real hierarchy.\n($(expo), at $((γ, δ)) of MM matrix)")
+                if (relaxctx.hierarchykind==:Complex) && ((moment.expl_part.degree.explvar > relaxctx.di[cstrname]) || (moment.conj_part.degree.conjvar > relaxctx.di[cstrname]))
+                    warn("build_SDPInstance(): Found exponent pair of degree $(expo.degree) > $(relaxctx.di[cstrname]) for Complex hierarchy.\n($(expo), at $((γ, δ)) of MM matrix)")
+                elseif (relaxctx.hierarchykind==:Real) && ((moment.expl_part.degree.explvar > 2*relaxctx.di[cstrname]) || (moment.conj_part.degree.conjvar != 0))
+                    warn("build_SDPInstance(): Found exponent pair of degree $(expo.degree) > 2*$(relaxctx.di[cstrname]) for Real hierarchy.\n($(expo), at $((γ, δ)) of MM matrix)")
                 end
-                !isnan(λ) || warn("convertMMtobase(): isNaN ! constraint $cstrname - clique $blocname - mm entry $((γ, δ)) - moment $(expo)")
-
-                # Determine which moment to affect the current coefficient.
-                α, β = split_expo(relaxctx, expo)
+                !isnan(λ) || warn("build_SDPInstance(): isNaN ! constraint $cstrname - clique $blocname - mm entry $((γ, δ)) - moment $(moment)")
 
                 # Add the current coeff to the SDP problem
-                key = ((α, β), block_name, γ, δ)
-
-                @assert !haskey(sdpblocks, key)
                 # Constraints are fα - ∑ Bi.Zi = 0
-                sdpblocks[key] = -λ
+                if mmt.matrixkind == :SDP || mmt.matrixkind == :SDPC
+                    key = (moment, block_name, γ, δ)
+                    debug && (@assert !haskey(sdpblocks, key))
+
+                    sdpblocks[key] = -λ
+                elseif mmt.matrixkind == :Sym || mmt.matrixkind == :SymC
+                    ## TODO: look into ht_keyindex2!, ht_keyindex for avoiding two dict table lookup
+                    # Maybe implement this operation (if haskey add, else set) using 'setindex!(h::Dict{K,V}, v0, key::K) where V where K' as inspiration
+                    key = (moment, block_name, product(γ, δ))
+                    haskey(sdplinsym, key) || (sdplinsym[key] = 0)
+
+                    sdplinsym[key] += -λ * (γ!=δ ? 2 : 1)
+                else
+                    error("build_SDPInstance(): Unhandled matrix kind $(mmt.matrixkind) for ($cstrname, $cliquename)")
+                end
+
             end
         end
     end
 
-    # Build linear dict
-    ## TODO : enforce clique coupling constraints
+    ## Build linear dict
+    # Enforce clique coupling constraints on moments
+    for (expo, cliques) in mmtrelax_pb.moments_overlap
+        expo == Exponent() && continue
+        # print_with_color(:light_cyan, "-> $expo - $(collect(cliques))\n")
+        @assert length(cliques)>1
+        cliqueref = first(cliques)
+
+        refmoment = Moment(expo, cliqueref)
+        for clique in setdiff(cliques, [cliqueref])
+            curmoment = Moment(expo, clique)
+            var = Exponent(get_ccmultvar(relaxctx, expo, cliqueref, clique))
+
+            @assert !haskey(sdplin, (refmoment, var))
+            @assert !haskey(sdplin, (curmoment, var))
+            sdplin[(refmoment, var)] =  1
+            sdplin[(curmoment, var)] = -1
+        end
+    end
 
     ## Build constants dict
-    for (expo, fαβ) in mmtrelax_pb.objective
+    for (moment, fαβ) in mmtrelax_pb.objective
         # Determine which moment to affect the current coefficient.
-        α, β = split_expo(relaxctx, expo)
 
-        if !haskey(sdpcst, (α, β))
-            sdpcst[(α, β)] = 0.0
+        if !haskey(sdpcst, moment)
+            sdpcst[moment] = 0.0
         end
 
         # Constraints are fα - ∑ Bi.Zi = 0
-        sdpcst[(α, β)] += fαβ
+        sdpcst[moment] += fαβ
     end
 
-    return SDPInstance(block_to_vartype, sdpblocks, sdplin, sdpcst)
+    return SDPInstance(block_to_vartype, sdpblocks, sdplinsym, sdplin, sdpcst)
 end
 
 
-"""
-    α, β = split_expo(expo::Exponent)
+# """
+#     α, β = split_expo(expo::Exponent)
 
-    Split the exponent into two exponents of conjugated and explicit variables in the complex case.
-    Real case is not supported yet.
-"""
-function split_expo(relaxctx::RelaxationContext, expo::Exponent)
-    α, β = Exponent(), Exponent()
+#     Split the exponent into two exponents of conjugated and explicit variables in the complex case.
+#     Real case is not supported yet.
+# """
+# function split_expo(relaxctx::RelaxationContext, expo::Exponent)
+#     α, β = Exponent(), Exponent()
 
-    for (var, deg) in expo
-        add_expod!(α, Exponent(SortedDict(var=>Degree(0, deg.conjvar))))
-        add_expod!(β, Exponent(SortedDict(var=>Degree(deg.explvar, 0))))
-    end
+#     for (var, deg) in expo
+#         product!(α, Exponent(SortedDict(var=>Degree(0, deg.conjvar))))
+#         product!(β, Exponent(SortedDict(var=>Degree(deg.explvar, 0))))
+#     end
 
-    if (relaxctx.hierarchykind == :Real) && (α.degree != Degree(0,0))
-        error("split_expo(): Inconsistent degree $α, $β found for $(relaxctx.hierarchykind) hierarchy.")
-    end
-    return α, β
-end
+#     if (relaxctx.hierarchykind == :Real) && (α.degree != Degree(0,0))
+#         error("split_expo(): Inconsistent degree $α, $β found for $(relaxctx.hierarchykind) hierarchy.")
+#     end
+#     return α, β
+# end
 
 
 function print(io::IO, sdpinst::SDPInstance)
     println(io, " -- SDP Blocks:")
     print(io, sdpinst.blocks)
     println(io, " -- linear part:")
-    length(sdpinst.lin) == 0 ? println("") : print(io, sdpinst.lin)
+    print(io, sdpinst.lin, sdpinst.linsym)
     println(io, " -- const part:")
     print(io, sdpinst.cst)
     println(io, " -- mat var types:")
@@ -86,62 +115,15 @@ function print(io::IO, sdpinst::SDPInstance)
     end
 end
 
-function print(io::IO, sdpblocks::SDPBlocks)
-    cstrlen = maximum(x->length(format_string(x[1][1], x[1][2])), keys(sdpblocks))
-    blocklen = maximum(x->length(x[2]), keys(sdpblocks))
-    rowlen = maximum(x->length(format_string(x[3])), keys(sdpblocks))
-    collen = maximum(x->length(format_string(x[4])), keys(sdpblocks))
-
-    print_string(io, "# Ctr / Obj key j", cstrlen)
-    print_string(io, "# Matrix variable key i", blocklen)
-    print_string(io, "# row key", rowlen)
-    print_string(io, "# col key", collen)
-    @printf(io, "%23s %23s\n", "# Coeff real part", "# Coeff imag part")
-
-    for (((α, β), blockname, γ, δ), λ) in sdpblocks
-        print_string(io, format_string(α, β), cstrlen)
-        print_string(io, blockname, blocklen)
-        print_string(io, format_string(γ), rowlen)
-        print_string(io, format_string(δ), collen)
-        @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
-    end
+function print(io::IO, sdpblocks::SDPBlocks; indentedprint=true)
+    print_blocksfile(io, sdpblocks; indentedprint=indentedprint, print_header=false)
 end
 
-function print(io::IO, sdplin::SDPLin)
-    cstrlen = length(sdplin)!=0 ? maximum(x->length(format_string(x[1][1], x[1][2])), keys(sdplin)) : 0
-    varlen = length(sdplin)!=0 ? maximum(x->length(format_string(x[2])), keys(sdplin)) : 0
-
-    cstrlen = max(cstrlen, length("# Ctr / Obj key j"))
-    varlen = max(varlen, length("# Scalar variable key"))
-    print_string(io, "# Ctr / Obj key j", cstrlen)
-    print_string(io, "# Scalar variable key", varlen)
-    @printf(io, "%23s %23s\n", "# Coeff real part", "# Coeff imag part")
-
-    length(sdplin)==0 && return
-    for (((α, β), var), λ) in sdplin
-        print_string(io, format_string(α, β), cstrlen)
-        print_string(io, format_string(var), varlen)
-        @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
-    end
+function print(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym; indentedprint=true)
+    print_linfile(io, sdplin, sdplinsym; indentedprint=indentedprint, print_header=false)
 end
 
 
-function print(io::IO, sdpcst::SDPcst)
-    cstrlen = maximum(x->length(format_string(x[1], x[2])), keys(sdpcst))
-
-    print_string(io, "# Ctr / Obj key j", cstrlen)
-    @printf(io, "%23s %23s\n", "# Coeff real part", "# Coeff imag part")
-
-    for ((α, β), λ) in sdpcst
-        print_string(io, format_string(α, β), cstrlen)
-        @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
-    end
-end
-
-function get_maxlenkey(dict::SortedDict{String, U}) where U
-    return maximum(map(x->length(x), keys(dict)))
-end
-
-function get_maxlenkey(dict::SortedDict{Tuple{Exponent,Exponent}, U}) where U
-    return maximum(map(x->((α, β)=x; length("($α, $β)")), keys(dict)))
+function print(io::IO, sdpcst::SDPCst; indentedprint=true)
+    print_cstfile(io, sdpcst; indentedprint=indentedprint, print_header=false)
 end

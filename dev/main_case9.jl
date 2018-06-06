@@ -1,38 +1,18 @@
 ROOT = pwd()
 include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
-include(joinpath(ROOT,"src_PowSysMod", "PowSysMod_body.jl"))
 
 
 function main()
 
-    problem = buildPOP_WB2(v2max=1.022, setnetworkphase=false)
-    # typeofinput = GOCInput
-    # instance_path = joinpath("..", "data", "data_GOC", "Phase_0_IEEE14_1Scenario","scenario_1")
-    # raw = "powersystem.raw"
-    # gen = "generator.csv"
-    # con = "contingency.csv"
-    # rawfile = joinpath(instance_path,raw)
-    # genfile = joinpath(instance_path, gen)
-    # contfile = joinpath(instance_path, con)
-    # OPFpbs = load_OPFproblems(rawfile, genfile, contfile)
+    OPFpbs = load_OPFproblems(MatpowerInput, joinpath("..", "data", "data_Matpower", "matpower", "case9.m"))
+    case9 = build_globalpb!(OPFpbs)
 
-    typeofinput = MatpowerInput
-    instance_path = joinpath("..", "data", "data_Matpower","matpower", "WB5.m")
+    problem = pb_cplx2real(case9)
 
-    OPFpbs = load_OPFproblems(typeofinput, instance_path)
-    ## Introducing coupling constraints on generator output
-    (typeofinput != GOCInput) || introduce_Sgenvariables!(OPFpbs)
-
-    ## Bulding optimization problem
-    problem = build_globalpb!(OPFpbs)
-    problem = pb_cplx2real(problem)
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        # symmetries=[PhaseInvariance],
-                                        d = 1)
-    problem = buildPOP_WB2(v2max=1.022, setnetworkphase=true)
-    relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        # symmetries=[PhaseInvariance],
-                                        d = 1)
+                                        symmetries=[PhaseInvariance],
+                                        issparse=true,
+                                        d = 2)
 
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")
@@ -42,7 +22,8 @@ function main()
 
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
-    max_cliques = get_maxcliques(relax_ctx, problem)
+    # max_cliques = get_maxcliques(relax_ctx, problem)
+    max_cliques = get_case9cliques(relax_ctx, problem)
 
     println("\n--------------------------------------------------------")
     println("max cliques =")
@@ -52,6 +33,7 @@ function main()
         @printf("\b\b \n")
     end
 
+    time1 = time()
     ########################################
     # Compute moment and localizing matrices parameters: order et variables
     momentmat_param, localizingmat_param = build_sparsity(relax_ctx, problem, max_cliques)
@@ -71,8 +53,8 @@ function main()
     # Build the moment relaxation problem
     mmtrel_pb = MomentRelaxation(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
 
-    println("\n--------------------------------------------------------")
-    println("mmtrel_pb = $mmtrel_pb")
+    # println("\n--------------------------------------------------------")
+    # println("mmtrel_pb = $mmtrel_pb")
 
     ########################################
     # Convert to a primal SDP problem
@@ -80,12 +62,15 @@ function main()
 
     # println("\n--------------------------------------------------------")
     # println("sdpinstance = \n$sdpinstance")
+    time2 = time()
 
     path = joinpath(pwd(), "Mosek_runs", "worksdp")
     mkpath(path)
     export_SDP(sdpinstance, path)
+
     sdp_instance = read_SDPInstance(path)
 
+    time3 = time()
     println("VAR_TYPES size:     $(size(sdp_instance.VAR_TYPES))")
     println("BLOCKS size:        $(size(sdp_instance.BLOCKS))")
     println("LINEAR size:        $(size(sdp_instance.LINEAR))")
@@ -104,11 +89,18 @@ function main()
 
     # println(sdp)
 
+    time4 = time()
     primal = SortedDict{Tuple{String,String,String}, Float64}()
     dual = SortedDict{Tuple{String, String, String}, Float64}()
 
     primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual)
 
+    time5 = time()
+
+    info("SOS pb construction time  : $(time2 - time1)")
+    info("Export / import time      : $(time3 - time2)")
+    info("Mosek julia pb build time : $(time4 - time3)")
+    info("Mosek solve time          : $(time5 - time4)")
     # # println("Primal solution")
     # # for ((blockname, var1, var2), val) in primal
     # # @printf("%15s %5s %5s %f\n", blockname, var1, var2, val)

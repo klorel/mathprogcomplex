@@ -8,7 +8,7 @@ function get_SDPtriplets(problem::SDP_Problem; debug = false)
   nza = 0
   for ((objctr, block, var1, var2), coeff) in problem.matrices
 
-      if objctr == obj_key()
+      if objctr in problem.obj_keys
         nzc += 1
       else
         nza += 1
@@ -33,7 +33,7 @@ function get_SDPtriplets(problem::SDP_Problem; debug = false)
     sdp_block = problem.name_to_sdpblock[block]
     lower = min(sdp_block.var_to_id[var1], sdp_block.var_to_id[var2])
     upper = max(sdp_block.var_to_id[var1], sdp_block.var_to_id[var2])
-    if objctr == problem.obj_name
+    if objctr in problem.obj_keys
       nzc+=1
       barcj[nzc] = sdp_block.id
       barck[nzc] = upper
@@ -69,8 +69,8 @@ function get_linterms(problem; debug=debug)
   # TODO add linear variables and constraints
 
   nza, nzc = 0, 0
-  for ((objctr, block, var1, var2), coeff) in problem.lin_matsym
-    if objctr == problem.obj_name
+  for (objctr, var) in keys(problem.linear)
+    if objctr in problem.obj_keys
       nzc += 1
     else
       nza += 1
@@ -84,16 +84,16 @@ function get_linterms(problem; debug=debug)
   cjval = zeros(Float64, nzc)
 
   nza, nzc = 0, 0
-  for ((ctrname, blockname, var1, var2), coeff) in problem.lin_matsym
-    if ctrname == problem.obj_name
+  for ((objctr, var), coeff) in problem.linear
+    if objctr in problem.obj_keys
       nzc += 1
-      cj[nzc]= problem.name_to_symblock[blockname].varpairs_to_id[(var1, var2)]
-      cjval[nzc] = coeff * (var1!=var2 ? 2 : 1)
+      cj[nzc] = problem.scalvar_to_id[var]
+      cjval[nzc] = coeff
     else
       nza += 1
-      ai[nza] = problem.name_to_ctr[ctrname][1]
-      aj[nza] = problem.name_to_symblock[blockname].varpairs_to_id[(var1, var2)]
-      aij[nza] = coeff * (var1!=var2 ? 2 : 1)
+      ai[nza] = problem.name_to_ctr[objctr][1]
+      aj[nza] = problem.scalvar_to_id[var]
+      aij[nza] = coeff
     end
   end
 
@@ -154,12 +154,12 @@ end
 function get_varbounds(problem::SDP_Problem)
   MSK_INFINITY = 1.0e30
 
-  varnum = problem.n_scalvarsym
+  numvar = length(problem.scalvar_to_id)
 
-  sub = [i for i in 1:varnum]
-  bkx = [MSK_BK_FR for i in 1:varnum]
-  blx = [-MSK_INFINITY for i in 1:varnum]
-  bux = [MSK_INFINITY for i in 1:varnum]
+  sub = [i for i in 1:numvar]
+  bkx = [MSK_BK_FR for i in 1:numvar]
+  blx = [-MSK_INFINITY for i in 1:numvar]
+  bux = [MSK_INFINITY for i in 1:numvar]
 
   return sub, bkx, blx, bux
 end
@@ -167,23 +167,21 @@ end
 function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64},
                                            dual::SortedDict{Tuple{String, String, String}, Float64};
                                            debug = false,
-                                           logname = "")
+                                           logname = "",
+                                           printlog = true)
   empty!(primal)
   empty!(dual)
   primobj = NaN
   dualobj = NaN
 
   nbarvar = length(problem.id_to_sdpblock)
-  println("nbarvar = ",   nbarvar)
 
   barvardim = [ length(problem.id_to_sdpblock[block].var_to_id) for block in 1:nbarvar ]
 
-  numvar = problem.n_scalvarsym
+  numvar = length(problem.scalvar_to_id)
 
   numcon, bkc, blc, buc = get_ctrbounds(problem)
   sub, bkx, blx, bux = get_varbounds(problem)
-  println("numcon = ",   numcon)
-  println("numvar = ",   numvar)
 
   barcj, barck, barcl, barcjkl , barai, baraj, barak, baral, baraijkl = get_SDPtriplets(problem, debug=debug)
 
@@ -191,11 +189,9 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
 
   # Create a task object and attach log stream printer
   maketask() do task
-      if logname != ""
-        linkfiletostream(task, MSK_STREAM_LOG, logname, 0)
-      else
-        putstreamfunc(task,MSK_STREAM_LOG,printstream)
-      end
+      logname != "" && linkfiletostream(task, MSK_STREAM_LOG, logname, 0)
+
+      printlog && putstreamfunc(task,MSK_STREAM_LOG,printstream)
 
       # Append SDP matrix variables and scalar variables.
       # The variables will initially be fixed at zero.
@@ -222,9 +218,14 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
       # Objective matrices and constant
       putbarcblocktriplet(task, length(barcj), barcj, barck, barcl, barcjkl)
       putclist(task, cj, cjval)
-      if haskey(problem.cst_ctr, problem.obj_name)
-        putcfix(task, problem.cst_ctr[problem.obj_name])
+
+      obj_cst = 0
+      for objmoment in problem.obj_keys
+        if haskey(problem.cst_ctr, objmoment)
+          obj_cst += problem.cst_ctr[objmoment]
+        end
       end
+      obj_cst != 0 && putcfix(task, obj_cst)
 
       # putintparam(task, MSK_IPAR_INTPNT_SCALING, MSK_SCALING_NONE)
       # putintparam(task, MSK_IPAR_INTPNT_SCALING, MSK_SCALING_AGGRESSIVE)

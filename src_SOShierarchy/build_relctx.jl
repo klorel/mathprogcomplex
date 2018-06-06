@@ -3,8 +3,8 @@
 
     Build a `relax_ctx` object containing relaxation choices and problem features : order by constraint, relaxation order by constraint...
 """
-function set_relaxation(pb::Problem; ismultiordered=false, 
-                                     issparse=false, 
+function set_relaxation(pb::Problem; ismultiordered=false,
+                                     issparse=false,
                                      symmetries=[],
                                      hierarchykind=:Complex,
                                      renamevars=false,
@@ -39,15 +39,15 @@ function set_relaxation(pb::Problem; ismultiordered=false,
         cstrtype = get_cstrtype(cstr)
         if cstrtype == :ineqdouble
             cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
-            cstrtypes[cstrname_lo] = :SDP
-            cstrtypes[cstrname_up] = :SDP
+            cstrtypes[cstrname_lo] = (hierarchykind==:Complex ? :SDPC : :SDP)
+            cstrtypes[cstrname_up] = (hierarchykind==:Complex ? :SDPC : :SDP)
         elseif cstrtype == :eq
-            cstrtypes[get_cstrname(cstrname, cstrtype)] = :Sym
+            cstrtypes[get_cstrname(cstrname, cstrtype)] = (hierarchykind==:Complex ? :SymC : :Sym)
         else
-            cstrtypes[get_cstrname(cstrname, cstrtype)] = :SDP
+            cstrtypes[get_cstrname(cstrname, cstrtype)] = (hierarchykind==:Complex ? :SDPC : :SDP)
         end
     end
-    cstrtypes[get_momentcstrname()] = :SDP
+    cstrtypes[get_momentcstrname()] = (hierarchykind==:Complex ? :SDPC : :SDP)
 
     # Relaxation order management
     di_relax = SortedDict{String, Int}()
@@ -61,13 +61,18 @@ function set_relaxation(pb::Problem; ismultiordered=false,
         if cstrtype == :ineqdouble
             cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
             cur_ki = ki[cstrname_lo]
-            (cur_ki <= cur_order) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value $cur_ki, hierarchy may be multiordered.")
-            di_relax[cstrname_lo] = max(cur_ki, cur_order)
-            di_relax[cstrname_up] = max(cur_ki, cur_order)
+            (0 ≤ cur_order-ceil(cur_ki/2)) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value ceil($cur_ki/2).")
+            # (cur_ki <= cur_order) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value $cur_ki, hierarchy may be multiordered.")
+            di_relax[cstrname_lo] = cur_order
+            di_relax[cstrname_up] = cur_order
+            # di_relax[cstrname_lo] = max(cur_order, ceil(cur_ki/2))
+            # di_relax[cstrname_up] = max(cur_order, ceil(cur_ki/2))
         else # :eq, :ineqlo, :ineqhi
             cur_ki = ki[get_cstrname(cstrname, cstrtype)]
-            (cur_ki <= cur_order) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value $cur_ki, hierarchy may be multiordered.")
-            di_relax[get_cstrname(cstrname, cstrtype)] = max(cur_ki, cur_order)
+            (0 ≤ cur_order-ceil(cur_ki/2)) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value ceil($cur_ki/2).")
+            # (cur_ki <= cur_order) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value $cur_ki, hierarchy may be multiordered.")
+            di_relax[get_cstrname(cstrname, cstrtype)] = cur_order
+            # di_relax[get_cstrname(cstrname, cstrtype)] = max(cur_order, ceil(cur_ki/2))
         end
     end
 
@@ -81,10 +86,10 @@ function set_relaxation(pb::Problem; ismultiordered=false,
     end
     # Objective polynomial must be representable by moment matrix
     obj_degree = max(pb.objective.degree.explvar, pb.objective.degree.conjvar)
-    if obj_degree > di_relax[get_momentcstrname()]
-        warn("RelaxationContext(): Moment matrix order $(di_relax[get_momentcstrname()]) is lower than objective degree ($obj_degree). \nUsing value $obj_degree, hierarchy may be multiordered.")
-        di_relax[get_momentcstrname()] = ceil(obj_degree/2)
-    end
+    # if obj_degree > di_relax[get_momentcstrname()]
+    #     warn("RelaxationContext(): Moment matrix order $(di_relax[get_momentcstrname()]) is lower than objective degree ($obj_degree). \nUsing value $obj_degree, hierarchy may be multiordered.")
+    #     di_relax[get_momentcstrname()] = ceil(obj_degree/2)
+    # end
 
     relax_ctx = RelaxationContext(ismultiordered, issparse, SortedSet{DataType}(), hierarchykind, renamevars, di_relax, ki, cstrtypes)
 

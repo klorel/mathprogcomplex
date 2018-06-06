@@ -1,12 +1,11 @@
 using DataStructures
+using ProgressMeter
 include(joinpath(ROOT, "src_PolynomialOptim", "PolynomialOptim.jl"))
 
-## Symetries
-abstract type AbstractSymetry end
-type PhaseInvariance <: AbstractSymetry end
 
-
-
+###############################################################################
+## Relaxation context, symmetries and cliques
+###############################################################################
 mutable struct RelaxationContext
     ismultiordered
     issparse
@@ -19,6 +18,24 @@ mutable struct RelaxationContext
 end
 
 
+include("build_relctx.jl")
+include("build_maxcliques.jl")
+
+abstract type AbstractSymmetry end
+type PhaseInvariance <: AbstractSymmetry end
+include("symmetries.jl")
+
+###############################################################################
+## Moment Problem
+###############################################################################
+struct Moment
+    conj_part::Exponent
+    expl_part::Exponent
+    clique::String
+end
+
+include("moment.jl")
+
 """
     MomentMatrix(mm, vars, order)
 
@@ -26,43 +43,54 @@ end
     **Note** that the matrix is indexed by a tuple of exponents, *the first of which contains only conjugated variables*, et second only real ones.
 """
 mutable struct MomentMatrix
-    mm::SortedDict{Tuple{Exponent, Exponent}, AbstractPolynomial}
+    mm::SortedDict{Tuple{Exponent, Exponent}, SortedDict{Moment, Number}}
     vars::SortedSet{Variable}
     order::Int
     matrixkind::Symbol            # Either :SDP or :Sym
 end
 
+include("momentmatrix.jl")
+
 """
-    momentrel = MomentRelaxationPb(obj, cstrs)
+    momentrel = MomentRelaxation(obj, cstrs)
 
     Store a Moment Relaxation problem.
 """
-struct MomentRelaxationPb
-    objective::AbstractPolynomial
+struct MomentRelaxation
+    objective::SortedDict{Moment, Number}
     constraints::SortedDict{Tuple{String, String}, MomentMatrix}
-    vars_overlap::SortedDict{Variable, SortedSet{String}}
+    moments_overlap::SortedDict{Exponent, SortedSet{String}}
 end
 
+include("build_momentrelaxation.jl")
 
 
 
-const SDPBlocks = SortedDict{Tuple{Tuple{Exponent, Exponent}, String, Exponent, Exponent}, Number}
-# ((α, β), block_name, γ, δ) -> coeff
-
-const SDPLin = SortedDict{Tuple{Tuple{Exponent, Exponent}, Exponent}, Number}
-# ((α, β), var) -> coeff
-
-const SDPcst = SortedDict{Tuple{Exponent, Exponent}, Number}
-# (α, β) -> coeff
+###############################################################################
+## SOS Problem
+###############################################################################
+const SDPBlocks = SortedDict{Tuple{Moment, String, Exponent, Exponent}, Number} # ((α, β), block_name, γ, δ) -> coeff
+const SDPLinSym = SortedDict{Tuple{Moment, String, Exponent}, Number}           # ((α, β), block_name, var) -> coeff
+const SDPLin = SortedDict{Tuple{Moment, Exponent}, Number}                      # ((α, β), var) -> coeff
+const SDPCst = SortedDict{Moment, Number}                                       # (α, β) -> coeff
 
 mutable struct SDPInstance
-    block_to_vartype::SortedDict{String, Symbol}  # Either :SDP, :Sym
+    block_to_vartype::SortedDict{String, Symbol}  # Either :SDP, :Sym, :SDPc, :SymC
     blocks::SDPBlocks
+    linsym::SDPLinSym
     lin::SDPLin
-    cst::SDPcst
+    cst::SDPCst
 end
 
+include("build_SDPInstance.jl")
+include("export_SDPInstance.jl")
+include("SDPInstance_cplx2real.jl")
 
+
+
+###############################################################################
+## Mosek Structures
+###############################################################################
 type SDP_Instance
   VAR_TYPES
   BLOCKS
@@ -79,84 +107,48 @@ type SDP_Block
   SDP_Block(id::Int64, name::String) = new(id, name, SortedDict{String, Int64}())
 end
 
-type Sym_Block
-  id::Int64
-  name::String
-  varpairs_to_id::SortedDict{Tuple{String, String}, Int64}
-
-  Sym_Block(id::Int64, name::String) = new(id, name, SortedDict{Tuple{String, String}, Int64}())
-end
+const SDP_Moment = Tuple{String, String, String}
 
 type SDP_Problem
   # SDP vars
   name_to_sdpblock::SortedDict{String, SDP_Block}
   id_to_sdpblock::SortedDict{Int64, SDP_Block}
 
-  # Symmetric vars
-  name_to_symblock::SortedDict{String, Sym_Block}
-  id_to_symblock::SortedDict{Int64, Sym_Block}
-  n_scalvarsym::Int
+  # Scalar variables
+  scalvar_to_id::Dict{String, Int64}
 
-  name_to_ctr::SortedDict{String, Tuple{Int64, String, Float64, Float64}} # Id, type et bornes des contraintes
-  id_to_ctr::SortedDict{Int64, String}
-  obj_name::String
+  # Objective / constraints
+  obj_keys::SortedSet{SDP_Moment}
+  name_to_ctr::SortedDict{SDP_Moment, Tuple{Int64, String, Float64, Float64}} # Id, type et bornes des contraintes
+  id_to_ctr::SortedDict{Int64, SDP_Moment}
 
-  matrices::SortedDict{Tuple{String, String, String, String}, Float64} # Matrices SDP du corps des contraintes / objectif
-  lin_matsym::SortedDict{Tuple{String, String, String, String}, Float64} # Matrices Sym du corps des contraintes / objectif
-  linear::SortedDict{Tuple{String, String, String, String}, Float64} # Matrice portant les parties linéaires des contraintes
-  cst_ctr::SortedDict{String, Float64} # Constante du corps des contraintes
-
-  scalar_vars_sym::Dict{Tuple{String, String, String}, Int64}
-  scalar_vars_ctr::Dict{Tuple{String, String}, Int64}
+  matrices::SortedDict{Tuple{SDP_Moment, String, String, String}, Float64} # Matrices SDP du corps des contraintes / objectif
+  linear::SortedDict{Tuple{SDP_Moment, String}, Float64} # Matrice portant les parties linéaires des contraintes
+  cst_ctr::SortedDict{SDP_Moment, Float64} # Constante du corps des contraintes
 
   SDP_Problem() = new(SortedDict{String, SDP_Block}(),
                       SortedDict{Int64, SDP_Block}(),
-                      SortedDict{String, Sym_Block}(),
-                      SortedDict{Int64, Sym_Block}(),
-                      -1,
-                      SortedDict{String, Tuple{Int64, String, Float64, Float64}}(),
-                      SortedDict{Int64, String}(),
-                      obj_key(),
-                      SortedDict{Tuple{String, String, String, String}, Float64}(),
-                      SortedDict{Tuple{String, String, String, String}, Float64}(),
-                      SortedDict{Tuple{String, String, String, String}, Float64}(),
-                      SortedDict{String, Float64}(),
-                      Dict{Tuple{String, String, String}, Int64}(),
-                      Dict{Tuple{String, String}, Int64}()
+                      Dict{String, Int64}(),
+                      SortedSet{SDP_Moment}(),
+                      SortedDict{SDP_Moment, Tuple{Int64, String, Float64, Float64}}(),
+                      SortedDict{Int64, SDP_Moment}(),
+                      SortedDict{Tuple{SDP_Moment, String, String, String}, Float64}(),
+                      SortedDict{Tuple{SDP_Moment, String}, Float64}(),
+                      SortedDict{SDP_Moment, Float64}()
                       )
 end
 
-"""
-    SparsityPattern
-
-    Type for storing and working on sparsitty patterns.
-"""
-type SparsityPattern end
-
-include("build_relctx.jl")
-include("build_maxcliques.jl")
-include("build_momentpb.jl")
-include("build_SDPInstance.jl")
+include("run_mosek.jl")
 include("build_SDP_Problem.jl")
 
-include("symmetries.jl")
-include("export_SDPInstance.jl")
+
+
+###############################################################################
+## Unsorted
+###############################################################################
+
+
 include("run_hierarchy.jl")
 
 include("example_problems.jl")
-include("run_mosek.jl")
 include("utils.jl")
-
-
-function print_cmat(mat::AbstractArray, round = 1e-3)
-    for i=1:size(mat, 1)
-        for j=1:size(mat, 2)
-            re, im = real(mat[i, j]), imag(mat[i, j])
-            @printf("% 5.4f", re)
-            @printf(" ")
-            @printf("%+5.4fim", im)
-            @printf("   ")
-        end
-        @printf("\n")
-    end
-end

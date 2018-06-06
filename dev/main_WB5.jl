@@ -1,38 +1,15 @@
 ROOT = pwd()
 include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
-include(joinpath(ROOT,"src_PowSysMod", "PowSysMod_body.jl"))
 
 
 function main()
 
-    problem = buildPOP_WB2(v2max=1.022, setnetworkphase=false)
-    # typeofinput = GOCInput
-    # instance_path = joinpath("..", "data", "data_GOC", "Phase_0_IEEE14_1Scenario","scenario_1")
-    # raw = "powersystem.raw"
-    # gen = "generator.csv"
-    # con = "contingency.csv"
-    # rawfile = joinpath(instance_path,raw)
-    # genfile = joinpath(instance_path, gen)
-    # contfile = joinpath(instance_path, con)
-    # OPFpbs = load_OPFproblems(rawfile, genfile, contfile)
+    problem = buildPOP_WB5(q5min=-20.51, rmeqs=false) #v2max=0.983
 
-    typeofinput = MatpowerInput
-    instance_path = joinpath("..", "data", "data_Matpower","matpower", "WB5.m")
-
-    OPFpbs = load_OPFproblems(typeofinput, instance_path)
-    ## Introducing coupling constraints on generator output
-    (typeofinput != GOCInput) || introduce_Sgenvariables!(OPFpbs)
-
-    ## Bulding optimization problem
-    problem = build_globalpb!(OPFpbs)
-    problem = pb_cplx2real(problem)
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         # symmetries=[PhaseInvariance],
-                                        d = 1)
-    problem = buildPOP_WB2(v2max=1.022, setnetworkphase=true)
-    relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        # symmetries=[PhaseInvariance],
-                                        d = 1)
+                                        issparse=true,
+                                        d = 2)
 
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")
@@ -42,15 +19,12 @@ function main()
 
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
-    max_cliques = get_maxcliques(relax_ctx, problem)
+    # max_cliques = get_maxcliques(relax_ctx, problem)
+    max_cliques = get_WB5cliques(relax_ctx, problem)
 
     println("\n--------------------------------------------------------")
     println("max cliques =")
-    for (cliquename, vars) in max_cliques
-        print("$cliquename = ")
-        for var in vars print("$var, ") end
-        @printf("\b\b \n")
-    end
+    print(max_cliques)
 
     ########################################
     # Compute moment and localizing matrices parameters: order et variables
@@ -71,8 +45,8 @@ function main()
     # Build the moment relaxation problem
     mmtrel_pb = MomentRelaxation(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
 
-    println("\n--------------------------------------------------------")
-    println("mmtrel_pb = $mmtrel_pb")
+    # println("\n--------------------------------------------------------")
+    # println("mmtrel_pb = $mmtrel_pb")
 
     ########################################
     # Convert to a primal SDP problem
@@ -84,6 +58,7 @@ function main()
     path = joinpath(pwd(), "Mosek_runs", "worksdp")
     mkpath(path)
     export_SDP(sdpinstance, path)
+
     sdp_instance = read_SDPInstance(path)
 
     println("VAR_TYPES size:     $(size(sdp_instance.VAR_TYPES))")
@@ -109,21 +84,6 @@ function main()
 
     primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual)
 
-    # # println("Primal solution")
-    # # for ((blockname, var1, var2), val) in primal
-    # # @printf("%15s %5s %5s %f\n", blockname, var1, var2, val)
-    # # end
-
-    # # println("\nDual solution NEGATED")
-    # # for var in problem.variables
-    # #     ctrname = get_momentcstrname()
-    # #     var1 = var[1]
-    # #     var2 = "1"
-    # #     val = dual[(ctrname, var1, var2)]
-    # #     println("($(ctrname), $(var1), $(var2)) = $(-val)")
-    # # end
-
-    # println("Objectives : $primobj, $dualobj")
 end
 
 main()

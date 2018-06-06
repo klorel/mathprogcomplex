@@ -1,36 +1,13 @@
 ROOT = pwd()
 include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
-include(joinpath(ROOT,"src_PowSysMod", "PowSysMod_body.jl"))
 
 
 function main()
 
-    problem = buildPOP_WB2(v2max=1.022, setnetworkphase=false)
-    # typeofinput = GOCInput
-    # instance_path = joinpath("..", "data", "data_GOC", "Phase_0_IEEE14_1Scenario","scenario_1")
-    # raw = "powersystem.raw"
-    # gen = "generator.csv"
-    # con = "contingency.csv"
-    # rawfile = joinpath(instance_path,raw)
-    # genfile = joinpath(instance_path, gen)
-    # contfile = joinpath(instance_path, con)
-    # OPFpbs = load_OPFproblems(rawfile, genfile, contfile)
-
-    typeofinput = MatpowerInput
-    instance_path = joinpath("..", "data", "data_Matpower","matpower", "WB5.m")
-
-    OPFpbs = load_OPFproblems(typeofinput, instance_path)
-    ## Introducing coupling constraints on generator output
-    (typeofinput != GOCInput) || introduce_Sgenvariables!(OPFpbs)
-
-    ## Bulding optimization problem
+    OPFpbs = load_OPFproblems(MatpowerInput, joinpath("..", "data", "data_Matpower", "matpower", "WB2.m"))
     problem = build_globalpb!(OPFpbs)
-    problem = pb_cplx2real(problem)
-    relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        # symmetries=[PhaseInvariance],
-                                        d = 1)
-    problem = buildPOP_WB2(v2max=1.022, setnetworkphase=true)
-    relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+
+    relax_ctx = set_relaxation(problem; hierarchykind=:Complex,
                                         # symmetries=[PhaseInvariance],
                                         d = 1)
 
@@ -45,12 +22,7 @@ function main()
     max_cliques = get_maxcliques(relax_ctx, problem)
 
     println("\n--------------------------------------------------------")
-    println("max cliques =")
-    for (cliquename, vars) in max_cliques
-        print("$cliquename = ")
-        for var in vars print("$var, ") end
-        @printf("\b\b \n")
-    end
+    println("max cliques =\n$max_cliques")
 
     ########################################
     # Compute moment and localizing matrices parameters: order et variables
@@ -78,12 +50,22 @@ function main()
     # Convert to a primal SDP problem
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
 
-    # println("\n--------------------------------------------------------")
-    # println("sdpinstance = \n$sdpinstance")
+    println("\n--------------------------------------------------------")
+    println("sdpinstance CPLX = \n$sdpinstance")
 
-    path = joinpath(pwd(), "Mosek_runs", "worksdp")
+    path = joinpath(pwd(), "Mosek_runs", "worksdp_cplx")
     mkpath(path)
     export_SDP(sdpinstance, path)
+
+    ## Real instance
+    sdpreal = SDPInstance_cplx2real(sdpinstance)
+    println("\n--------------------------------------------------------")
+    println("sdpinstance REAL = \n$sdpinstance")
+
+    path = joinpath(pwd(), "Mosek_runs", "worksdp_real")
+    mkpath(path)
+    export_SDP(sdpreal, path)
+
     sdp_instance = read_SDPInstance(path)
 
     println("VAR_TYPES size:     $(size(sdp_instance.VAR_TYPES))")
