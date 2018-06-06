@@ -136,9 +136,10 @@ function build_ctrkeysset(sdp)
 end
 
 
-function print_blocksfile(io::IO, sdpblocks::SDPBlocks; momentdict::SortedDict{Exponent, String}=SortedDict{Exponent, String}(),
+function print_blocksfile(io::IO, sdpblocks::Dict{Tuple{Moment, String, Exponent, Exponent}, T};
+                                                        momentdict::SortedDict{Exponent, String}=SortedDict{Exponent, String}(),
                                                         indentedprint=false,
-                                                        print_header=true)
+                                                        print_header=true) where T
     if print_header
         println(io, "## Description of the matrices A_ji for the problem:")
         println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
@@ -184,9 +185,10 @@ function print_blocksfile(io::IO, sdpblocks::SDPBlocks; momentdict::SortedDict{E
 end
 
 
-function print_linfile(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym; momentdict::SortedDict{Exponent, String}=SortedDict{Exponent, String}(),
+function print_linfile(io::IO, sdplin::Dict{Tuple{Moment, Exponent}, T}, sdplinsym::Dict{Tuple{Moment, Exponent, Exponent}, T};
+                                                                     momentdict::SortedDict{Exponent, String}=SortedDict{Exponent, String}(),
                                                                      indentedprint=false,
-                                                                     print_header=true)
+                                                                     print_header=true) where T
     if print_header
         println(io, "## Description of the vectors b_j for the problem:")
         println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
@@ -245,10 +247,11 @@ function print_linfile(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym; momentdict:
 end
 
 
-function print_cstfile(io::IO, sdpcst::SDPCst; momentdict::SortedDict{Exponent, String}=SortedDict{Exponent, String}(),
+function print_cstfile(io::IO, sdpcst::Dict{Moment, T};
+                                               momentdict::SortedDict{Exponent, String}=SortedDict{Exponent, String}(),
                                                ctr_keys::SortedSet{Moment}=SortedSet{Moment}(),
                                                indentedprint=false,
-                                               print_header=true)
+                                               print_header=true) where T
     if print_header
         println(io, "## Description of the scalars c_j for the problem:")
         println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")

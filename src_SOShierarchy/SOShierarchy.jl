@@ -69,17 +69,12 @@ include("build_momentrelaxation.jl")
 ###############################################################################
 ## SOS Problem
 ###############################################################################
-const SDPBlocks = Dict{Tuple{Moment, String, Exponent, Exponent}, Number} # ((α, β), block_name, γ, δ) -> coeff
-const SDPLinSym = Dict{Tuple{Moment, String, Exponent}, Number}           # ((α, β), block_name, var) -> coeff
-const SDPLin = Dict{Tuple{Moment, Exponent}, Number}                      # ((α, β), var) -> coeff
-const SDPCst = Dict{Moment, Number}                                       # (α, β) -> coeff
-
-mutable struct SDPInstance
-    block_to_vartype::Dict{String, Symbol}  # Either :SDP, :Sym, :SDPc, :SymC
-    blocks::SDPBlocks
-    linsym::SDPLinSym
-    lin::SDPLin
-    cst::SDPCst
+mutable struct SDPInstance{T}
+    block_to_vartype::Dict{String, Symbol}                       # Either :SDP, :Sym, :SDPc, :SymC
+    blocks::Dict{Tuple{Moment, String, Exponent, Exponent}, T}   # ((α, β), block_name, γ, δ) -> coeff
+    linsym::Dict{Tuple{Moment, String, Exponent}, T}             # ((α, β), block_name, var) -> coeff
+    lin::Dict{Tuple{Moment, Exponent}, T}                        # ((α, β), var) -> coeff
+    cst::Dict{Moment, T}                                         # (α, β) -> coeff
 end
 
 include("build_SDPInstance.jl")

@@ -1,8 +1,8 @@
-function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxation; debug=false)
-    sdpblocks = SDPBlocks()
-    sdplin = SDPLin()
-    sdplinsym = SDPLinSym()
-    sdpcst = SDPCst()
+function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxation{T}; debug=false) where T<:Number
+    sdpblocks = Dict{Tuple{Moment, String, Exponent, Exponent}, T}()
+    sdplinsym = Dict{Tuple{Moment, String, Exponent}, T}()
+    sdplin = Dict{Tuple{Moment, Exponent}, T}()
+    sdpcst = Dict{Moment, T}()
     block_to_vartype = Dict{String, Symbol}()
 
     ## Build blocks dict
@@ -77,7 +77,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
         sdpcst[moment] += fαβ
     end
 
-    return SDPInstance(block_to_vartype, sdpblocks, sdplinsym, sdplin, sdpcst)
+    return SDPInstance{T}(block_to_vartype, sdpblocks, sdplinsym, sdplin, sdpcst)
 end
 
 
@@ -115,15 +115,15 @@ function print(io::IO, sdpinst::SDPInstance)
     end
 end
 
-function print(io::IO, sdpblocks::SDPBlocks; indentedprint=true)
+function print(io::IO, sdpblocks::Dict{Tuple{Moment, String, Exponent, Exponent}, T}; indentedprint=true) where T
     print_blocksfile(io, sdpblocks; indentedprint=indentedprint, print_header=false)
 end
 
-function print(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym; indentedprint=true)
+function print(io::IO, sdplin::Dict{Tuple{Moment, Exponent}, T}, sdplinsym::Dict{Tuple{Moment, Exponent, Exponent}, T}; indentedprint=true) where T
     print_linfile(io, sdplin, sdplinsym; indentedprint=indentedprint, print_header=false)
 end
 
 
-function print(io::IO, sdpcst::SDPCst; indentedprint=true)
+function print(io::IO, sdpcst::Dict{Moment, T}; indentedprint=true) where T
     print_cstfile(io, sdpcst; indentedprint=indentedprint, print_header=false)
 end

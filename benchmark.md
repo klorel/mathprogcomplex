@@ -52,6 +52,7 @@ order_2
 ### Specific benchmarks: MomentRelaxation()
 
 #### Before any improvements
+
 MomentRelaxation(), case30, d=1
 ```
   memory estimate:  374.77 MiB
@@ -81,7 +82,7 @@ BenchmarkTools.Trial:
   evals/sample:     1
 ```
 
-#### Removing Sorted Structures:
+#### Removing Sorted Structures
 
 ```
 MomentRelaxation(), case30, d=1
@@ -160,14 +161,14 @@ build_SDPInstance(), case30, d=1
 
 build_SDPInstance(), case89pegase, d=1
 ```
-  memory estimate:  15.57 MiB
-  allocs estimate:  479607
+  memory estimate:  15.04 MiB
+  allocs estimate:  448344
   --------------
-  minimum time:     119.698 ms (0.00% GC)
-  median time:      142.063 ms (14.05% GC)
-  mean time:        138.118 ms (11.25% GC)
-  maximum time:     159.937 ms (21.56% GC)
+  minimum time:     116.857 ms (0.00% GC)
+  median time:      135.347 ms (11.83% GC)
+  mean time:        133.295 ms (8.86% GC)
+  maximum time:     152.965 ms (9.19% GC)
   --------------
-  samples:          37
+  samples:          38
   evals/sample:     1
 ```
