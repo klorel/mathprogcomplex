@@ -26,11 +26,11 @@ function main()
                        "LMBM3"      => (1, 386.42, 386.42, false),
                        "WB5"        => (2, 954.82, 1146.4, true),
                        "case6ww"    => (1, 2986, 2986, false),
-                       "case9"      => (2, 373.8, 1458.8, true),
-                       "case9mod"   => (2, 234.6, 1320.4, true),
-                       "case14"     => (2, 721.5, 5371.5, true),
+                       "case9"      => (2, 373.8, 1458.8, true))
+                    #   "case9mod"   => (2, 234.6, 1320.4, true),
+                    #   "case14"     => (2, 721.5, 5371.5, true),
                     #    "case22loop" => (1, 4538.8, 4538.8, false), ## Absent in data repo...
-                       "case30"     => (2, 268.915, 316.49, true))
+                    #   "case30"     => (2, 268.915, 316.49, true))
 
 
     suite = BenchmarkGroup()
@@ -81,7 +81,7 @@ function main()
     if isfile(paramspath)
         loadparams!(suite, BenchmarkTools.load(paramspath)[1], :evals);
     else
-        tune!(suite)
+        #tune!(suite)
         BenchmarkTools.save(paramspath, params(suite));
     end
 
