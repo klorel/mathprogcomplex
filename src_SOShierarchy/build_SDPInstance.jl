@@ -34,9 +34,12 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
                     ## TODO: look into ht_keyindex2!, ht_keyindex for avoiding two dict table lookup
                     # Maybe implement this operation (if haskey add, else set) using 'setindex!(h::Dict{K,V}, v0, key::K) where V where K' as inspiration
                     key = (moment, block_name, product(γ, δ))
-                    haskey(sdplinsym, key) || (sdplinsym[key] = 0)
+                    val = -λ * (γ!=δ ? 2 : 1)
 
-                    sdplinsym[key] += -λ * (γ!=δ ? 2 : 1)
+                    addindex!(sdplinsym, val, key)
+
+                    # haskey(sdplinsym, key) || (sdplinsym[key] = 0)
+                    # sdplinsym[key] += val
                 else
                     error("build_SDPInstance(): Unhandled matrix kind $(mmt.matrixkind) for ($cstrname, $cliquename)")
                 end
@@ -69,12 +72,15 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
     for (moment, fαβ) in mmtrelax_pb.objective
         # Determine which moment to affect the current coefficient.
 
-        if !haskey(sdpcst, moment)
-            sdpcst[moment] = 0.0
-        end
-
         # Constraints are fα - ∑ Bi.Zi = 0
-        sdpcst[moment] += fαβ
+        addindex!(sdpcst, fαβ, moment)
+
+        # if !haskey(sdpcst, moment)
+        #     sdpcst[moment] = 0.0
+        # end
+
+        # # Constraints are fα - ∑ Bi.Zi = 0
+        # sdpcst[moment] += fαβ
     end
 
     return SDPInstance{T}(block_to_vartype, sdpblocks, sdplinsym, sdplin, sdpcst)

@@ -13,6 +13,8 @@ function MomentMatrix{T}(relax_ctx::RelaxationContext, vars::Set{Variable},
 
     mm = Dict{Tuple{Exponent, Exponent}, Dict{Moment, T}}()
 
+    @assert default_clique!="" || var_to_cliques!=Dict{Variable, Set{String}}()
+
     ## Computing exponents for available variables
     realexpos = compute_exponents(vars, d)
     conjexpos = compute_exponents(vars, d, compute_conj=true)
@@ -28,7 +30,6 @@ function MomentMatrix{T}(relax_ctx::RelaxationContext, vars::Set{Variable},
 
             ## Storing only lower triangular matrix
             if issym && cexp ≥ rexp
-                @assert default_clique!="" || var_to_cliques!=Dict{Variable, Set{String}}()
 
                 # Get exponent clique
                 expo_clique = default_clique
@@ -118,8 +119,10 @@ function product(momentpoly::Dict{Moment, M}, p::Polynomial, var_to_cliques::Dic
         for (moment, val2) in momentpoly
             resmoment = product(moment, expo, var_to_cliques)
 
-            haskey(resmpoly, resmoment) || (resmpoly[resmoment] = convert(M, 0.0))
-            resmpoly[resmoment] += val1*val2
+            # haskey(resmpoly, resmoment) || (resmpoly[resmoment] = convert(M, 0.0))
+            # resmpoly[resmoment] += val1*val2
+            addindex!(resmpoly, val1*val2, resmoment)
+
             isnull(resmpoly[resmoment]) && delete!(resmpoly, resmoment)
         end
     end

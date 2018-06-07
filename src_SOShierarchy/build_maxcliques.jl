@@ -119,8 +119,9 @@ function get_locctrcliques(p::Polynomial, max_cliques::Dict{String, Set{Variable
             cliques_from_unaffvar = Dict{String, Int}()
             for var in unaffected_vars
                 for clique in var_to_cliques[var]
-                    haskey(cliques_from_unaffvar, clique) || (cliques_from_unaffvar[clique] = 0)
-                    cliques_from_unaffvar[clique] += 1
+                    # haskey(cliques_from_unaffvar, clique) || (cliques_from_unaffvar[clique] = 0)
+                    # cliques_from_unaffvar[clique] += 1
+                    addindex!(cliques_from_unaffvar, 1, clique)
                 end
             end
             cur_clique, cur_pop = first(cliques_from_unaffvar)[1], first(cliques_from_unaffvar)[2]

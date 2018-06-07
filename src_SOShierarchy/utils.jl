@@ -107,7 +107,7 @@ function print_cmat(mat::AbstractArray, round = 1e-3)
     end
 end
 
-import Base: hashindex, isslotempty, isslotmissing, _setindex!
+import Base: hashindex, isslotempty, isslotmissing, isslotfilled, _setindex!, rehash!
 
 
 
@@ -143,6 +143,9 @@ end
 # and the key would be inserted at pos
 # This version is for use by setindex! and get!
 function ht_keyindex2!(h::Dict{K,V}, key) where V where K
+    maxallowedprobe = 16
+    maxprobeshift   = 6
+
     age0 = h.age
     sz = length(h.keys)
     iter = 0
