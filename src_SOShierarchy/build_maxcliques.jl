@@ -18,19 +18,23 @@ function build_sparsity(relax_ctx::RelaxationContext, problem::Problem, max_cliq
             di_lo, ki_lo = relax_ctx.di[ctrname_lo], relax_ctx.ki[ctrname_lo]
             di_up, ki_up = relax_ctx.di[ctrname_up], relax_ctx.ki[ctrname_up]
 
-            if relax_ctx.hierarchykind==:Cplx
+            if relax_ctx.hierarchykind==:Complex
                 localizingmat_param[ctrname_lo] = (ctrcliques, di_lo-ki_lo)
                 localizingmat_param[ctrname_up] = (ctrcliques, di_up-ki_up)
             elseif relax_ctx.hierarchykind==:Real
                 localizingmat_param[ctrname_lo] = (ctrcliques, di_lo-ceil(ki_lo/2))
                 localizingmat_param[ctrname_up] = (ctrcliques, di_up-ceil(ki_up/2))
+            else
+                error("build_sparsity(): Unknown relaxation kind $(relax_ctx.hierarchykind). Should be `:Real` or `:Complex`")
             end
         else # :ineqlo, :ineqhi, :eq
             di, ki = relax_ctx.di[get_cstrname(ctrname, ctrtype)], relax_ctx.ki[get_cstrname(ctrname, ctrtype)]
-            if relax_ctx.hierarchykind == :Cplx
+            if relax_ctx.hierarchykind == :Complex
                 localizingmat_param[get_cstrname(ctrname, ctrtype)] = (ctrcliques, di-ki)
             elseif relax_ctx.hierarchykind == :Real
                 localizingmat_param[get_cstrname(ctrname, ctrtype)] = (ctrcliques, di-ceil(ki/2))
+            else
+                error("build_sparsity(): Unknown relaxation kind $(relax_ctx.hierarchykind). Should be `:Real` or `:Complex`")
             end
         end
     end
