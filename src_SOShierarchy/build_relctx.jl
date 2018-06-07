@@ -1,16 +1,16 @@
 """
-    relax_ctx = set_relaxation(pb::Problem; ismultiordered=false, issparse=false, symmetries=SortedSet(), hierarchykind=:Complex, renamevars=false, di=SortedDict{String, Int}(), d=-1)
+    relax_ctx = set_relaxation(pb::Problem; ismultiordered=false, issparse=false, symmetries=Set(), hierarchykind=:Complex, renamevars=false, di=Dict{String, Int}(), d=-1)
 
     Build a `relax_ctx` object containing relaxation choices and problem features : order by constraint, relaxation order by constraint...
 """
-function set_relaxation(pb::Problem; ismultiordered=false,
-                                     issparse=false,
-                                     symmetries=[],
-                                     hierarchykind=:Complex,
-                                     renamevars=false,
-                                     di=SortedDict{String, Int}(),
-                                     d=-1)
-    println("\n=== set_relaxation(pb; ismultiordered=$ismultiordered, issparse=$issparse, symmetries=$symmetries, hierarchykind=$hierarchykind, renamevars=$renamevars, di=SortedDict of length $(length(di)), d=$d)")
+function set_relaxation(pb::Problem; ismultiordered::Bool=false,
+                                     issparse::Bool=false,
+                                     symmetries::Array{DataType, 1}=DataType[],
+                                     hierarchykind::Symbol=:Complex,
+                                     renamevars::Bool=false,
+                                     di::Dict{String, Int}=Dict{String, Int}(),
+                                     d::Int=-1)
+    println("\n=== set_relaxation(pb; ismultiordered=$ismultiordered, issparse=$issparse, symmetries=$symmetries, hierarchykind=$hierarchykind, renamevars=$renamevars, di=Dict of length $(length(di)), d=$d)")
 
     # Check that all variables have a type fitting the hierarchy kind
     for (varname, vartype) in pb.variables
@@ -20,7 +20,7 @@ function set_relaxation(pb::Problem; ismultiordered=false,
     end
 
     # Compute each constraint degree
-    ki = SortedDict{String, Int}()
+    ki = Dict{String, Int}()
     ki[get_momentcstrname()] = 0
     for (cstrname, cstr) in pb.constraints
         cstrtype = get_cstrtype(cstr)
@@ -34,7 +34,7 @@ function set_relaxation(pb::Problem; ismultiordered=false,
     end
 
     # Store each SDP multiplier type
-    cstrtypes = SortedDict{String, Symbol}()
+    cstrtypes = Dict{String, Symbol}()
     for (cstrname, cstr) in pb.constraints
         cstrtype = get_cstrtype(cstr)
         if cstrtype == :ineqdouble
@@ -50,8 +50,8 @@ function set_relaxation(pb::Problem; ismultiordered=false,
     cstrtypes[get_momentcstrname()] = (hierarchykind==:Complex ? :SDPC : :SDP)
 
     # Relaxation order management
-    di_relax = SortedDict{String, Int}()
-    !((di == SortedDict{String, Int}()) && (d==-1)) || error("RelaxationContext(): Either di or d should be provided as input.")
+    di_relax = Dict{String, Int}()
+    !((di == Dict{String, Int}()) && (d==-1)) || error("RelaxationContext(): Either di or d should be provided as input.")
 
     for (cstrname, cstr) in pb.constraints
         cur_order = haskey(di, cstrname) ? di[cstrname] : d
@@ -61,13 +61,18 @@ function set_relaxation(pb::Problem; ismultiordered=false,
         if cstrtype == :ineqdouble
             cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
             cur_ki = ki[cstrname_lo]
-            (cur_ki <= cur_order) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value $cur_ki, hierarchy may be multiordered.")
-            di_relax[cstrname_lo] = max(cur_ki, cur_order)
-            di_relax[cstrname_up] = max(cur_ki, cur_order)
+            (0 ≤ cur_order-ceil(cur_ki/2)) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value ceil($cur_ki/2).")
+            # (cur_ki <= cur_order) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value $cur_ki, hierarchy may be multiordered.")
+            di_relax[cstrname_lo] = cur_order
+            di_relax[cstrname_up] = cur_order
+            # di_relax[cstrname_lo] = max(cur_order, ceil(cur_ki/2))
+            # di_relax[cstrname_up] = max(cur_order, ceil(cur_ki/2))
         else # :eq, :ineqlo, :ineqhi
             cur_ki = ki[get_cstrname(cstrname, cstrtype)]
-            (cur_ki <= cur_order) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value $cur_ki, hierarchy may be multiordered.")
-            di_relax[get_cstrname(cstrname, cstrtype)] = max(cur_ki, cur_order)
+            (0 ≤ cur_order-ceil(cur_ki/2)) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value ceil($cur_ki/2).")
+            # (cur_ki <= cur_order) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value $cur_ki, hierarchy may be multiordered.")
+            di_relax[get_cstrname(cstrname, cstrtype)] = cur_order
+            # di_relax[get_cstrname(cstrname, cstrtype)] = max(cur_order, ceil(cur_ki/2))
         end
     end
 
@@ -81,15 +86,15 @@ function set_relaxation(pb::Problem; ismultiordered=false,
     end
     # Objective polynomial must be representable by moment matrix
     obj_degree = max(pb.objective.degree.explvar, pb.objective.degree.conjvar)
-    if obj_degree > di_relax[get_momentcstrname()]
-        warn("RelaxationContext(): Moment matrix order $(di_relax[get_momentcstrname()]) is lower than objective degree ($obj_degree). \nUsing value $obj_degree, hierarchy may be multiordered.")
-        di_relax[get_momentcstrname()] = ceil(obj_degree/2)
-    end
+    # if obj_degree > di_relax[get_momentcstrname()]
+    #     warn("RelaxationContext(): Moment matrix order $(di_relax[get_momentcstrname()]) is lower than objective degree ($obj_degree). \nUsing value $obj_degree, hierarchy may be multiordered.")
+    #     di_relax[get_momentcstrname()] = ceil(obj_degree/2)
+    # end
 
-    relax_ctx = RelaxationContext(ismultiordered, issparse, SortedSet{DataType}(), hierarchykind, renamevars, di_relax, ki, cstrtypes)
+    relax_ctx = RelaxationContext(ismultiordered, issparse, Set{DataType}(), hierarchykind, renamevars, di_relax, ki, cstrtypes)
 
     # Check whether the problem has the suggested symmetries
-    pbsymmetries = SortedSet{DataType}()
+    pbsymmetries = Set{DataType}()
     isa(symmetries, Array) || error("set_relaxation(): symmetries should be an Array of types.")
     for symtype in symmetries
         if has_symmetry(relax_ctx, pb, symtype)
@@ -109,7 +114,7 @@ function set_relaxation(pb::Problem; ismultiordered=false,
     end
 
 
-    exposet = SortedSet()
+    exposet = Set()
     nb_expotot = 0
     degbycstr = Int64[]
     for (cstrname, cstr) in get_constraints(pb)
@@ -141,13 +146,16 @@ function print(io::IO, relctx::RelaxationContext)
     print(io, "symmetries             : $(relctx.symmetries)\n")
     print(io, "hierarchykind          : $(relctx.hierarchykind)\n")
     print(io, "renamevars             : $(relctx.renamevars)\n")
-    for (cstrname, di) in relctx.di
-    print(io, "di                     : $cstrname  \t=> $di\n")
+    for cstrname in sort(collect(keys(relctx.di)))
+        di = relctx.di[cstrname]
+        print(io, "di                     : $cstrname  \t=> $di\n")
     end
-    for (cstrname, ki) in relctx.ki
-    print(io, "ki                     : $cstrname  \t=> $ki\n")
+    for cstrname in sort(collect(keys(relctx.ki)))
+        ki = relctx.ki[cstrname]
+        print(io, "ki                     : $cstrname  \t=> $ki\n")
     end
-    for (cstrname, cstrtype) in relctx.cstrtypes
-    print(io, "bar var types          : $cstrname  \t=> $(string(cstrtype))\n")
+    for cstrname in sort(collect(keys(relctx.cstrtypes)))
+        cstrtype = relctx.cstrtypes[cstrname]
+        print(io, "bar var types          : $cstrname  \t=> $(string(cstrtype))\n")
     end
 end

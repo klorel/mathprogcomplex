@@ -8,7 +8,7 @@ function has_symmetry(relax_ctx, pb::Problem, sym::T) where T
     if !has_symmetry(relax_ctx, pb.objective, sym)
         return false
     end
-    
+
     # Check constraints for symmetry sym
     for (cstrname, cstr) in pb.constraints
         if !has_symmetry(relax_ctx, cstr.p, sym)

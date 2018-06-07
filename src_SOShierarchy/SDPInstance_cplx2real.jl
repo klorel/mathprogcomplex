@@ -145,11 +145,14 @@ function cplx2real_sdpctr(moment::Moment)
 end
 
 function cplx2real_sdpctr(expo::Exponent)
+<<<<<<< HEAD
     expo_expl = expo
 
     (expo.degree.conjvar > 0) && (expo_expl = conj(expo))
     @assert expo_expl.degree.conjvar == 0
 
+=======
+>>>>>>> master
     expo_re, expo_im = Exponent(), Exponent()
     expo_re = Exponent(Variable(string(expo_expl, "_Re"), Real))
     expo_im = Exponent(Variable(string(expo_expl, "_Im"), Real))
@@ -157,21 +160,29 @@ function cplx2real_sdpctr(expo::Exponent)
 end
 
 function get_Xictrname_re(block_name::String, γ::Exponent, δ::Exponent)
+<<<<<<< HEAD
     δ_ctr = δ
     if product(γ, δ) == Exponent()
         δ_ctr = Exponent(Variable("1_ctr", Real))
     end
     @show Moment(γ, δ_ctr, block_name*"_ReCtr")
     return Moment(γ, δ_ctr, block_name*"_ReCtr")
+=======
+    return Moment(product(γ, δ), block_name*"_ReCtr")
+>>>>>>> master
     # return Exponent(Variable(block_name*"_Re", Real)), Exponent(Variable(string(γ, "_", δ), Real))
 end
 
 function get_Xictrname_im(block_name::String, γ::Exponent, δ::Exponent)
+<<<<<<< HEAD
     δ_ctr = δ
     if product(γ, δ) == Exponent()
         δ_ctr = Exponent(Variable("1_ctr", Real))
     end
     @show Moment(γ, δ_ctr, block_name*"_ImCtr")
     return Moment(γ, δ_ctr, block_name*"_ImCtr")
+=======
+    return Moment(product(γ, δ), block_name*"_ImCtr")
+>>>>>>> master
     # return Exponent(Variable(block_name*"_Im", Real)), Exponent(Variable(string(γ, "_", δ), Real))
 end

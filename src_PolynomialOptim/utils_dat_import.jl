@@ -20,10 +20,13 @@ function import_from_dat(instancepath::String; precondcstrspath::String="")
     while line[1] == "VAR_TYPE" && !eof(instance_str)
         if line[2] == "R"
             variables[line[3]] = Variable(line[3], Real)
+            add_variable!(pb, Variable(line[3], Real))
         elseif line[2] == "BOOL"
             variables[line[3]] = Variable(line[3], Bool)
+            add_variable!(pb, Variable(line[3], Bool))
         elseif line[2] == "C"
             variables[line[3]] = Variable(line[3], Complex)
+            add_variable!(pb, Variable(line[3], Complex))
         else
             error("import_to_dat(): Unknown variable type $(line[2]) for variable $(line[3]).")
         end

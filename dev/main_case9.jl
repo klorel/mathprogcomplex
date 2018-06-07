@@ -11,7 +11,7 @@ function main()
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         symmetries=[PhaseInvariance],
-                                        issparse=true,
+                                        issparse=false,
                                         d = 2)
 
     println("\n--------------------------------------------------------")
@@ -51,7 +51,7 @@ function main()
 
     ########################################
     # Build the moment relaxation problem
-    mmtrel_pb = MomentRelaxationPb(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
+    mmtrel_pb = MomentRelaxation{Float64}(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
 
     # println("\n--------------------------------------------------------")
     # println("mmtrel_pb = $mmtrel_pb")
@@ -66,7 +66,7 @@ function main()
 
     path = joinpath(pwd(), "Mosek_runs", "worksdp")
     mkpath(path)
-    export_SDP(relax_ctx, sdpinstance, path)
+    export_SDP(sdpinstance, path)
 
     sdp_instance = read_SDPInstance(path)
 

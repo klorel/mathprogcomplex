@@ -69,11 +69,11 @@ function product(p1::Polynomial, p2::Polynomial)
 end
 
 """
-    add_expod!(expod, expod1)
+    product!(expod, expod1)
 
     Add the `expod1` degree to `expod` inplace (equivalent to the monomial product)
 """
-function add_expod!(expod::Exponent, expod1::Exponent)
+function product!(expod::Exponent, expod1::Exponent)
     for (var, deg) in expod1
         if !haskey(expod, var)
             expod.expo[var] = Degree(0,0)
@@ -90,8 +90,8 @@ end
 
 function product(exp1::Exponent, exp2::Exponent)
     expod = Exponent()
-    add_expod!(expod, exp1)
-    add_expod!(expod, exp2)
+    product!(expod, exp1)
+    product!(expod, exp2)
     return Exponent(expod)
 end
 
