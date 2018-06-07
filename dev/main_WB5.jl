@@ -9,7 +9,7 @@ function main()
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         # symmetries=[PhaseInvariance],
                                         issparse=true,
-                                        d = 2)
+                                        d = 1)
 
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")

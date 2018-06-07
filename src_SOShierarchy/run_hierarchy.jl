@@ -1,6 +1,6 @@
 
 function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath; indentedprint=false,
-                                                                                max_cliques::SortedDict{String, SortedSet{Variable}}=SortedDict{String, SortedSet{Variable}}(),
+                                                                                max_cliques::Dict{String, Set{Variable}}=Dict{String, Set{Variable}}(),
                                                                                 save_pbs=false)
 
     open(joinpath(logpath, "pb_opt.log"), "w") do fout
@@ -9,7 +9,7 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath; 
 
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
-    if max_cliques == SortedDict{String, SortedSet{Variable}}()
+    if max_cliques == Dict{String, Set{Variable}}()
         max_cliques = get_maxcliques(relax_ctx, problem)
     end
 
@@ -53,11 +53,11 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath; 
     return primobj, dualobj
 end
 
-function build_relaxation(problem::Problem, relax_ctx::RelaxationContext; max_cliques::SortedDict{String, SortedSet{Variable}} = SortedDict{String, SortedSet{Variable}}())
+function build_relaxation(problem::Problem, relax_ctx::RelaxationContext; max_cliques::Dict{String, Set{Variable}} = Dict{String, Set{Variable}}())
 
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
-    if max_cliques == Dict{String, SortedSet{Variable}}()
+    if max_cliques == Dict{String, Set{Variable}}()
         max_cliques = get_maxcliques(relax_ctx, problem)
     end
 
