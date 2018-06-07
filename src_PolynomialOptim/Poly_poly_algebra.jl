@@ -168,3 +168,35 @@ end
 function ^(p::T, d::Int) where T<:AbstractPolynomial
     return powpoly(convert(Polynomial, p), d)
 end
+
+###############################################################################
+## Deep copy functions
+###############################################################################
+
+function deepcopy(p::Polynomial)
+    pcopy = SortedDict{Exponent, Number}()
+
+    for (expo, coeff) in p
+        pcopy[deepcopy(expo)] = coeff
+    end
+
+    return Polynomial(pcopy)
+end
+
+function deepcopy(expo::Exponent)
+    expocopy = SortedDict{Variable, Degree}()
+
+    for (var, deg) in expo
+        expocopy[deepcopy(var)] = deepcopy(deg)
+    end
+
+    return Exponent(expocopy)
+end
+
+function deepcopy(var::Variable)
+    return Variable(deepcopy(var.name), var.kind)
+end
+
+function deepcopy(deg::Degree)
+    return Degree(deg.explvar, deg.conjvar)
+end

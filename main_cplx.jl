@@ -140,4 +140,4 @@ function run_mosek(path::String)
     primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual)
 end
 
-# main()
+main()
