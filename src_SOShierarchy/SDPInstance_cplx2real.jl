@@ -1,12 +1,13 @@
 
-function SDPInstance_cplx2real(sdp::SDPInstance)
-    sdpblocks = SDPBlocks()
-    sdplinsym = SDPLinSym()
-    sdplin = SDPLin()
-    sdpcst = SDPCst()
-    block_to_vartype = SortedDict{String, Symbol}()
+function SDPInstance_cplx2real(sdp::SDPInstance{T}) where T<:Complex
 
-    matrix_terms = Dict{String, SortedSet{Tuple{Exponent, Exponent}}}()
+    block_to_vartype = Dict{String, Symbol}()
+    sdpblocks = Dict{Tuple{Moment, String, Exponent, Exponent}, Float64}()
+    sdplinsym = Dict{Tuple{Moment, String, Exponent}, Float64}()
+    sdplin = Dict{Tuple{Moment, Exponent}, Float64}()
+    sdpcst = Dict{Moment, Float64}()
+
+    matrix_terms = Dict{String, Set{Tuple{Exponent, Exponent}}}()
 
     ## Complex blocks to real
     for ((moment, block_name, γ, δ), coeff) in sdp.blocks
@@ -14,30 +15,24 @@ function SDPInstance_cplx2real(sdp::SDPInstance)
         γ_re, γ_im = cplx2real_sdpctr(γ)
         δ_re, δ_im = cplx2real_sdpctr(δ)
 
+        @assert ctr_re != ctr_im
 
         println("$moment  is $ctr_re, $ctr_im")
 
-        !haskey(matrix_terms, block_name) && (matrix_terms[block_name] = SortedSet{Tuple{Exponent, Exponent}}())
+        !haskey(matrix_terms, block_name) && (matrix_terms[block_name] = Set{Tuple{Exponent, Exponent}}())
         push!(matrix_terms[block_name], (min(γ, δ), max(γ, δ)))
 
         # Convert complex linear term to real ones
-        # haskey(sdpblocks, (ctr_re, block_name, γ_re, δ_re)) && warn("haskey(sdpblocks, ($ctr_re, $block_name, $γ_re, $δ_re))")
+        ## Real part
         sdpblocks[(ctr_re, block_name, γ_re, δ_re)] = real(coeff)
-        # info("adding sdpblocks -> ($ctr_re, $block_name, $γ_re, $δ_re))")
-
-        # haskey(sdpblocks, (ctr_re, block_name, γ_im, δ_im)) && warn("haskey(sdpblocks, ($ctr_re, $block_name, $γ_im, $δ_im))")
         sdpblocks[(ctr_re, block_name, γ_im, δ_re)] = -imag(coeff)
-        # info("adding sdpblocks -> ($ctr_re, $block_name, $γ_im, $δ_im))")
 
-        product(moment.conj_part, moment.expl_part) == Exponent() && continue
+        ## Imag part
+        if product(moment.conj_part, moment.expl_part) != Exponent()
 
-        # haskey(sdpblocks, (ctr_im, block_name, γ_re, δ_re)) && warn("haskey(sdpblocks, ($ctr_im, $block_name, $γ_re, $δ_re))")
-        sdpblocks[(ctr_im, block_name, γ_re, δ_re)] = imag(coeff)
-        # info("adding sdpblocks -> ($ctr_im, $block_name, $γ_re, $δ_re))")
-
-        # haskey(sdpblocks, (ctr_im, block_name, γ_im, δ_im)) && warn("haskey(sdpblocks, ($ctr_im, $block_name, $γ_im, $δ_im))")
-        sdpblocks[(ctr_im, block_name, γ_im, δ_re)] = real(coeff)
-        # info("adding sdpblocks -> ($ctr_im, $block_name, $γ_im, $δ_im))")
+            sdpblocks[(ctr_im, block_name, γ_re, δ_re)] = imag(coeff)
+            sdpblocks[(ctr_im, block_name, γ_im, δ_re)] = real(coeff)
+        end
     end
 
     for (block_name, coords) in matrix_terms
@@ -64,30 +59,6 @@ function SDPInstance_cplx2real(sdp::SDPInstance)
 
         end
     end
-
-        # # Add constraint on matrix variable: real part symmetric & 1,1 == 2,2
-        # Xi_ctrname_re = get_Xictrname_re(block_name, γ, δ)
-
-        # haskey(sdpblocks, (Xi_ctrname_re, block_name, γ_re, δ_re)) && warn("hasekey sdpblocks[($(Xi_ctrname_re), $block_name, $γ_re, $δ_re)]")
-        # sdpblocks[(Xi_ctrname_re, block_name, γ_re, δ_re)] = 1    #haskey(sdpblocks, (Xi_ctrname_re, block_name, γ_re, δ_re)) ||
-        # print_with_color(:light_cyan, "adding sdpblocks -> ($(Xi_ctrname_re), $block_name, $γ_re, $δ_re)\n")
-
-        # haskey(sdpblocks, (Xi_ctrname_re, block_name, γ_im, δ_im)) && warn("hasekey sdpblocks[($(Xi_ctrname_re), $block_name, $γ_im, $δ_im)]")
-        # sdpblocks[(Xi_ctrname_re, block_name, γ_im, δ_im)] = -1    #haskey(sdpblocks, (Xi_ctrname_re, block_name, γ_im, δ_im)) ||
-        # print_with_color(:light_cyan, "adding sdpblocks -> ($(Xi_ctrname_re), $block_name, $γ_im, $δ_im)\n")
-
-        # # Add constraint on matrix variable: imad part antisymmetric && 1,2 == 2,1^T
-        # Xi_ctrname_im = get_Xictrname_im(block_name, γ, δ)
-
-        # haskey(sdpblocks, (Xi_ctrname_im, block_name, γ_re, δ_im)) && warn("hasekey sdpblocks[($(Xi_ctrname_im), $block_name, $γ_re, $δ_im)]")
-        # sdpblocks[(Xi_ctrname_im, block_name, γ_re, δ_im)] = 1
-        # print_with_color(:light_cyan, "adding sdpblocks -> ($(Xi_ctrname_im), $block_name, $γ_re, $δ_im)\n")
-
-        # haskey(sdpblocks, (Xi_ctrname_im, block_name, γ_im, δ_re)) && warn("hasekey sdpblocks[($(Xi_ctrname_im), $block_name, $γ_im, $δ_re)]")
-        # sdpblocks[(Xi_ctrname_im, block_name, γ_im, δ_re)] = 1
-        # print_with_color(:light_cyan, "adding sdpblocks -> ($(Xi_ctrname_im), $block_name, $γ_im, $δ_re)\n")
-
-
 
     ## Complex symetric blocks to real
     for ((moment, block_name, var), coeff) in sdp.linsym
