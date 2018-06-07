@@ -185,7 +185,6 @@ order_1
 |   case6ww |            635.079 ms |                  115.655 ms |                          225.262 ms |                 189.157 ms |
 |     case9 |            327.359 ms |                   74.992 ms |                           88.304 ms |                 289.448 ms |
 
-
 order_2
 
 | instances |           1.POP_build |           2.pb_construction |           3.pb_build_SDPMosekstruct |           4.pb_mosek_solve |
@@ -195,3 +194,27 @@ order_2
 |       WB5 |            246.962 ms |                     2.804 s |                             1.001 s |                    3.781 s |
 |   case6ww |            543.881 ms |                     6.506 s |                             2.245 s |                    9.069 s |
 |     case9 |            253.338 ms |                    15.039 s |                             5.176 s |                  148.176 s |
+
+## 7 june 2018
+
+changes : addindex! function.
+
+order_1
+
+| instances |           1.POP_build |           2.pb_construction |           3.pb_build_SDPMosekstruct |           4.pb_mosek_solve |
+| --------- | ---------------------:| ---------------------------:| -----------------------------------:| --------------------------:|
+|       WB2 |             46.554 ms |                   14.502 ms |                            6.057 ms |                  28.743 ms |
+|     LMBM3 |            132.754 ms |                   38.195 ms |                           12.925 ms |                  56.226 ms |
+|       WB5 |            213.880 ms |                   55.178 ms |                           21.882 ms |                  69.439 ms |
+|   case6ww |            466.185 ms |                  103.533 ms |                           28.754 ms |                  68.627 ms |
+|     case9 |            238.251 ms |                   65.787 ms |                           47.890 ms |                 118.387 ms |
+
+order_2
+
+| instances |           1.POP_build |           2.pb_construction |           3.pb_build_SDPMosekstruct |           4.pb_mosek_solve |
+| --------- | ---------------------:| ---------------------------:| -----------------------------------:| --------------------------:|
+|       WB2 |             47.870 ms |                   85.025 ms |                           46.952 ms |                 123.663 ms |
+|     LMBM3 |            127.208 ms |                  580.757 ms |                          212.954 ms |                 404.964 ms |
+|       WB5 |            207.997 ms |                     1.924 s |                          814.236 ms |                    3.243 s |
+|   case6ww |            513.525 ms |                     5.076 s |                             1.898 s |                    6.827 s |
+|     case9 |            208.660 ms |                    11.547 s |                             4.141 s |                  146.763 s |

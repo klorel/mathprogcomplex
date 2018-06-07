@@ -116,7 +116,8 @@ function print(io::IO, sdpinst::SDPInstance)
     println(io, " -- const part:")
     print(io, sdpinst.cst)
     println(io, " -- mat var types:")
-    for (blockname, blocktype) in sdpinst.block_to_vartype
+    for blockname in sort(collect(keys(sdpinst.block_to_vartype)))
+        blocktype = sdpinst.block_to_vartype[blockname]
         println(io, "   $blockname  \t $blocktype")
     end
 end
@@ -125,7 +126,7 @@ function print(io::IO, sdpblocks::Dict{Tuple{Moment, String, Exponent, Exponent}
     print_blocksfile(io, sdpblocks; indentedprint=indentedprint, print_header=false)
 end
 
-function print(io::IO, sdplin::Dict{Tuple{Moment, Exponent}, T}, sdplinsym::Dict{Tuple{Moment, Exponent, Exponent}, T}; indentedprint=true) where T
+function print(io::IO, sdplin::Dict{Tuple{Moment, Exponent}, T}, sdplinsym::Dict{Tuple{Moment, String, Exponent}, T}; indentedprint=true) where T
     print_linfile(io, sdplin, sdplinsym; indentedprint=indentedprint, print_header=false)
 end
 

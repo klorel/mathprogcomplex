@@ -146,13 +146,16 @@ function print(io::IO, relctx::RelaxationContext)
     print(io, "symmetries             : $(relctx.symmetries)\n")
     print(io, "hierarchykind          : $(relctx.hierarchykind)\n")
     print(io, "renamevars             : $(relctx.renamevars)\n")
-    for (cstrname, di) in relctx.di
-    print(io, "di                     : $cstrname  \t=> $di\n")
+    for cstrname in sort(collect(keys(relctx.di)))
+        di = relctx.di[cstrname]
+        print(io, "di                     : $cstrname  \t=> $di\n")
     end
-    for (cstrname, ki) in relctx.ki
-    print(io, "ki                     : $cstrname  \t=> $ki\n")
+    for cstrname in sort(collect(keys(relctx.ki)))
+        ki = relctx.ki[cstrname]
+        print(io, "ki                     : $cstrname  \t=> $ki\n")
     end
-    for (cstrname, cstrtype) in relctx.cstrtypes
-    print(io, "bar var types          : $cstrname  \t=> $(string(cstrtype))\n")
+    for cstrname in sort(collect(keys(relctx.cstrtypes)))
+        cstrtype = relctx.cstrtypes[cstrname]
+        print(io, "bar var types          : $cstrname  \t=> $(string(cstrtype))\n")
     end
 end

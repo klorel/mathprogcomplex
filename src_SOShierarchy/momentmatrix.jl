@@ -53,13 +53,19 @@ function print(io::IO, mm::MomentMatrix{T}) where T<:Number
 
     maxorder = 0
 
-    for (key, momentpoly) in mm.mm
+    for key in sort(collect(keys(mm.mm)))
+        momentpoly = mm.mm[key]
+
         print_string(io, "($(key[1]), $(key[2])) → ", keylen)
 
-        (moment_first, val_first) = first(momentpoly)
+        momentpoly_sortedkeys = sort(collect(keys(momentpoly)))
+        moment_first = pop!(momentpoly_sortedkeys)
+        val_first = momentpoly[moment_first]
+
         println(io, "$(moment_first.clique) -- $(moment_first.conj_part) × $(moment_first.expl_part) × $val_first")
 
-        for (moment, val) in momentpoly
+        for moment in momentpoly_sortedkeys
+            val = momentpoly[moment]
             maxorder = max(maxorder, moment.expl_part.degree.explvar)
 
             (moment_first, val_first) == (moment, val) && continue

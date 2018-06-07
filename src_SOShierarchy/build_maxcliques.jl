@@ -231,7 +231,9 @@ function collect_cliquesvars(clique_keys::Set{String}, max_cliques::Dict{String,
 end
 
 function print(io::IO, max_cliques::Dict{String, Set{Variable}})
-    for (cliquename, vars) in max_cliques
+    for cliquename in sort(collect(keys(max_cliques)))
+        vars = max_cliques[cliquename]
+
         print(io, "$cliquename = ")
         for var in vars print(io, "$var, ") end
         @printf(io, "\b\b \n")

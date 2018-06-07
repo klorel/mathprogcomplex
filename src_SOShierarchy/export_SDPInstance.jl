@@ -48,17 +48,19 @@ function export_SDP(sdp::SDPInstance, path; indentedprint=true, renamemoments=tr
         print_namesfile(fname, momentdict)
         close(fname)
     end
+
+    return nothing
 end
 
 
 """
     momentdict = build_momentdict(sdp, renamemoments)
 
-    Build a dict `momentdict::SortedDict{Exponent, String}` that stores short names for moments (Exponent) of `sdp`.
+    Build a dict `momentdict::Dict{Exponent, String}` that stores short names for moments (Exponent) of `sdp`.
     NOTE: should be extended to Variable and (String, Variable) later...
 """
 function build_momentdict(sdp, renamemoments::Bool)
-    momentdict = SortedDict{Exponent, String}()
+    momentdict = Dict{Exponent, String}()
 
     n_moment=0
     n_matvar=0
@@ -117,8 +119,8 @@ function build_momentdict(sdp, renamemoments::Bool)
     return momentdict
 end
 
-function build_ctrkeysset(sdp)
-    ctr_keys = SortedSet{Moment}()
+function build_ctrkeysset(sdp::SDPInstance{T}) where T
+    ctr_keys = Set{Moment}()
 
     for ((moment, blockname, γ, δ), λ) in sdp.blocks
         push!(ctr_keys, moment)
@@ -137,7 +139,7 @@ end
 
 
 function print_blocksfile(io::IO, sdpblocks::Dict{Tuple{Moment, String, Exponent, Exponent}, T};
-                                                        momentdict::SortedDict{Exponent, String}=SortedDict{Exponent, String}(),
+                                                        momentdict::Dict{Exponent, String}=Dict{Exponent, String}(),
                                                         indentedprint=false,
                                                         print_header=true) where T
     if print_header
@@ -172,7 +174,9 @@ function print_blocksfile(io::IO, sdpblocks::Dict{Tuple{Moment, String, Exponent
     print_string(io, "Imag(A_ij[k, l])", 23, indentedprint=indentedprint)
     println(io)
 
-    for ((moment, blockname, γ, δ), λ) in sdpblocks
+    for (moment, blockname, γ, δ) in sort(collect(keys(sdpblocks)))
+        λ = sdpblocks[(moment, blockname, γ, δ)]
+
         α, β = moment.conj_part, moment.expl_part
         print_string(io, haskey(momentdict, α)?momentdict[α]: string(α), cstrlenα, indentedprint=indentedprint)
         print_string(io, haskey(momentdict, β)?momentdict[β]: string(β), cstrlenβ, indentedprint=indentedprint)
@@ -186,7 +190,7 @@ end
 
 
 function print_linfile(io::IO, sdplin::Dict{Tuple{Moment, Exponent}, T}, sdplinsym::Dict{Tuple{Moment, String, Exponent}, T};
-                                                                     momentdict::SortedDict{Exponent, String}=SortedDict{Exponent, String}(),
+                                                                     momentdict::Dict{Exponent, String}=Dict{Exponent, String}(),
                                                                      indentedprint=false,
                                                                      print_header=true) where T
     if print_header
@@ -225,7 +229,9 @@ function print_linfile(io::IO, sdplin::Dict{Tuple{Moment, Exponent}, T}, sdplins
     println(io)
 
     if length(sdplin)!=0
-        for ((moment, var), λ) in sdplin
+        for (moment, var) in sort(collect(keys(sdplin)))
+            λ = sdplin[(moment, var)]
+
             α, β = moment.conj_part, moment.expl_part
             print_string(io, haskey(momentdict, α)?momentdict[α]: string(α), cstrlenα, indentedprint=indentedprint)
             print_string(io, haskey(momentdict, β)?momentdict[β]: string(β), cstrlenβ, indentedprint=indentedprint)
@@ -235,7 +241,9 @@ function print_linfile(io::IO, sdplin::Dict{Tuple{Moment, Exponent}, T}, sdplins
         end
     end
     if length(sdplinsym) != 0
-        for ((moment, blockname, var), λ) in sdplinsym
+        for (moment, blockname, var) in sort(collect(keys(sdplinsym)))
+            λ = sdplinsym[(moment, blockname, var)]
+
             α, β = moment.conj_part, moment.expl_part
             print_string(io, haskey(momentdict, α)?momentdict[α]: string(α), cstrlenα, indentedprint=indentedprint)
             print_string(io, haskey(momentdict, β)?momentdict[β]: string(β), cstrlenβ, indentedprint=indentedprint)
@@ -248,10 +256,10 @@ end
 
 
 function print_cstfile(io::IO, sdpcst::Dict{Moment, T};
-                                               momentdict::SortedDict{Exponent, String}=SortedDict{Exponent, String}(),
-                                               ctr_keys::SortedSet{Moment}=SortedSet{Moment}(),
-                                               indentedprint=false,
-                                               print_header=true) where T
+                                momentdict::Dict{Exponent, String}=Dict{Exponent, String}(),
+                                ctr_keys::Set{Moment}=Set{Moment}(),
+                                indentedprint=false,
+                                print_header=true) where T
     if print_header
         println(io, "## Description of the scalars c_j for the problem:")
         println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
@@ -275,7 +283,7 @@ function print_cstfile(io::IO, sdpcst::Dict{Moment, T};
     print_string(io, "Imag(c_j)", 23, indentedprint=indentedprint)
     println(io)
 
-    for moment in SortedSet(union(ctr_keys, keys(sdpcst)))
+    for moment in sort(union(ctr_keys, keys(sdpcst)))
         α, β = moment.conj_part, moment.expl_part
         λ = haskey(sdpcst, moment)?sdpcst[moment]:0
         print_string(io, haskey(momentdict, α)?momentdict[α]: string(α), cstrlenα, indentedprint=indentedprint)
@@ -286,7 +294,7 @@ function print_cstfile(io::IO, sdpcst::Dict{Moment, T};
 end
 
 
-function print_typesfile(io::IO, block_to_vartype)
+function print_typesfile(io::IO, block_to_vartype::Dict{String, Symbol})
     println(io, "## Description of the matrix and scalar variables Zi and x[k] for the problem:")
     println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
     println(io, "##         s.t.    ∑ A_ji[k,l] × Zi[k,l] + ∑ b_j[k] × x[k] + c_j  ==  0")
@@ -299,7 +307,8 @@ function print_typesfile(io::IO, block_to_vartype)
 
     print_string(io, "#Zi", cstrlen, alignright=false); println(io, " type")
 
-    for (blockname, vartype) in block_to_vartype
+    for blockname in sort(collect(keys(block_to_vartype)))
+        vartype = block_to_vartype[blockname]
         if vartype in Set([:SDP, :SDPC])
             print_string(io, blockname, cstrlen)
             println(io, " $(string(vartype))")
@@ -309,7 +318,7 @@ function print_typesfile(io::IO, block_to_vartype)
 end
 
 
-function print_namesfile(io::IO, momentdict)
+function print_namesfile(io::IO, momentdict::Dict{Exponent, String})
     println(io, "## Description of the scalars c_j for the problem:")
     println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
     println(io, "##         s.t.    ∑ A_ji[k,l] × Zi[k,l] + ∑ b_j[k] × x[k] + c_j  ==  0")
@@ -318,7 +327,8 @@ function print_namesfile(io::IO, momentdict)
     println(io, "#")
     println(io, "#shortname  Explicit_name")
 
-    for (α, shortname) in momentdict
+    for α in sort(collect(keys(momentdict)))
+        shortname = momentdict[α]
         println(io, "$shortname $(format_string(α))")
     end
 end
