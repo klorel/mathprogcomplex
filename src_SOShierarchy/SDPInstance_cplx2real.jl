@@ -157,6 +157,21 @@ function cplx2real_sdpctr(expo::Exponent)
 end
 
 function get_Xictrname_re(block_name::String, γ::Exponent, δ::Exponent)
-<<<<<<< HEAD
     δ_ctr = δ
     if product(γ, δ) == Exponent()
+        δ_ctr = Exponent(Variable("1_ctr", Real))
+    end
+    @show Moment(γ, δ_ctr, block_name*"_ReCtr")
+    return Moment(γ, δ_ctr, block_name*"_ReCtr")
+    # return Exponent(Variable(block_name*"_Re", Real)), Exponent(Variable(string(γ, "_", δ), Real))
+end
+
+function get_Xictrname_im(block_name::String, γ::Exponent, δ::Exponent)
+    δ_ctr = δ
+    if product(γ, δ) == Exponent()
+        δ_ctr = Exponent(Variable("1_ctr", Real))
+    end
+    @show Moment(γ, δ_ctr, block_name*"_ImCtr")
+    return Moment(γ, δ_ctr, block_name*"_ImCtr")
+    # return Exponent(Variable(block_name*"_Im", Real)), Exponent(Variable(string(γ, "_", δ), Real))
+end
