@@ -45,19 +45,20 @@ function main()
     # Build the moment relaxation problem
     mmtrel_pb = MomentRelaxation{Float64}(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
 
-    # println("\n--------------------------------------------------------")
-    # println("mmtrel_pb = $mmtrel_pb")
+    println("\n--------------------------------------------------------")
+    println("mmtrel_pb = $mmtrel_pb")
 
     ########################################
     # Convert to a primal SDP problem
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
 
-    # println("\n--------------------------------------------------------")
-    # println("sdpinstance = \n$sdpinstance")
+    println("\n--------------------------------------------------------")
+    println("sdpinstance = \n$sdpinstance")
 
     path = joinpath(pwd(), "Mosek_runs", "worksdp")
+    ispath(path) && rm(path, recursive=true)
     mkpath(path)
-    export_SDP(sdpinstance, path)
+    export_SDP(sdpinstance, path, renamemoments=false)
 
     sdp_instance = read_SDPInstance(path)
 

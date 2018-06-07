@@ -11,7 +11,7 @@ function main()
 
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         symmetries=[PhaseInvariance],
-                                        issparse=true,
+                                        issparse=false,
                                         d = 2)
 
     println("\n--------------------------------------------------------")

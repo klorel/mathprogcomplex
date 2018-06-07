@@ -5,7 +5,7 @@
 """
 function set_relaxation(pb::Problem; ismultiordered::Bool=false,
                                      issparse::Bool=false,
-                                     symmetries::Array{Any, 1}=Any[],
+                                     symmetries::Array{DataType, 1}=DataType[],
                                      hierarchykind::Symbol=:Complex,
                                      renamevars::Bool=false,
                                      di::Dict{String, Int}=Dict{String, Int}(),

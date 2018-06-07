@@ -21,7 +21,7 @@ include(joinpath("..", "src_SOShierarchy", "SOShierarchy.jl"))
                        61.81 => (1, 1114.90, 1114.90))
 
     testfolder = joinpath("Mosek_runs", "tests")
-    @testset "q5min=$q5min, sparse, sym=$sym" for (q5min, (dmax, obj_fixedphase, obj_rankrel)) in sols, rmeqs in Set([false]), sym in Set([[], [PhaseInvariance]])
+    @testset "q5min=$q5min, sparse, sym=$sym" for (q5min, (dmax, obj_fixedphase, obj_rankrel)) in sols, rmeqs in Set([false]), sym in Set([DataType[], [PhaseInvariance]])
 
         # info("Working on WB5, no eqs, q5min=$q5min, d=$d")
         problem = buildPOP_WB5(q5min=q5min, rmeqs=rmeqs)
@@ -42,6 +42,6 @@ include(joinpath("..", "src_SOShierarchy", "SOShierarchy.jl"))
         primobj, dualobj = run_hierarchy(problem, relax_ctx, logpath, save_pbs=true, max_cliques=max_cliques);
         @show primobj, dualobj, obj_rankrel
         @test primobj ≈ obj_rankrel atol=1e-2
-        @test dualobj ≈ obj_rankrel atol=1e-2
+        @test dualobj ≈ primobj atol=mosek_optgap*min(abs(primobj), abs(dualobj))
     end
 end

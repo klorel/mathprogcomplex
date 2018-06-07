@@ -27,7 +27,7 @@ include(joinpath("..", "src_SOShierarchy", "SOShierarchy.jl"))
 
         primobj, dualobj =run_hierarchy(problem, relax_ctx, logpath)
         @test primobj ≈ -3 atol=1e-6
-        @test dualobj ≈ -3 atol=1e-6
+        @test dualobj ≈ primobj atol=mosek_optgap*min(abs(primobj), abs(dualobj))
 
         ## Order 2
         relax_ctx = set_relaxation(problem; hierarchykind=:Real,
@@ -35,7 +35,7 @@ include(joinpath("..", "src_SOShierarchy", "SOShierarchy.jl"))
 
         primobj, dualobj =run_hierarchy(problem, relax_ctx, logpath)
         @test primobj ≈ -2 atol=1e-6
-        @test dualobj ≈ -2 atol=1e-6
+        @test dualobj ≈ primobj atol=mosek_optgap*min(abs(primobj), abs(dualobj))
 
         rm(logpath, recursive = true)
     end

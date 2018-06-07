@@ -36,6 +36,6 @@ include(joinpath("..", "src_SOShierarchy", "SOShierarchy.jl"))
         primobj, dualobj = run_hierarchy(problem, relax_ctx, logpath, save_pbs=true);
         @show primobj, dualobj, obj_fixedphase
         @test primobj ≈ obj_fixedphase atol=1e-2
-        @test dualobj ≈ obj_fixedphase atol=1e-2
+        @test dualobj ≈ primobj atol=mosek_optgap*min(abs(primobj), abs(dualobj))
     end
 end

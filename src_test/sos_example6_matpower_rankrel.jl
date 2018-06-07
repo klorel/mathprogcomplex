@@ -41,6 +41,6 @@ include(joinpath("..", "src_SOShierarchy", "SOShierarchy.jl"))
         @show (primobj, dualobj, obj_rankrel, obj_opt, cstobj)
 
         @test primobj ≈ obj_rankrel + cstobj atol=1e-1
-        @test dualobj ≈ obj_rankrel + cstobj atol=1e-1
+        @test dualobj ≈ primobj atol=mosek_optgap*min(abs(primobj), abs(dualobj))
     end
 end
