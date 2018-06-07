@@ -3,7 +3,7 @@ include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
 
 
 function main()
-    rmeqs = true
+    rmeqs = false
 
     OPFpbs = load_OPFproblems(MatpowerInput, joinpath("..", "data", "data_Matpower", "matpower", "WB2.m"))
     problem = build_globalpb!(OPFpbs)
