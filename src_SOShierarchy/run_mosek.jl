@@ -180,7 +180,9 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
   empty_mats = Set{String}()
   for i=1:nbarvar
     barvardim[i] = length(problem.id_to_sdpblock[i].var_to_id)
-    push!(empty_mats, problem.id_to_sdpblock[i].name)
+    if length(problem.id_to_sdpblock[i].var_to_id) == 0
+      push!(empty_mats, problem.id_to_sdpblock[i].name)
+    end
   end
 
   if length(empty_mats) > 0
