@@ -1,13 +1,27 @@
 ROOT = pwd()
 include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
-include(joinpath(ROOT,"src_PowSysMod", "PowSysMod_body.jl"))
+include(joinpath(ROOT, "dev", "get_cliques.jl"))
+include(joinpath(ROOT, "src_Matpower", "get_cliques_matpower.jl"))
 
 
 function main()
 
-    problem = buildPOP_WB2(v2max=1.022, setnetworkphase=false)
-    # typeofinput = GOCInput
-    # instance_path = joinpath("..", "data", "data_GOC", "Phase_0_IEEE14_1Scenario","scenario_1")
+    # problem = buildPOP_WB2(v2max=1.022, setnetworkphase=false)
+    # relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+    #                                     # symmetries=[PhaseInvariance],
+    #                                     d = 1)
+    #
+    # problem = buildPOP_WB2(v2max=1.022, setnetworkphase=true)
+    # relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+    #                                     # symmetries=[PhaseInvariance],
+    #                                     d = 1)
+    #
+    # ###GOC
+    # data_path = joinpath("..", "data", "data_GOC")
+    # folder = "Phase_0_IEEE14_1Scenario"
+    # scenario = "scenario_1"
+    # folder_path = joinpath(data_path, folder)
+    # instance_path = joinpath(folder_path, scenario)
     # raw = "powersystem.raw"
     # gen = "generator.csv"
     # con = "contingency.csv"
@@ -15,24 +29,32 @@ function main()
     # genfile = joinpath(instance_path, gen)
     # contfile = joinpath(instance_path, con)
     # OPFpbs = load_OPFproblems(rawfile, genfile, contfile)
-
-    typeofinput = MatpowerInput
-    instance_path = joinpath("..", "data", "data_Matpower","matpower", "WB5.m")
-
-    OPFpbs = load_OPFproblems(typeofinput, instance_path)
-    ## Introducing coupling constraints on generator output
-    (typeofinput != GOCInput) || introduce_Sgenvariables!(OPFpbs)
-
-    ## Bulding optimization problem
-    problem = build_globalpb!(OPFpbs)
-    problem = pb_cplx2real(problem)
+    # introduce_Sgenvariables!(OPFpbs)
+    # ## Bulding optimization problem
+    # pb_global = build_globalpb!(OPFpbs)
+    # pb_global_real = pb_cplx2real(pb_global)
+    # problem = pb_global_real
+    # # problem = convert_mipb_to_pb(pb_global_real)
+    # relax_ctx = set_relaxation(problem; hierarchykind=:Real,
+    #                                     # symmetries=[PhaseInvariance],
+    #                                     issparse=true,
+    #                                     d = 2)
+    ##Matpower
+    instance = "case14.m"
+    sparse_param = true
+    instance_path = joinpath(pwd(),"..","data", "data_Matpower", "matpower", instance)
+    # OPFpbs = load_OPFproblems(MatpowerInput, instance_path)
+    # ## Bulding optimization problem
+    # pb_global = build_globalpb!(OPFpbs)
+    # problem = pb_cplx2real(pb_global)
+    problem_c, point = import_from_dat(joinpath("..", "data", "data_Matpower", "matpower_QCQP", instance[1:end-2]*".dat"))
+    problem = pb_cplx2real(problem_c)
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         # symmetries=[PhaseInvariance],
+                                        issparse=sparse_param,
                                         d = 1)
-    problem = buildPOP_WB2(v2max=1.022, setnetworkphase=true)
-    relax_ctx = set_relaxation(problem; hierarchykind=:Real,
-                                        # symmetries=[PhaseInvariance],
-                                        d = 1)
+
+
 
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")
@@ -42,7 +64,20 @@ function main()
 
     ########################################
     # Construction du sparsity pattern, extension chordale, cliques maximales.
-    max_cliques = get_maxcliques(relax_ctx, problem)
+    if sparse_param
+        # max_cliques = get_cliques(problem)
+        # max_cliques = get_cliques_matpower(instance_path)
+        # max_cliques = get_cliques_matpower_forQCQP(instance_path)
+        max_cliques = SortedDict{String, SortedSet{Variable}}()
+        max_cliques["clique1"] = SortedSet{Variable}()
+        for var in problem.variables
+            push!(max_cliques["clique1"], Variable(var[1], var[2]))
+        end
+    else
+        max_cliques = get_maxcliques(relax_ctx, problem)
+    end
+
+
 
     println("\n--------------------------------------------------------")
     println("max cliques =")

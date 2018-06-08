@@ -48,7 +48,7 @@ JuMP_runs
 Mosek_runs
 *.sdp
 *.zip
-/log_IEEE14_scenario_1_cliques.txt
-/log_IEEE14_scenario_1_dense.txt
+*.txt
+
 /log_IEEE14_scenario_1_ordre2_cliques.txt
 /log_Mosek_case118_sparse_1clique.txt

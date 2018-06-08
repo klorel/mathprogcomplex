@@ -44,32 +44,17 @@ print(convert_mipb_to_pb!(PB_poly_real))
 function get_cliques(pb_real::Problem)
     cliques = SortedDict{String, SortedSet{Variable}}()
     vars = pb_real.variables
-
-    generator_buses = SortedSet()
-    for var in vars
-        if ismatch(r"Sgen", var[1])
-            bus_id = split(var[1],'_')[2]
-            push!(generator_buses, bus_id)
-        end
-    end
-
     for var in vars
         splits = split(var[1],'_')
         scen = splits[1]
-        bus_id = splits[2]
-        if bus_id ∈ generator_buses
-            clique ="C-bus-$bus_id)"
-            if !haskey(cliques, clique)
-                cliques[clique] = SortedSet{Variable}()
-            end
-            push!(cliques[clique], Variable(var[1], var[2]))
-        else
-            clique ="C-$scen"
-            if !haskey(cliques, clique)
-                cliques[clique] = SortedSet{Variable}()
-            end
-            push!(cliques[clique], Variable(var[1], var[2]))
+        if scen == "BinVolt"
+            splits[3] == basecase_scenario_name() ? scen = splits[5] : scen = splits[3]
         end
+        clique ="clique-$scen"
+        if !haskey(cliques, clique)
+            cliques[clique] = SortedSet{Variable}()
+        end
+        push!(cliques[clique], Variable(var[1], var[2]))
     end
     return cliques
 end
@@ -80,7 +65,7 @@ end
 # # folder = "Phase_0_RTS96"
 # scenario = "scenario_1"
 #
-# instance_path = joinpath(pwd(),"..","..","data", "data_GOC", folder, scenario)
+# instance_path = joinpath(pwd(),"..","data", "data_GOC", folder, scenario)
 #
 #
 # raw = "powersystem.raw"
@@ -95,3 +80,8 @@ end
 # pb_global = build_globalpb!(OPFpbs)
 # pb_global_real = pb_cplx2real(pb_global)
 # cliques = get_cliques(pb_global_real)
+# println(cliques)
+#
+# println(length(cliques["C-$(basecase_scenario_name())"]))
+#
+# println(length(cliques["C-Scen1"]))

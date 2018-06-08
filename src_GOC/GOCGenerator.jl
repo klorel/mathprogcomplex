@@ -36,15 +36,25 @@ function create_vars!(element::T, bus::String, elemid::String, elem_formulation:
     elseif elem_formulation == :GOCcoupling
         bus_vars[elemid] = Variable(variable_name("Sgen", bus, elemid, scenario), Complex)
 
+        # # Binary variables for coupling constraints
+        # Vbc_inf_Vsc = get_binInf_varname(basecase_scenario_name(), scenario, bus)
+        # bus_vars[Vbc_inf_Vsc] = Variable(Vbc_inf_Vsc, Bool)
+        #
+        # Vsc_inf_Vbc = get_binInf_varname(scenario, basecase_scenario_name(), bus)
+        # bus_vars[Vsc_inf_Vbc] = Variable(Vsc_inf_Vbc, Bool)
+        #
+        # Veq = get_binEq_varname(scenario, basecase_scenario_name(), bus)
+        # bus_vars[Veq] = Variable(Veq, Bool)
+
         # Binary variables for coupling constraints
         Vbc_inf_Vsc = get_binInf_varname(basecase_scenario_name(), scenario, bus)
-        bus_vars[Vbc_inf_Vsc] = Variable(Vbc_inf_Vsc, Bool)
+        bus_vars[Vbc_inf_Vsc] = Variable(Vbc_inf_Vsc, Real)
 
         Vsc_inf_Vbc = get_binInf_varname(scenario, basecase_scenario_name(), bus)
-        bus_vars[Vsc_inf_Vbc] = Variable(Vsc_inf_Vbc, Bool)
+        bus_vars[Vsc_inf_Vbc] = Variable(Vsc_inf_Vbc, Real)
 
         Veq = get_binEq_varname(scenario, basecase_scenario_name(), bus)
-        bus_vars[Veq] = Variable(Veq, Bool)
+        bus_vars[Veq] = Variable(Veq, Real)
 
         # Scaling factor for current scenario
         delta_varname = get_delta_varname(scenario)
@@ -157,6 +167,10 @@ function constraint(element::T, bus::String, elemid::String, elem_formulation::S
         ## Coupling constraint reactive : lower bound
         ccname_lower = get_CC_reactivelower_cstrname()
         cstrs[ccname_lower] = ((Qgen - Vsc_inf_Vbc * (Qmax - Qmin) - Qmin)) >> 0
+
+        cstrs["Bin_Vbc_inf_Vsc"] = (Vbc_inf_Vsc^2 - Vbc_inf_Vsc == 0)
+        cstrs["Bin_Vsc_inf_Vbc"] = (Vsc_inf_Vbc^2 - Vsc_inf_Vbc == 0)
+        cstrs["Bin_Veq"] = (Veq^2 - Veq == 0)
     end
 
     return cstrs
