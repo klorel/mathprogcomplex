@@ -132,7 +132,7 @@ function set_matrices!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
       if !haskey(sdp.matrices, (ctr_name, block_name, var1, var2))
         sdp.matrices[(ctr_name, block_name, var1, var2)] = parse(coeff)
       else
-        warn("set_matrices!(): sdp.matrices already has key ($ctr_name, $block_name, $var1, $var2) with val $(sdp.matrices[(ctr_name, block_name, var1, var2)]), $(parse(coeff))")
+        error("set_matrices!(): sdp.matrices already has key ($ctr_name, $block_name, $var1, $var2) with val $(sdp.matrices[(ctr_name, block_name, var1, var2)]), $(parse(coeff))")
       end
 
     else
@@ -154,7 +154,7 @@ function set_linear!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
       if !haskey(sdp.linear, (ctr_name, var))
         sdp.linear[(ctr_name, var)] = parse(coeff)
       else
-        warn("set_linear!(): sdp.linear already has key ($ctr_name, $var) with val $(sdp.linear[(ctr_name, var)]). New val is $(parse(coeff))")
+        error("set_linear!(): sdp.linear already has key ($ctr_name, $var) with val $(sdp.linear[(ctr_name, var)]). New val is $(parse(coeff))")
       end
     end
   end
@@ -179,25 +179,30 @@ function set_const!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
 end
 
 function print(io::IO, sdp::SDP_Problem)
-  for (cstr, block) in sdp.name_to_sdpblock
+  for cstr in sort(keys(sdp.name_to_sdpblock))
+    block = sdp.name_to_sdpblock[cstr]
     println(io, "  sdp   : $cstr -> $block")
   end
 
   println(io, "  objk  : $(sdp.obj_keys)")
 
-  for (name, ctr) in sdp.name_to_ctr
+  for name in sort(keys(sdp.name_to_ctr))
+    ctr = sdp.name_to_ctr[name]
     println(io, "  ctr   : $name \t $ctr")
   end
 
-  for (name, mat) in sdp.matrices
+  for name in sort(keys(sdp.matrices))
+    mat = sdp.matrices[name]
     println(io, "  matrix: $name \t $mat")
   end
 
-  for (name, lin) in sdp.linear
+  for name in sort(keys(sdp.linear))
+    lin = sdp.linear[name]
     println(io, "  lin   : $name \t $lin")
   end
 
-  for (name, cst) in sdp.cst_ctr
+  for name in sort(keys(sdp.cst_ctr))
+    cst = sdp.cst_ctr[name]
     println(io, "  cst   : $name \t $cst")
   end
 end

@@ -12,7 +12,7 @@ function main()
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         symmetries=[PhaseInvariance],
                                         issparse=true,
-                                        d = 2)
+                                        d = 1)
 
     println("\n--------------------------------------------------------")
     println("problem = \n$problem")
@@ -51,7 +51,7 @@ function main()
 
     ########################################
     # Build the moment relaxation problem
-    mmtrel_pb = MomentRelaxation(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
+    mmtrel_pb = MomentRelaxation{Float64}(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
 
     # println("\n--------------------------------------------------------")
     # println("mmtrel_pb = $mmtrel_pb")

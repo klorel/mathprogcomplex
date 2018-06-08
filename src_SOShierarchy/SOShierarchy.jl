@@ -7,14 +7,14 @@ include(joinpath(ROOT, "src_PolynomialOptim", "PolynomialOptim.jl"))
 ## Relaxation context, symmetries and cliques
 ###############################################################################
 mutable struct RelaxationContext
-    ismultiordered
-    issparse
-    symmetries::SortedSet{DataType} # ::SortedSet{DataType}
-    hierarchykind                   # :Complex or :Real
-    renamevars                      # Replace variables with by shorter named ones
-    di
-    ki
-    cstrtypes
+    ismultiordered::Bool
+    issparse::Bool
+    symmetries::Set{DataType}       # ::SortedSet{DataType}
+    hierarchykind::Symbol           # :Complex or :Real
+    renamevars::Bool                # Replace variables with by shorter named ones
+    di::Dict{String, Int}
+    ki::Dict{String, Int}
+    cstrtypes::Dict{String, Symbol}
 end
 
 
@@ -37,14 +37,14 @@ end
 include("moment.jl")
 
 """
-    MomentMatrix(mm, vars, order)
+    MomentMatrix{T}(mm, vars, order, matrixkind)
 
     Store a moment or localizing matrix of size `order`, corresponding to the `vars` variables in the `mm` dictionnary.
     **Note** that the matrix is indexed by a tuple of exponents, *the first of which contains only conjugated variables*, et second only real ones.
 """
-mutable struct MomentMatrix
-    mm::SortedDict{Tuple{Exponent, Exponent}, SortedDict{Moment, Number}}
-    vars::SortedSet{Variable}
+mutable struct MomentMatrix{T}
+    mm::Dict{Tuple{Exponent, Exponent}, Dict{Moment, T}}
+    vars::Set{Variable}
     order::Int
     matrixkind::Symbol            # Either :SDP or :Sym
 end
@@ -56,10 +56,10 @@ include("momentmatrix.jl")
 
     Store a Moment Relaxation problem.
 """
-struct MomentRelaxation
-    objective::SortedDict{Moment, Number}
-    constraints::SortedDict{Tuple{String, String}, MomentMatrix}
-    moments_overlap::SortedDict{Exponent, SortedSet{String}}
+struct MomentRelaxation{T}
+    objective::Dict{Moment, T}
+    constraints::Dict{Tuple{String, String}, MomentMatrix{T}}
+    moments_overlap::Dict{Exponent, Set{String}}
 end
 
 include("build_momentrelaxation.jl")
@@ -69,17 +69,12 @@ include("build_momentrelaxation.jl")
 ###############################################################################
 ## SOS Problem
 ###############################################################################
-const SDPBlocks = SortedDict{Tuple{Moment, String, Exponent, Exponent}, Number} # ((α, β), block_name, γ, δ) -> coeff
-const SDPLinSym = SortedDict{Tuple{Moment, String, Exponent}, Number}           # ((α, β), block_name, var) -> coeff
-const SDPLin = SortedDict{Tuple{Moment, Exponent}, Number}                      # ((α, β), var) -> coeff
-const SDPCst = SortedDict{Moment, Number}                                       # (α, β) -> coeff
-
-mutable struct SDPInstance
-    block_to_vartype::SortedDict{String, Symbol}  # Either :SDP, :Sym, :SDPc, :SymC
-    blocks::SDPBlocks
-    linsym::SDPLinSym
-    lin::SDPLin
-    cst::SDPCst
+mutable struct SDPInstance{T}
+    block_to_vartype::Dict{String, Symbol}                       # Either :SDP, :Sym, :SDPc, :SymC
+    blocks::Dict{Tuple{Moment, String, Exponent, Exponent}, T}   # ((α, β), block_name, γ, δ) -> coeff
+    linsym::Dict{Tuple{Moment, String, Exponent}, T}             # ((α, β), block_name, var) -> coeff
+    lin::Dict{Tuple{Moment, Exponent}, T}                        # ((α, β), var) -> coeff
+    cst::Dict{Moment, T}                                         # (α, β) -> coeff
 end
 
 include("build_SDPInstance.jl")

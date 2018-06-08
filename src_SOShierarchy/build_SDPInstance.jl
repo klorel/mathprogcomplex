@@ -1,9 +1,9 @@
-function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxation; debug=false)
-    sdpblocks = SDPBlocks()
-    sdplin = SDPLin()
-    sdplinsym = SDPLinSym()
-    sdpcst = SDPCst()
-    block_to_vartype = SortedDict{String, Symbol}()
+function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxation{T}; debug=false) where T<:Number
+    sdpblocks = Dict{Tuple{Moment, String, Exponent, Exponent}, T}()
+    sdplinsym = Dict{Tuple{Moment, String, Exponent}, T}()
+    sdplin = Dict{Tuple{Moment, Exponent}, T}()
+    sdpcst = Dict{Moment, T}()
+    block_to_vartype = Dict{String, Symbol}()
 
     ## Build blocks dict
     for ((cstrname, cliquename), mmt) in mmtrelax_pb.constraints
@@ -34,9 +34,12 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
                     ## TODO: look into ht_keyindex2!, ht_keyindex for avoiding two dict table lookup
                     # Maybe implement this operation (if haskey add, else set) using 'setindex!(h::Dict{K,V}, v0, key::K) where V where K' as inspiration
                     key = (moment, block_name, product(γ, δ))
-                    haskey(sdplinsym, key) || (sdplinsym[key] = 0)
+                    val = -λ * (γ!=δ ? 2 : 1)
 
-                    sdplinsym[key] += -λ * (γ!=δ ? 2 : 1)
+                    addindex!(sdplinsym, val, key)
+
+                    # haskey(sdplinsym, key) || (sdplinsym[key] = 0)
+                    # sdplinsym[key] += val
                 else
                     error("build_SDPInstance(): Unhandled matrix kind $(mmt.matrixkind) for ($cstrname, $cliquename)")
                 end
@@ -69,15 +72,18 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
     for (moment, fαβ) in mmtrelax_pb.objective
         # Determine which moment to affect the current coefficient.
 
-        if !haskey(sdpcst, moment)
-            sdpcst[moment] = 0.0
-        end
-
         # Constraints are fα - ∑ Bi.Zi = 0
-        sdpcst[moment] += fαβ
+        addindex!(sdpcst, fαβ, moment)
+
+        # if !haskey(sdpcst, moment)
+        #     sdpcst[moment] = 0.0
+        # end
+
+        # # Constraints are fα - ∑ Bi.Zi = 0
+        # sdpcst[moment] += fαβ
     end
 
-    return SDPInstance(block_to_vartype, sdpblocks, sdplinsym, sdplin, sdpcst)
+    return SDPInstance{T}(block_to_vartype, sdpblocks, sdplinsym, sdplin, sdpcst)
 end
 
 
@@ -91,8 +97,8 @@ end
 #     α, β = Exponent(), Exponent()
 
 #     for (var, deg) in expo
-#         product!(α, Exponent(SortedDict(var=>Degree(0, deg.conjvar))))
-#         product!(β, Exponent(SortedDict(var=>Degree(deg.explvar, 0))))
+#         product!(α, Exponent(Dict(var=>Degree(0, deg.conjvar))))
+#         product!(β, Exponent(Dict(var=>Degree(deg.explvar, 0))))
 #     end
 
 #     if (relaxctx.hierarchykind == :Real) && (α.degree != Degree(0,0))
@@ -110,20 +116,21 @@ function print(io::IO, sdpinst::SDPInstance)
     println(io, " -- const part:")
     print(io, sdpinst.cst)
     println(io, " -- mat var types:")
-    for (blockname, blocktype) in sdpinst.block_to_vartype
+    for blockname in sort(collect(keys(sdpinst.block_to_vartype)))
+        blocktype = sdpinst.block_to_vartype[blockname]
         println(io, "   $blockname  \t $blocktype")
     end
 end
 
-function print(io::IO, sdpblocks::SDPBlocks; indentedprint=true)
+function print(io::IO, sdpblocks::Dict{Tuple{Moment, String, Exponent, Exponent}, T}; indentedprint=true) where T
     print_blocksfile(io, sdpblocks; indentedprint=indentedprint, print_header=false)
 end
 
-function print(io::IO, sdplin::SDPLin, sdplinsym::SDPLinSym; indentedprint=true)
+function print(io::IO, sdplin::Dict{Tuple{Moment, Exponent}, T}, sdplinsym::Dict{Tuple{Moment, String, Exponent}, T}; indentedprint=true) where T
     print_linfile(io, sdplin, sdplinsym; indentedprint=indentedprint, print_header=false)
 end
 
 
-function print(io::IO, sdpcst::SDPCst; indentedprint=true)
+function print(io::IO, sdpcst::Dict{Moment, T}; indentedprint=true) where T
     print_cstfile(io, sdpcst; indentedprint=indentedprint, print_header=false)
 end
