@@ -1,7 +1,7 @@
 ROOT = pwd()
 include(joinpath(ROOT, "src_SOShierarchy", "SOShierarchy.jl"))
 
-using Convex, SCS
+using Convex, Mosek
 
 function set_variables!(matrix_variables, scalar_variables, primalSDP)
     for (names, block) in primalSDP.name_to_sdpblock
@@ -45,6 +45,7 @@ function build_Convex_SDPPrimal(primalSDP::SDP_Problem{Float64}, mysolver)
             #                                                     primalSDP.name_to_sdpblock[matname].var_to_id[δ]] * λ
 
             constraints[sdpmoment] += vecdot(matrix_variables[matname], sparse([i], [j], [λ], n, n))
+            println(" Adding to constraint $sdpmoment, Zi $matname, i,j = $i, $j  *\t $λ")
 
         end
     end
