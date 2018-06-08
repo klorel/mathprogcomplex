@@ -176,7 +176,16 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
 
   nbarvar = length(problem.id_to_sdpblock)
 
-  barvardim = [ length(problem.id_to_sdpblock[block].var_to_id) for block in 1:nbarvar ]
+  barvardim = zeros(Int, nbarvar)
+  empty_mats = Set{String}()
+  for i=1:nbarvar
+    barvardim[i] = length(problem.id_to_sdpblock[i].var_to_id)
+    push!(empty_mats, problem.id_to_sdpblock[i].name)
+  end
+
+  if length(empty_mats) > 0
+    error("solve_mosek(): several SDP variables have size 0 :\n", sort(collect(empty_mats)))
+  end
 
   numvar = length(problem.scalvar_to_id)
 

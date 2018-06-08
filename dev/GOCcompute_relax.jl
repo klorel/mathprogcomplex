@@ -52,6 +52,8 @@ function build_and_solve_SDPrelax_GOC(data_path::String, folder::String, scenari
 
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
 
+    ispath(output_dir) && rm(output_dir, recursive=true)
+    mkpath(output_dir)
     export_SDP(sdpinstance, output_dir)
 
     sdp_instance = read_SDPInstance(output_dir)

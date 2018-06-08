@@ -29,9 +29,11 @@ function add!(p::Polynomial, p1::Polynomial)
     for (cur_expo, λ) in p1
         λ != 0 || continue
         add_to_dict!(p.poly, cur_expo, λ)
+        if p.poly[cur_expo] == 0
+            delete!(p.poly,cur_expo)
+        end
     end
-    p.degree.explvar = max(p.degree.explvar, p1.degree.explvar)
-    p.degree.conjvar = max(p.degree.conjvar, p1.degree.conjvar)
+    update_degree!(p)
 end
 
 function add(p1::Polynomial, p2::Polynomial)
