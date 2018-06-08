@@ -68,8 +68,8 @@ function main()
         # max_cliques = get_cliques(problem)
         # max_cliques = get_cliques_matpower(instance_path)
         # max_cliques = get_cliques_matpower_forQCQP(instance_path)
-        max_cliques = SortedDict{String, SortedSet{Variable}}()
-        max_cliques["clique1"] = SortedSet{Variable}()
+        max_cliques = Dict{String, Set{Variable}}()
+        max_cliques["clique1"] = Set{Variable}()
         for var in problem.variables
             push!(max_cliques["clique1"], Variable(var[1], var[2]))
         end

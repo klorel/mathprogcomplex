@@ -197,7 +197,7 @@ function export_to_dat(pb_optim::Problem, outpath::String, pt::Point = Point())
   precond_cstrs = SortedSet{String}()
 
   isdir(outpath) || mkpath(outpath)
-  filename = joinpath(outpath, "real_minlp_instance.dat")
+  filename = joinpath(outpath, "real_minlp_instance_noSmax.dat")
   touch(filename)
   outfile = open(filename, "w")
 
@@ -230,7 +230,7 @@ function export_to_dat(pb_optim::Problem, outpath::String, pt::Point = Point())
   close(outfile)
 
   ## Print constraints with preconditionning
-  filename = joinpath(outpath, "real_minlp_precond_cstrs.dat")
+  filename = joinpath(outpath, "real_minlp_precond_cstrs_noSmax.dat")
   touch(filename)
   outfile = open(filename, "w")
 
