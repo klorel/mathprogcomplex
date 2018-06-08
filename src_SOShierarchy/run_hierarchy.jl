@@ -86,7 +86,7 @@ end
 function build_mosekpb(logpath::String)
     sdp_instance = read_SDPInstance(logpath)
 
-    sdp = SDP_Problem()
+    sdp = SDP_Problem{Float64}()
 
     set_constraints!(sdp, sdp_instance)
     set_vartypes!(sdp, sdp_instance)
@@ -107,7 +107,7 @@ function build_mosekpb(SOS_pb::SDPInstance, logpath::String; indentedprint=false
 
     sdp_instance = read_SDPInstance(logpath)
 
-    sdp = SDP_Problem()
+    sdp = SDP_Problem{Float64}()
 
     set_constraints!(sdp, sdp_instance)
     set_vartypes!(sdp, sdp_instance)

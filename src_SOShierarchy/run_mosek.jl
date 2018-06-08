@@ -2,7 +2,7 @@ using Mosek
 
 printstream(msg::String) = print(msg)
 
-function get_SDPtriplets(problem::SDP_Problem; debug = false)
+function get_SDPtriplets(problem::SDP_Problem{T}; debug = false) where T<:Real
 
   nzc = 0
   nza = 0
@@ -110,7 +110,7 @@ function get_linterms(problem; debug=debug)
   return cj, cjval, ai, aj, aij
 end
 
-function get_ctrbounds(problem::SDP_Problem; debug = false)
+function get_ctrbounds(problem::SDP_Problem{T}; debug = false) where T<:Real
   numcon=length(problem.name_to_ctr)
   MOSEK_KIND = Dict(["EQ"=>MSK_BK_FX, "GEQ"=>MSK_BK_LO, "LEQ"=>MSK_BK_UP, "RNG"=>MSK_BK_RA])
   bkc = Boundkey[ Mosek.Boundkey(1)  for kv in problem.name_to_ctr]
@@ -151,7 +151,7 @@ function get_ctrbounds(problem::SDP_Problem; debug = false)
   return numcon, bkc, blc, buc
 end
 
-function get_varbounds(problem::SDP_Problem)
+function get_varbounds(problem::SDP_Problem{T}) where T<:Real
   MSK_INFINITY = 1.0e30
 
   numvar = length(problem.scalvar_to_id)
@@ -164,11 +164,11 @@ function get_varbounds(problem::SDP_Problem)
   return sub, bkx, blx, bux
 end
 
-function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,String,String}, Float64},
+function solve_mosek(problem::SDP_Problem{T}, primal::SortedDict{Tuple{String,String,String}, Float64},
                                            dual::SortedDict{Tuple{String, String, String}, Float64};
                                            debug = false,
                                            logname = "",
-                                           printlog = true)
+                                           printlog = true) where T<:Real
   empty!(primal)
   empty!(dual)
   primobj = NaN

@@ -22,12 +22,8 @@ set_constraints!(sdp::SDP_Problem, instance::SDP_Instance)
 Build `name_to_ctr` with explicit constraint parameters from instance with ==0 as default.
 """
 function set_constraints!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
-  # Collect constraints names
-  # ctr_names = SortedSet{Tuple{String, String, String}}([(instance.BLOCKS[i, 1], instance.BLOCKS[i, 2], instance.BLOCKS[i, 3]) for i=1:size(instance.BLOCKS, 1)])
-  # union!(ctr_names, [(instance.LINEAR[i, 1], instance.LINEAR[i, 2], instance.LINEAR[i, 3]) for i=1:size(instance.LINEAR, 1)])
-  # union!(ctr_names, [(instance.CONST[i, 1], instance.CONST[i, 2], instance.CONST[i, 3]) for i=1:size(instance.CONST, 1)])
 
-ctr_names = SortedSet{SDP_Moment}([(instance.CONST[i, 1], instance.CONST[i, 2], instance.CONST[i, 3]) for i=1:size(instance.CONST, 1)])
+  ctr_names = SortedSet{SDP_Moment}([(instance.CONST[i, 1], instance.CONST[i, 2], instance.CONST[i, 3]) for i=1:size(instance.CONST, 1)])
 
   obj_keys = SortedSet{SDP_Moment}()
   for ctr_name in ctr_names
@@ -120,7 +116,7 @@ function set_linvars!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
 end
 
 
-function set_matrices!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
+function set_matrices!(sdp::SDP_Problem{T}, instance::SDP_Instance; debug=false) where T
   for i=1:size(instance.BLOCKS, 1)
     ctr_name = (instance.BLOCKS[i, 1], instance.BLOCKS[i, 2], instance.BLOCKS[i, 3])
     (block_name, var1, var2, coeff) = instance.BLOCKS[i, 4:7]
@@ -130,9 +126,9 @@ function set_matrices!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
 
     if haskey(sdp.name_to_sdpblock, block_name)
       if !haskey(sdp.matrices, (ctr_name, block_name, var1, var2))
-        sdp.matrices[(ctr_name, block_name, var1, var2)] = parse(coeff)
+        sdp.matrices[(ctr_name, block_name, var1, var2)] = parse(T, coeff)
       else
-        error("set_matrices!(): sdp.matrices already has key ($ctr_name, $block_name, $var1, $var2) with val $(sdp.matrices[(ctr_name, block_name, var1, var2)]), $(parse(coeff))")
+        error("set_matrices!(): sdp.matrices already has key ($ctr_name, $block_name, $var1, $var2) with val $(sdp.matrices[(ctr_name, block_name, var1, var2)]), $(parse(T, coeff))")
       end
 
     else
@@ -145,16 +141,16 @@ function set_matrices!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
 end
 
 
-function set_linear!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
+function set_linear!(sdp::SDP_Problem{T}, instance::SDP_Instance; debug=false) where T
   if length(instance.LINEAR) != 0
     for i=1:size(instance.LINEAR, 1)
       ctr_name = (instance.LINEAR[i, 1], instance.LINEAR[i, 2], instance.LINEAR[i, 3])
       (var, coeff) = instance.LINEAR[i, 4:5]
 
       if !haskey(sdp.linear, (ctr_name, var))
-        sdp.linear[(ctr_name, var)] = parse(coeff)
+        sdp.linear[(ctr_name, var)] = parse(T, coeff)
       else
-        error("set_linear!(): sdp.linear already has key ($ctr_name, $var) with val $(sdp.linear[(ctr_name, var)]). New val is $(parse(coeff))")
+        error("set_linear!(): sdp.linear already has key ($ctr_name, $var) with val $(sdp.linear[(ctr_name, var)]). New val is $(parse(T, coeff))")
       end
     end
   end
@@ -163,14 +159,14 @@ function set_linear!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
   end
 end
 
-function set_const!(sdp::SDP_Problem, instance::SDP_Instance; debug=false)
+function set_const!(sdp::SDP_Problem{T}, instance::SDP_Instance; debug=false) where T
   for i=1:size(instance.CONST, 1)
     ctr_name = (instance.CONST[i, 1], instance.CONST[i, 2], instance.CONST[i, 3])
     coeff = instance.CONST[i, 4]
 
     @assert !haskey(sdp.cst_ctr, ctr_name)
     if coeff != 0
-      sdp.cst_ctr[ctr_name] = parse(coeff)
+      sdp.cst_ctr[ctr_name] = parse(T, coeff)
     end
   end
 

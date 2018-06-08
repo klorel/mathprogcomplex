@@ -104,7 +104,7 @@ end
 
 const SDP_Moment = Tuple{String, String, String}
 
-type SDP_Problem
+type SDP_Problem{T}
   # SDP vars
   name_to_sdpblock::SortedDict{String, SDP_Block}
   id_to_sdpblock::SortedDict{Int64, SDP_Block}
@@ -114,23 +114,25 @@ type SDP_Problem
 
   # Objective / constraints
   obj_keys::SortedSet{SDP_Moment}
-  name_to_ctr::SortedDict{SDP_Moment, Tuple{Int64, String, Float64, Float64}} # Id, type et bornes des contraintes
+  name_to_ctr::SortedDict{SDP_Moment, Tuple{Int64, String, T, T}} # Id, type et bornes des contraintes
   id_to_ctr::SortedDict{Int64, SDP_Moment}
 
-  matrices::SortedDict{Tuple{SDP_Moment, String, String, String}, Float64} # Matrices SDP du corps des contraintes / objectif
-  linear::SortedDict{Tuple{SDP_Moment, String}, Float64} # Matrice portant les parties linéaires des contraintes
-  cst_ctr::SortedDict{SDP_Moment, Float64} # Constante du corps des contraintes
+  matrices::SortedDict{Tuple{SDP_Moment, String, String, String}, T} # Matrices SDP du corps des contraintes / objectif
+  linear::SortedDict{Tuple{SDP_Moment, String}, T} # Matrice portant les parties linéaires des contraintes
+  cst_ctr::SortedDict{SDP_Moment, T} # Constante du corps des contraintes
+end
 
-  SDP_Problem() = new(SortedDict{String, SDP_Block}(),
-                      SortedDict{Int64, SDP_Block}(),
-                      Dict{String, Int64}(),
-                      SortedSet{SDP_Moment}(),
-                      SortedDict{SDP_Moment, Tuple{Int64, String, Float64, Float64}}(),
-                      SortedDict{Int64, SDP_Moment}(),
-                      SortedDict{Tuple{SDP_Moment, String, String, String}, Float64}(),
-                      SortedDict{Tuple{SDP_Moment, String}, Float64}(),
-                      SortedDict{SDP_Moment, Float64}()
-                      )
+function SDP_Problem{T}() where T
+    return SDP_Problem(SortedDict{String, SDP_Block}(),
+                       SortedDict{Int64, SDP_Block}(),
+                       Dict{String, Int64}(),
+                       SortedSet{SDP_Moment}(),
+                       SortedDict{SDP_Moment, Tuple{Int64, String, T, T}}(),
+                       SortedDict{Int64, SDP_Moment}(),
+                       SortedDict{Tuple{SDP_Moment, String, String, String}, T}(),
+                       SortedDict{Tuple{SDP_Moment, String}, T}(),
+                       SortedDict{SDP_Moment, T}()
+                       )
 end
 
 include("run_mosek.jl")
