@@ -4,7 +4,7 @@ using DataStructures
 import Base: ==, !=, <<, >>, isless, isconst, isreal, isnull, isequal
 import Base: +, -, *, /, ^, conj, conj!, abs2, norm, real, imag
 import Base: show, print, convert, copy, hash, merge
-import Base: start, next, done, length, setindex!, getindex, haskey, keys, values
+import Base: start, next, done, length, setindex!, getindex, haskey, keys, values, deepcopy
 
 
 abstract type  AbstractPolynomial end

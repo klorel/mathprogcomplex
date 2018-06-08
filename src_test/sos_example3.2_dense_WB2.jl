@@ -27,10 +27,10 @@
         @show primobj, dualobj, obj_fixedphase
         if (0.983 ≤ v2max ≤ 1.028)
             @test_broken primobj ≈ obj_fixedphase atol=1e-2
-            @test_broken dualobj ≈ obj_fixedphase atol=1e-2
+            @test_broken dualobj ≈ primobj atol=mosek_optgap*min(abs(primobj), abs(dualobj))
         else
             @test primobj ≈ obj_fixedphase atol=1e-2
-            @test dualobj ≈ obj_fixedphase atol=1e-2
+            @test dualobj ≈ primobj atol=mosek_optgap*min(abs(primobj), abs(dualobj))
         end
     end
 end
