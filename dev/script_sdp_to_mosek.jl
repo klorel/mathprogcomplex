@@ -13,7 +13,7 @@ function parse_commandline()
         arg_type = String
         required = true
     "msk_log"
-        help = "States whether to save Mosek log."
+        help = "States whether to save Mosek log - optional"
         arg_type = Bool
         default = false
   end

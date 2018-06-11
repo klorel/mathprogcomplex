@@ -26,11 +26,7 @@ function main()
 
     println("\n--------------------------------------------------------")
     println("max cliques =")
-    for (cliquename, vars) in max_cliques
-        print("$cliquename = ")
-        for var in vars print("$var, ") end
-        @printf("\b\b \n")
-    end
+    println(max_cliques)
 
     ########################################
     # Compute moment and localizing matrices parameters: order et variables
