@@ -279,7 +279,7 @@ include("utils_dat_compare.jl")
 include("utils_dat_export.jl")
 include("utils_dat_import.jl")
 include("utils_Poly.jl")
-include("utils_jump.jl")
+# include("utils_jump.jl")
 
 # export Variable, Point, Exponent, Monomial, Polynomial
 # export isconst, isone, is_homogeneous
