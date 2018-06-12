@@ -61,6 +61,7 @@ function print(io::IO, mm::MomentMatrix{T}) where T<:Number
         momentpoly_sortedkeys = sort(collect(keys(momentpoly)))
         moment_first = pop!(momentpoly_sortedkeys)
         val_first = momentpoly[moment_first]
+        maxorder = max(maxorder, moment_first.expl_part.degree.explvar)
 
         println(io, "$(moment_first.clique) -- $(moment_first.conj_part) × $(moment_first.expl_part) × $val_first")
 

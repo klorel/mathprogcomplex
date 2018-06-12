@@ -168,14 +168,15 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
                                            dual::SortedDict{Tuple{String, String, String}, Float64};
                                            debug = false,
                                            logname = "",
-                                           printlog = true)
+                                           printlog = true,
+                                           sol_info=OrderedDict())
   empty!(primal)
   empty!(dual)
   primobj = NaN
   dualobj = NaN
 
+  # Get nb of variables, dimensions, nb of ctrs, bounds.
   nbarvar = length(problem.id_to_sdpblock)
-
   barvardim = [ length(problem.id_to_sdpblock[block].var_to_id) for block in 1:nbarvar ]
 
   numvar = length(problem.scalvar_to_id)
@@ -183,8 +184,10 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
   numcon, bkc, blc, buc = get_ctrbounds(problem)
   sub, bkx, blx, bux = get_varbounds(problem)
 
-  barcj, barck, barcl, barcjkl , barai, baraj, barak, baral, baraijkl = get_SDPtriplets(problem, debug=debug)
+  # Get objective and ctr matrix contribution
+  barcj, barck, barcl, barcjkl, barai, baraj, barak, baral, baraijkl = get_SDPtriplets(problem, debug=debug)
 
+  # Get obj and ctr linear contribution
   cj, cjval, ai, aj, aij = get_linterms(problem, debug=debug)
 
   # Create a task object and attach log stream printer
@@ -236,91 +239,166 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
       # putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_PFEAS, 1e-12)
       # putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_REL_GAP, 1e-1)
 
-
       if debug
-        println("*********************************************************************************")
-        println("Debug -> Reading Mosek params")
-        println("MSK_DPAR_INTPNT_CO_TOL_DFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_DFEAS))")
-        println("MSK_DPAR_INTPNT_CO_TOL_INFEAS,   $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_INFEAS))")
-        println("MSK_DPAR_INTPNT_CO_TOL_MU_RED,   $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_MU_RED))")
-        println("MSK_DPAR_INTPNT_CO_TOL_PFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_PFEAS))")
-        println("MSK_DPAR_INTPNT_CO_TOL_REL_GAP,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_REL_GAP))")
-
-        println("Debug -> Reading Mosek problem")
-        num, subcj, subck, subcl, valcjkl = getbarcblocktriplet(task)
-        @printf("%5s  %5s  %5s  %s\n", "subcj", "subck", "subcl", "valcjkl")
-        for i=1:num
-            @printf("%5i  %5i  %5i  %f\n", subcj[i], subck[i], subcl[i], valcjkl[i])
-        end
-
-        num, subai, subaj, subak, subal, valajkl = getbarablocktriplet(task)
-        @printf("%5s  %5s  %5s  %5s  %s\n", "subai", "subaj", "subak", "subal", "valajkl")
-        for i=1:num
-            @printf("%5i  %5i  %5i  %5i  %f\n", subai[i], subaj[i], subak[i], subal[i], valajkl[i])
-        end
-
-        boundkeys, lbs, ubs = getconboundslice(task, 1, numcon+1)
-        @show boundkeys
-        @show lbs
-        @show ubs
-        println("*********************************************************************************")
+        dump_mosek_model(task)
       end
 
       optimize(task)
       solutionsummary(task,MSK_STREAM_MSG)
 
       # Get status information about the solution
-      prosta = getprosta(task,MSK_SOL_ITR)
-      solsta = getsolsta(task,MSK_SOL_ITR)
+      prosta = getprosta(task, MSK_SOL_ITR)
+      solsta = getsolsta(task, MSK_SOL_ITR)
+
+      save_SDPsolinfo!(task, sol_info)
+
       if solsta == MSK_SOL_STA_OPTIMAL || solsta == MSK_SOL_STA_NEAR_OPTIMAL
         # Get objective
         primobj = getprimalobj(task, MSK_SOL_ITR)
         dualobj = getdualobj(task, MSK_SOL_ITR)
 
-        # Get primal solution
-        for (id, block) in problem.id_to_sdpblock
-          barx = getbarxj(task, MSK_SOL_ITR, id)
-          all_variables = ["" for kv in block.var_to_id]
-          for (var, varid) in block.var_to_id
-            all_variables[varid] = var
-          end
-          n = 0
-          for j in 1:length(all_variables)
-            for i in j:length(all_variables)
-              n+=1
-              # @printf("%15s%15s%15s%25.10f\n", id_block[2].name, all_variables[i], all_variables[j], barx[n])
-              primal[block.name, all_variables[i], all_variables[j]] = barx[n]
-            end
-          end
-        end
+        # Get primal and dual solutions
+        get_primalsol!(task, problem, primal)
+        get_dualsol!(task, problem, dual)
 
-        # Get dual solution
-        for (blockid, block) in problem.id_to_sdpblock
-          bars = getbarsj(task, MSK_SOL_ITR, blockid)
-          id_to_var = OrderedDict([id=>var for (var,id) in block.var_to_id])
-          it = 0
-          for j=1:length(id_to_var), i=j:length(id_to_var)
-            it += 1
-            # println("($(block.name), $(id_to_var[i]), $(id_to_var[j])) = $(bars[it])")
-            dual[(block.name, id_to_var[i], id_to_var[j])] = bars[it]
-          end
-        end
 
       elseif solsta == MSK_SOL_STA_DUAL_INFEAS_CER
-          println("Primal or dual infeasibility.\n")
+          println("Dual infeasibility.\n")
       elseif solsta == MSK_SOL_STA_PRIM_INFEAS_CER
-          println("Primal or dual infeasibility.\n")
+          println("Primal infeasibility.\n")
       elseif solsta == MSK_SOL_STA_NEAR_DUAL_INFEAS_CER
-          println("Primal or dual infeasibility.\n")
+          println("Near dual infeasibility.\n")
       elseif  solsta == MSK_SOL_STA_NEAR_PRIM_INFEAS_CER
-          println("Primal or dual infeasibility.\n")
+          println("Near primal infeasibility.\n")
       elseif  solsta == MSK_SOL_STA_UNKNOWN
-          println("Unknown solution status")
+          println("Unknown solution status.\n")
       else
-          println("Other solution status")
+          println("Other solution status.\n")
       end
-
   end
 
   return primobj, dualobj
+end
+
+
+function save_SDPsolinfo!(task::Mosek.Task, sol_info::OrderedDict)
+  prosta = getprosta(task, MSK_SOL_ITR)
+  solsta = getsolsta(task, MSK_SOL_ITR)
+
+  sol_info[:slv_prosta] = get_prosta_map()[prosta]
+  sol_info[:slv_solsta] = get_solsta_map()[solsta]
+
+  if solsta == MSK_SOL_STA_OPTIMAL || solsta == MSK_SOL_STA_NEAR_OPTIMAL
+    sol_info[:slv_primobj] = getprimalobj(task, MSK_SOL_ITR)
+    sol_info[:slv_dualobj] = getdualobj(task, MSK_SOL_ITR)
+    sol_info[:slv_primfeas] = getdouinf(task, MSK_DINF_INTPNT_PRIMAL_FEAS)
+    sol_info[:slv_dualfeas] = getdouinf(task, MSK_DINF_INTPNT_DUAL_FEAS)
+    sol_info[:slv_solvetime] = getdouinf(task, MSK_DINF_OPTIMIZER_TIME)
+  else
+    sol_info[:slv_primobj] = -1.0
+    sol_info[:slv_dualobj] = -1.0
+    sol_info[:slv_primfeas] = -1.0
+    sol_info[:slv_dualfeas] = -1.0
+    sol_info[:slv_solvetime] = -1.0
+  end
+end
+
+
+function get_primalsol!(task::Mosek.Task, problem::SDP_Problem,
+                                          primal::SortedDict{Tuple{String,String,String}, Float64})
+  for (id, block) in problem.id_to_sdpblock
+    barx = getbarxj(task, MSK_SOL_ITR, id)
+    all_variables = ["" for kv in block.var_to_id]
+    for (var, varid) in block.var_to_id
+      all_variables[varid] = var
+    end
+    n = 0
+    for j in 1:length(all_variables)
+      for i in j:length(all_variables)
+        n+=1
+        # @printf("%15s%15s%15s%25.10f\n", id_block[2].name, all_variables[i], all_variables[j], barx[n])
+        primal[block.name, all_variables[i], all_variables[j]] = barx[n]
+      end
+    end
+  end
+end
+
+
+function get_dualsol!(task::Mosek.Task, problem::SDP_Problem,
+                                        dual::SortedDict{Tuple{String, String, String}, Float64})
+  for (blockid, block) in problem.id_to_sdpblock
+    bars = getbarsj(task, MSK_SOL_ITR, blockid)
+    id_to_var = OrderedDict([id=>var for (var,id) in block.var_to_id])
+    it = 0
+    for j=1:length(id_to_var), i=j:length(id_to_var)
+      it += 1
+      # println("($(block.name), $(id_to_var[i]), $(id_to_var[j])) = $(bars[it])")
+      dual[(block.name, id_to_var[i], id_to_var[j])] = bars[it]
+    end
+  end
+end
+
+
+function dump_mosek_model(task)
+  println("*********************************************************************************")
+  println("Debug -> Reading Mosek params")
+  println("MSK_DPAR_INTPNT_CO_TOL_DFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_DFEAS))")
+  println("MSK_DPAR_INTPNT_CO_TOL_INFEAS,   $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_INFEAS))")
+  println("MSK_DPAR_INTPNT_CO_TOL_MU_RED,   $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_MU_RED))")
+  println("MSK_DPAR_INTPNT_CO_TOL_PFEAS,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_PFEAS))")
+  println("MSK_DPAR_INTPNT_CO_TOL_REL_GAP,  $(getdouparam(task, MSK_DPAR_INTPNT_CO_TOL_REL_GAP))")
+
+  println("\nDebug -> Reading Mosek problem")
+  num, subcj, subck, subcl, valcjkl = getbarcblocktriplet(task)
+  @printf("%5s  %5s  %5s  %s\n", "subcj", "subck", "subcl", "valcjkl")
+  for i=1:num
+      @printf("%5i  %5i  %5i  %f\n", subcj[i], subck[i], subcl[i], valcjkl[i])
+  end
+
+  num, subai, subaj, subak, subal, valajkl = getbarablocktriplet(task)
+  @printf("\n%5s  %5s  %5s  %5s  %s\n", "subai", "subaj", "subak", "subal", "valajkl")
+  for i=1:num
+      @printf("%5i  %5i  %5i  %5i  %f\n", subai[i], subaj[i], subak[i], subal[i], valajkl[i])
+  end
+
+  boundkeys, lbs, ubs = getconboundslice(task, 1, numcon+1)
+  @show boundkeys
+  @show lbs
+  @show ubs
+  println("*********************************************************************************")
+end
+
+function get_solsta_map()
+  return OrderedDict(MSK_SOL_STA_UNKNOWN => "Status of the solution is unknown.",
+                     MSK_SOL_STA_OPTIMAL => "The solution is optimal.",
+                     MSK_SOL_STA_PRIM_FEAS => "The solution is primal feasible.",
+                     MSK_SOL_STA_DUAL_FEAS => "The solution is dual feasible.",
+                     MSK_SOL_STA_PRIM_AND_DUAL_FEAS => "The solution is both primal and dual feasible.",
+                     MSK_SOL_STA_NEAR_OPTIMAL => "The solution is nearly optimal.",
+                     MSK_SOL_STA_NEAR_PRIM_FEAS => "The solution is nearly primal feasible.",
+                     MSK_SOL_STA_NEAR_DUAL_FEAS => "The solution is nearly dual feasible.",
+                     MSK_SOL_STA_NEAR_PRIM_AND_DUAL_FEAS => "The solution is nearly both primal and dual feasible.",
+                     MSK_SOL_STA_PRIM_INFEAS_CER => "The solution is a certificate of primal infeasibility.",
+                     MSK_SOL_STA_DUAL_INFEAS_CER => "The solution is a certificate of dual infeasibility.",
+                     MSK_SOL_STA_NEAR_PRIM_INFEAS_CER => "The solution is almost a certificate of primal infeasibility.",
+                     MSK_SOL_STA_NEAR_DUAL_INFEAS_CER => "The solution is almost a certificate of dual infeasibility.",
+                     MSK_SOL_STA_PRIM_ILLPOSED_CER => "The solution is a certificate that the primal problem is illposed.",
+                     MSK_SOL_STA_DUAL_ILLPOSED_CER => "The solution is a certificate that the dual problem is illposed.",
+                     MSK_SOL_STA_INTEGER_OPTIMAL => "The primal solution is integer optimal.",
+                     MSK_SOL_STA_NEAR_INTEGER_OPTIMAL => "The primal solution is near integer optimal.")
+end
+
+function get_prosta_map()
+  return OrderedDict(MSK_PRO_STA_UNKNOWN => "Unknown problem status.",
+                     MSK_PRO_STA_PRIM_AND_DUAL_FEAS => "The problem is primal and dual feasible.",
+                     MSK_PRO_STA_PRIM_FEAS => "The problem is primal feasible.",
+                     MSK_PRO_STA_DUAL_FEAS => "The problem is dual feasible.",
+                     MSK_PRO_STA_NEAR_PRIM_AND_DUAL_FEAS => "The problem is at least nearly primal and dual feasible.",
+                     MSK_PRO_STA_NEAR_PRIM_FEAS => "The problem is at least nearly primal feasible.",
+                     MSK_PRO_STA_NEAR_DUAL_FEAS => "The problem is at least nearly dual feasible.",
+                     MSK_PRO_STA_PRIM_INFEAS => "The problem is primal infeasible.",
+                     MSK_PRO_STA_DUAL_INFEAS => "The problem is dual infeasible.",
+                     MSK_PRO_STA_PRIM_AND_DUAL_INFEAS => "The problem is primal and dual infeasible.",
+                     MSK_PRO_STA_ILL_POSED => "The problem is ill-posed. For example, it may be primal and dual feasible but have a positive duality gap.",
+                     MSK_PRO_STA_PRIM_INFEAS_OR_UNBOUNDED => "The problem is either primal infeasible or unbounded. This may occur for mixed-integer problems.")
 end
