@@ -2,6 +2,7 @@ using DataStructures
 using ProgressMeter
 include(joinpath(ROOT, "src_PolynomialOptim", "PolynomialOptim.jl"))
 
+include("momentsos_io.jl")
 
 ###############################################################################
 ## Relaxation context, symmetries and cliques
@@ -15,6 +16,17 @@ mutable struct RelaxationContext
     di::Dict{String, Int}
     ki::Dict{String, Int}
     cstrtypes::Dict{String, Symbol}
+    relaxparams::OrderedDict{Symbol, Any}
+
+    RelaxationContext() = new(false,
+                              false,
+                              Set{DataType}(),
+                              :Real,
+                              false,
+                              Dict{String, Int}(),
+                              Dict{String, Int}(),
+                              Dict{String, Symbol}(),
+                              get_defaultparams())
 end
 
 

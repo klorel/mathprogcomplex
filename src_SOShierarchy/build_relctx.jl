@@ -9,8 +9,8 @@ function set_relaxation(pb::Problem; ismultiordered::Bool=false,
                                      hierarchykind::Symbol=:Complex,
                                      renamevars::Bool=false,
                                      di::Dict{String, Int}=Dict{String, Int}(),
-                                     d::Int=-1)
-    println("\n=== set_relaxation(pb; ismultiordered=$ismultiordered, issparse=$issparse, symmetries=$symmetries, hierarchykind=$hierarchykind, renamevars=$renamevars, di=Dict of length $(length(di)), d=$d)")
+                                     d::Int=-1,
+                                     params=Dict())
 
     # Check that all variables have a type fitting the hierarchy kind
     for (varname, vartype) in pb.variables
@@ -19,8 +19,45 @@ function set_relaxation(pb::Problem; ismultiordered::Bool=false,
         (hierarchykind==:Real) && !(vartype<:Real) && error("set_relaxation() : variable $varname,$vartype should be real for real hierarchy.")
     end
 
+    relax_ctx = RelaxationContext()
+
+    relaxparams = relax_ctx.relaxparams
+
     # Compute each constraint degree
-    ki = Dict{String, Int}()
+    relctx_setki!(relax_ctx, pb)
+
+    # Store each SDP multiplier type
+    relctx_setSDPmulttypes!(relax_ctx, pb, hierarchykind)
+
+    # Relaxation order management
+    relctx_setdi!(relax_ctx, pb, di, d)
+
+    rel_ctx_setsymetries!(relax_ctx, pb, symmetries)
+
+
+    log_POPcharact!(relax_ctx, pb)
+
+    relaxparams[:opt_issparse] = issparse
+    relaxparams[:opt_hierarchykind] = hierarchykind
+    relaxparams[:opt_multiordered] = ismultiordered
+    relaxparams[:opt_globalorder] = relax_ctx.di[get_momentcstrname()]
+    (PhaseInvariance in symmetries) && (relaxparams[:opt_sym_phaseinv] = true)
+
+    for (param, val) in params
+        if haskey(relax_ctx.relaxparams, param)
+            relax_ctx.relaxparams[param] = val
+        else
+            warn("set_relaxation(): Unhandled parameter $param")
+        end
+    end
+
+    print_build_relctx(relax_ctx, pb)
+    return relax_ctx
+end
+
+
+function relctx_setki!(relax_ctx, pb::Problem)
+    ki = relax_ctx.ki
     ki[get_momentcstrname()] = 0
     for (cstrname, cstr) in pb.constraints
         cstrtype = get_cstrtype(cstr)
@@ -32,27 +69,32 @@ function set_relaxation(pb::Problem; ismultiordered::Bool=false,
             ki[get_cstrname(cstrname, cstrtype)] = max(cstr.p.degree.explvar, cstr.p.degree.conjvar)
         end
     end
+    return
+end
 
-    # Store each SDP multiplier type
-    cstrtypes = Dict{String, Symbol}()
+function relctx_setSDPmulttypes!(relax_ctx, pb::Problem, hierarchykind)
+    ctrtypes = relax_ctx.cstrtypes
     for (cstrname, cstr) in pb.constraints
         cstrtype = get_cstrtype(cstr)
         if cstrtype == :ineqdouble
             cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
-            cstrtypes[cstrname_lo] = (hierarchykind==:Complex ? :SDPC : :SDP)
-            cstrtypes[cstrname_up] = (hierarchykind==:Complex ? :SDPC : :SDP)
+            ctrtypes[cstrname_lo] = (hierarchykind==:Complex ? :SDPC : :SDP)
+            ctrtypes[cstrname_up] = (hierarchykind==:Complex ? :SDPC : :SDP)
         elseif cstrtype == :eq
-            cstrtypes[get_cstrname(cstrname, cstrtype)] = (hierarchykind==:Complex ? :SymC : :Sym)
+            ctrtypes[get_cstrname(cstrname, cstrtype)] = (hierarchykind==:Complex ? :SymC : :Sym)
         else
-            cstrtypes[get_cstrname(cstrname, cstrtype)] = (hierarchykind==:Complex ? :SDPC : :SDP)
+            ctrtypes[get_cstrname(cstrname, cstrtype)] = (hierarchykind==:Complex ? :SDPC : :SDP)
         end
     end
-    cstrtypes[get_momentcstrname()] = (hierarchykind==:Complex ? :SDPC : :SDP)
+    ctrtypes[get_momentcstrname()] = (hierarchykind==:Complex ? :SDPC : :SDP)
+    return
+end
 
-    # Relaxation order management
-    di_relax = Dict{String, Int}()
+function relctx_setdi!(relax_ctx, pb::Problem, di, d)
+    di_relax = relax_ctx.di
     !((di == Dict{String, Int}()) && (d==-1)) || error("RelaxationContext(): Either di or d should be provided as input.")
 
+    ## Checking order by constraint
     for (cstrname, cstr) in pb.constraints
         cur_order = haskey(di, cstrname) ? di[cstrname] : d
 
@@ -60,7 +102,7 @@ function set_relaxation(pb::Problem; ismultiordered::Bool=false,
         cstrtype = get_cstrtype(cstr)
         if cstrtype == :ineqdouble
             cstrname_lo, cstrname_up = get_cstrname(cstrname, cstrtype)
-            cur_ki = ki[cstrname_lo]
+            cur_ki = relax_ctx.ki[cstrname_lo]
             (0 ≤ cur_order-ceil(cur_ki/2)) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value ceil($cur_ki/2).")
             # (cur_ki <= cur_order) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value $cur_ki, hierarchy may be multiordered.")
             di_relax[cstrname_lo] = cur_order
@@ -68,7 +110,7 @@ function set_relaxation(pb::Problem; ismultiordered::Bool=false,
             # di_relax[cstrname_lo] = max(cur_order, ceil(cur_ki/2))
             # di_relax[cstrname_up] = max(cur_order, ceil(cur_ki/2))
         else # :eq, :ineqlo, :ineqhi
-            cur_ki = ki[get_cstrname(cstrname, cstrtype)]
+            cur_ki = relax_ctx.ki[get_cstrname(cstrname, cstrtype)]
             (0 ≤ cur_order-ceil(cur_ki/2)) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value ceil($cur_ki/2).")
             # (cur_ki <= cur_order) || warn("RelaxationContext(): Provided order ($cur_order) is lower than constraint $cstrname order ($cur_ki). \nUsing value $cur_ki, hierarchy may be multiordered.")
             di_relax[get_cstrname(cstrname, cstrtype)] = cur_order
@@ -76,7 +118,7 @@ function set_relaxation(pb::Problem; ismultiordered::Bool=false,
         end
     end
 
-    # Moment constraint relaxation order
+    ## Setting order for moment contraint(s)
     if haskey(di, get_momentcstrname())
         di_relax[get_momentcstrname()] = di[get_momentcstrname()]
     elseif d!=-1
@@ -84,17 +126,21 @@ function set_relaxation(pb::Problem; ismultiordered::Bool=false,
     else
         di_relax[get_momentcstrname()] = maximum(values(di_relax))
     end
-    # Objective polynomial must be representable by moment matrix
+
+    # Checking order of objective
     obj_degree = max(pb.objective.degree.explvar, pb.objective.degree.conjvar)
     # if obj_degree > di_relax[get_momentcstrname()]
     #     warn("RelaxationContext(): Moment matrix order $(di_relax[get_momentcstrname()]) is lower than objective degree ($obj_degree). \nUsing value $obj_degree, hierarchy may be multiordered.")
     #     di_relax[get_momentcstrname()] = ceil(obj_degree/2)
     # end
 
-    relax_ctx = RelaxationContext(ismultiordered, issparse, Set{DataType}(), hierarchykind, renamevars, di_relax, ki, cstrtypes)
+    return
+end
 
-    # Check whether the problem has the suggested symmetries
-    pbsymmetries = Set{DataType}()
+
+
+function rel_ctx_setsymetries!(relax_ctx, pb, symmetries)
+    pbsymmetries = relax_ctx.symmetries
     isa(symmetries, Array) || error("set_relaxation(): symmetries should be an Array of types.")
     for symtype in symmetries
         if has_symmetry(relax_ctx, pb, symtype)
@@ -103,59 +149,66 @@ function set_relaxation(pb::Problem; ismultiordered::Bool=false,
     end
     relax_ctx.symmetries = pbsymmetries
 
-    # log intel
-    nb_densecstrs = 0
-    maxdeg_densecstr = Float32[]
-    for (cstr, ki_) in ki
-        if di_relax[cstr] > ki_
-            nb_densecstrs += 1
-            push!(maxdeg_densecstr, ki_)
-        end
+    if has_symmetry(relax_ctx, pb, PhaseInvariance)
+        relax_ctx.relaxparams[:pb_isphaseinv] = true
     end
-
-
-    exposet = Set()
-    nb_expotot = 0
-    degbycstr = Int64[]
-    for (cstrname, cstr) in get_constraints(pb)
-        push!(degbycstr, max(cstr.p.degree.explvar, cstr.p.degree.conjvar))
-        for (expo, λ) in cstr.p
-            push!(exposet, expo)
-            nb_expotot += 1
-        end
-    end
-    println("=> Problem with:")
-    println("-> Nb of variables:                        $(length(pb.variables))")
-    println("-> Nb of constraints:                      $(length(pb.constraints))")
-    println("-> Nb of monomials:                        $nb_expotot ($(length(exposet)) different)")
-    @printf("-> Max total degree by constraint:         %.1f / %.1f (mean/std)\n", mean(degbycstr), std(degbycstr))
-
-    println("=> Relaxation characteristics:")
-    @printf("-> Number of constraints s.t. di > ki:     %i / %i\n", nb_densecstrs, length(pb.constraints))
-    @printf("-> Max total degree on such constraints:   %.1f / %.1f (mean/std)\n", mean(maxdeg_densecstr), std(maxdeg_densecstr))
-    @printf("All variables appearing in such constraints will be linked in the sparsity pattern, which will largely densify it.\n")
-    return relax_ctx
+    return
 end
 
 
 
-function print(io::IO, relctx::RelaxationContext)
-    print(io, "RelaxationContext:\n")
-    print(io, "ismultiordered         : $(relctx.ismultiordered)\n")
-    print(io, "issparse               : $(relctx.issparse)\n")
-    print(io, "symmetries             : $(relctx.symmetries)\n")
-    print(io, "hierarchykind          : $(relctx.hierarchykind)\n")
-    print(io, "renamevars             : $(relctx.renamevars)\n")
-    for cstrname in sort(collect(keys(relctx.di)))
-        di = relctx.di[cstrname]
-        print(io, "di                     : $cstrname  \t=> $di\n")
+function log_POPcharact!(relax_ctx::RelaxationContext, pb::Problem)
+    params = relax_ctx.relaxparams
+
+    params[:pb_nvar] = length(pb.variables)
+    for (varname, vartype) in pb.variables
+        if vartype <: Complex
+            params[:pb_nvar_cplx] += 1
+        elseif vartype <: Real
+            params[:pb_nvar_real] += 1
+        elseif vartype <: Bool
+            params[:pb_nvar_bin] += 1
+        end
     end
-    for cstrname in sort(collect(keys(relctx.ki)))
-        ki = relctx.ki[cstrname]
-        print(io, "ki                     : $cstrname  \t=> $ki\n")
-    end
-    for cstrname in sort(collect(keys(relctx.cstrtypes)))
-        cstrtype = relctx.cstrtypes[cstrname]
-        print(io, "bar var types          : $cstrname  \t=> $(string(cstrtype))\n")
-    end
+
+    params[:pb_nctr] = length(pb.constraints)
+    params[:pb_nctr_eq] = -1
+    params[:pb_nctr_ineqsimple] = -1
+    params[:pb_nctr_ineqdouble] = -1
+
+    params[:pb_maxpolydeg] = maximum(values(relax_ctx.ki))
+end
+
+function get_defaultparams()
+    defparams = OrderedDict{Symbol, Any}(:pb_name=>"",                           # POP parameters
+                        :pb_nvar=>0,
+                        :pb_nvar_cplx=>0,
+                        :pb_nvar_real=>0,
+                        :pb_nvar_bin=>0,
+                        :pb_nctr=>0,
+                        :pb_nctr_eq=>-1,
+                        :pb_nctr_ineqsimple=>-1,
+                        :pb_nctr_ineqdouble=>-1,
+                        :pb_maxpolydeg=>-1,
+                        :pb_isphaseinv=>false,
+                        :slv_prosta=>"",                        # SDP solution values
+                        :slv_solsta=>"",
+                        :slv_primobj=>-1.0,
+                        :slv_dualobj=>-1.0,
+                        :slv_primfeas=>-1.0,
+                        :slv_dualfeas=>-1.0,
+                        :slv_solvetime=>-1.0,
+                        :opt_hierarchykind=>:Undef,
+                        :opt_issparse=>false,                   # Relaxation parameters
+                        :opt_multiordered=>false,
+                        :opt_globalorder=>-1,
+                        :opt_sym_phaseinv=>false,
+                        :opt_nb_cliques=>-1,
+                        :opt_outmode=>0,                        # 0: screen, 1: file, 2: both
+                        :opt_outlev=>1,                         # 0: none, 1:summary at moment relaxation, sos relaxation.
+                        :opt_outname=>"momentsos.log",
+                        :opt_outcsv=>0,                         # 0: no csv is written, 1: csv is written
+                        :opt_outcsvname=>"momentsos_solve.csv")
+
+    return defparams
 end
