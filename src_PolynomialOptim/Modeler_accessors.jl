@@ -1,17 +1,6 @@
-## objective
-get_objective(pb::Problem) = pb.objective
-
-"""
-get_objective(pb::Problem, pt::Point)
-
-Return the polynomial objective evaluated at `pt`.
-"""
-get_objective(pb::Problem, pt::Point) = evaluate(pb.objective, pt)
-
-set_objective!(pb::Problem, p::Polynomial) = pb.objective = p
-
-
-## variables
+###############################################################################
+#### Variables
+###############################################################################
 get_variables(pb::Problem) = pb.variables
 
 function get_variabletype(pb::Problem, varName::String)
@@ -23,18 +12,84 @@ end
 
 has_variable(pb::Problem, var::Variable) = haskey(pb.variables, var.name) && pb.variables[var.name] == var.kind
 
-function add_variable!(pb::Problem, x::Variable)
-  if haskey(pb.variables, x.name) && !(x.kind <: pb.variables[x.name])
-    error("add_variable!(): Attempting to add variable ", x.name, " (", x.kind, ") when ", x, " (", get_variabletype(pb, x.name), ") already exists.")
-  end
-  pb.variables[x.name] = x.kind
-end
 
 function add_variable!(pb::Problem, x::Pair{String, T}) where T
-  return add_variable!(pb, Variable(x[1], x[2]))
+  if haskey(pb.variables, x[1]) && !(x[2] <: pb.variables[x[1]])
+    error("add_variable!(): Attempting to add variable ", x.name, " (", x.kind, ") when ", x, " (", get_variabletype(pb, x.name), ") already exists.")
+  end
+  pb.variables[x[1]] = x[2]
 end
 
-## constraints
+"""
+  add_variable!(pb, x::Variable)
+
+  Add the `x` variable to `pb` set of variables.
+"""
+function add_variable!(pb::Problem, x::Variable)
+  add_variable!(pb, x.name => x.kind)
+end
+
+"""
+  add_variables!(pb, expo::Exponent)
+
+  Add variables from `expo` exponent to `pb` set of variables.
+"""
+function add_variables!(pb::Problem, expo::Exponent)
+  for var in keys(expo)
+    add_variable!(pb, var)
+  end
+end
+
+"""
+  add_variables!(pb, p::Polynomial)
+
+  Add variables from `p` polynomial to `pb` set of variables.
+"""
+function add_variables!(pb::Problem, p::Polynomial)
+  vars = Set{Variable}()
+  for expo in keys(p)
+    for var in keys(expo)
+      push!(vars, var)
+    end
+  end
+  for var in vars
+    add_variable!(pb, var)
+  end
+  return
+end
+
+"""
+  add_variables!(pb, ctr::Constraint)
+
+  Add variables from `ctr` constraint to `pb` set of variables.
+"""
+function add_variables!(pb::Problem, ctr::Constraint)
+  add_variables!(pb, ctr.p)
+  return
+end
+
+###############################################################################
+#### Objective
+###############################################################################
+get_objective(pb::Problem) = pb.objective
+
+"""
+get_objective(pb::Problem, pt::Point)
+
+Return the polynomial objective evaluated at `pt`.
+"""
+get_objective(pb::Problem, pt::Point) = evaluate(pb.objective, pt)
+
+function set_objective!(pb::Problem, p::Polynomial)
+  add_variables!(pb, p)
+  pb.objective = p
+  return
+end
+
+
+###############################################################################
+#### Constraints
+###############################################################################
 has_constraint(pb::Problem, cstrName::String) = haskey(pb.constraints, cstrName)
 
 get_constraints(pb::Problem) = pb.constraints
@@ -72,6 +127,7 @@ function add_constraint!(pb::Problem, cstrName::String, cstr::Constraint)
   if real(cstr.ub) < real(cstr.lb) || imag(cstr.ub) < imag(cstr.lb)
     warn("add_constraint!(): ", cstrName, " Lower bound is higher than upper bound ($(cstr.lb) - $(cstr.ub))")
   end
+  add_variables!(pb, cstr)
   pb.constraints[cstrName] = cstr
 end
 
