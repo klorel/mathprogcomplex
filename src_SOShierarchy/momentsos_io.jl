@@ -2,8 +2,9 @@
 ####  Relaxation context
 ###############################################################################
 function print_build_relctx(relax_ctx, pb)
-    outstream = []
     relaxparams = relax_ctx.relaxparams
+
+    outstream = []
     relaxparams[:opt_outmode]!=1 && push!(outstream, STDOUT)
     relaxparams[:opt_outmode]≥0  && push!(outstream, open(relaxparams[:opt_outname], "a"))
 
@@ -91,25 +92,27 @@ end
 ####  Moment problem construction
 ###############################################################################
 function print_build_momentrelax(relax_ctx, momentrelaxation, nb_expos)
-    (relax_ctx[:opt_outlev] == 0) && return
+    relaxparams = relax_ctx.relaxparams
 
-    outstream = IOStream[]
-    relax_ctx[:opt_outmode]!=1 && push!(outstream, STDOUT)
-    relax_ctx[:opt_outmode]≥0  && push!(outstream, open(relax_ctx[:opt_outname], "a"))
+    (relaxparams[:opt_outlev] == 0) && return
+
+    outstream = []
+    relaxparams[:opt_outmode]!=1 && push!(outstream, STDOUT)
+    relaxparams[:opt_outmode]≥0  && push!(outstream, open(relaxparams[:opt_outname], "a"))
 
     ## Compute indicators
-    nb_overlap_expos = length(expo_to_cliques)
+    nb_overlap_expos = length(momentrelaxation.moments_overlap)
 
     for outstr in outstream
-        if relax_ctx[:opt_outlev] ≥ 1
+        if relaxparams[:opt_outlev] ≥ 1
             println(outstr, "\n=== MomentRelaxation(relax_ctx, problem, moment_param::Dict{String, Tuple{Set{String}, Int}}, max_cliques::Dict{String, Set{Variable}})")
             println(outstr, "Compute the moment and localizing matrices associated with the problem constraints and clique decomposition and return a MomentRelaxation object.")
 
-            if relax_ctx[:opt_outlev] ≥ 2
-                print(outstr, momentrelax)
+            if relaxparams[:opt_outlev] ≥ 2
+                print(outstr, momentrelaxation)
             end
             if nb_overlap_expos > 0
-                info(outstr, "Nb exponents coupled: $nb_overlap_expos (over $nb_expos)")
+                println(outstr, "Nb exponents coupled: $nb_overlap_expos (over $nb_expos)")
             end
 
             ## NOTE: which relevant indicators here ?
@@ -149,5 +152,102 @@ function print(io::IO, momentrelax::MomentRelaxation{T}) where T
         end
     else
         print(io, "  None")
+    end
+end
+
+###############################################################################
+####  SOS problem construction
+###############################################################################
+function print_build_SOSrelax(relax_ctx::RelaxationContext, sosrel::SDPInstance)
+    relaxparams = relax_ctx.relaxparams
+
+    (relaxparams[:opt_outlev] == 0) && return
+
+    outstream = []
+    relaxparams[:opt_outmode]!=1 && push!(outstream, STDOUT)
+    relaxparams[:opt_outmode]≥0  && push!(outstream, open(relaxparams[:opt_outname], "a"))
+
+    ## Compute indicators
+    size_SDPvars = length(Set([(key[2], key[3], key[4]) for key in keys(sosrel.blocks)]))
+    size_symvars = length(Set([(key[2], key[3]) for key in keys(sosrel.linsym)]))
+    nb_scalvars = length(Set([key[3] for key in keys(sosrel.linsym)]))
+
+    for outstr in outstream
+        if relaxparams[:opt_outlev] ≥ 1
+            println(outstr, "\n=== SOSrelaxation")
+            println(outstr, "- nb of matrix variables     : ", length(sosrel.block_to_vartype))
+            println(outstr, "- size of (C)SDP matrix vars : ", length(size_SDPvars))
+            println(outstr, "- size of linear matrix vars : ", length(size_symvars))
+            println(outstr, "- number of scalar variables : ", length(nb_scalvars))
+            println(outstr, "- nb of constraints          : ", length(sosrel.cst))
+
+            if relaxparams[:opt_outlev] ≥ 2
+                print(outstr, sosrel)
+            end
+            ## NOTE: which relevant indicators here ?
+        end
+
+        (outstr!=STDOUT) && close(outstr)
+    end
+end
+
+
+function print(io::IO, sdpinst::SDPInstance)
+    println(io, " -- SDP Blocks:")
+    print(io, sdpinst.blocks)
+    println(io, " -- linear part:")
+    print(io, sdpinst.lin, sdpinst.linsym)
+    println(io, " -- const part:")
+    print(io, sdpinst.cst)
+    println(io, " -- mat var types:")
+    for blockname in sort(collect(keys(sdpinst.block_to_vartype)))
+        blocktype = sdpinst.block_to_vartype[blockname]
+        println(io, "   $blockname  \t $blocktype")
+    end
+end
+
+function print(io::IO, sdpblocks::Dict{Tuple{Moment, String, Exponent, Exponent}, T}; indentedprint=true) where T
+    print_blocksfile(io, sdpblocks; indentedprint=indentedprint, print_header=false)
+end
+
+function print(io::IO, sdplin::Dict{Tuple{Moment, Exponent}, T}, sdplinsym::Dict{Tuple{Moment, String, Exponent}, T}; indentedprint=true) where T
+    print_linfile(io, sdplin, sdplinsym; indentedprint=indentedprint, print_header=false)
+end
+
+
+function print(io::IO, sdpcst::Dict{Moment, T}; indentedprint=true) where T
+    print_cstfile(io, sdpcst; indentedprint=indentedprint, print_header=false)
+end
+
+function init_output(relax_ctx::RelaxationContext)
+    relaxparams = relax_ctx.relaxparams
+
+    # Create empty log file
+    if relaxparams[:opt_outmode] ≥ 1
+        isfile(relaxparams[:opt_outname]) && rm(relaxparams[:opt_outname])
+        open(relaxparams[:opt_outname], "w") do f
+            repo = LibGit2.GitRepo(pwd()); branch = LibGit2.shortname(LibGit2.head(repo))
+
+            println(f, "MomentSOS hierarchy, date: ", String(Dates.format(now(), "mm_dd-HH:MM:SS")))
+        end
+    end
+end
+
+function final_output(relax_ctx::RelaxationContext)
+    relaxparams = relax_ctx.relaxparams
+
+    # Print CSV file
+    if relaxparams[:opt_outcsv] == 1
+        isfile(relaxparams[:opt_outcsvname]) && rm(relaxparams[:opt_outcsvname])
+        open(relaxparams[:opt_outcsvname], "w") do f
+            for key in keys(relaxparams)
+                print(f, key, ";")
+            end
+            println(f)
+
+            for val in values(relaxparams)
+                print(f, val, ";")
+            end
+        end
     end
 end

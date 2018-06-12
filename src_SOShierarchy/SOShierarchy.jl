@@ -2,8 +2,6 @@ using DataStructures
 using ProgressMeter
 include(joinpath(ROOT, "src_PolynomialOptim", "PolynomialOptim.jl"))
 
-include("momentsos_io.jl")
-
 ###############################################################################
 ## Relaxation context, symmetries and cliques
 ###############################################################################
@@ -89,7 +87,7 @@ mutable struct SDPInstance{T}
     cst::Dict{Moment, T}                                         # (α, β) -> coeff
 end
 
-include("build_SDPInstance.jl")
+include("build_SOSrelaxation.jl")
 include("export_SDPInstance.jl")
 include("SDPInstance_cplx2real.jl")
 
@@ -159,3 +157,4 @@ include("run_hierarchy.jl")
 
 include("example_problems.jl")
 include("utils.jl")
+include("momentsos_io.jl")

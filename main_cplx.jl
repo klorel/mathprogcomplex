@@ -50,7 +50,7 @@ function main()
 
     ########################################
     # Convert to a primal SDP problem
-    sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
+    sdpinstance = build_SOSrelaxation(relax_ctx, mmtrel_pb)
 
     println("\n--------------------------------------------------------")
     println("sdpinstance CPLX = \n$sdpinstance")

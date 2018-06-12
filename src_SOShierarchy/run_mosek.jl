@@ -14,8 +14,8 @@ function get_SDPtriplets(problem::SDP_Problem; debug = false)
         nza += 1
       end
   end
-  println("nza : ", nza)
-  println("nzc : ", nzc)
+  # println("nza : ", nza)
+  # println("nzc : ", nzc)
   barai = Int32[0 for i in 1:nza]
   baraj = Int32[0 for i in 1:nza]
   barak = Int32[0 for i in 1:nza]
@@ -66,8 +66,6 @@ function get_SDPtriplets(problem::SDP_Problem; debug = false)
 end
 
 function get_linterms(problem; debug=debug)
-  # TODO add linear variables and constraints
-
   nza, nzc = 0, 0
   for (objctr, var) in keys(problem.linear)
     if objctr in problem.obj_keys

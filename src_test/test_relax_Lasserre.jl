@@ -11,7 +11,7 @@ moments_params = build_sparsity(relax_ctx, problem, max_cliques)
 
 mmtrel_pb = MomentRelaxation{Float64}(relax_ctx, problem, moments_params, max_cliques)
 
-sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
+sdpinstance = build_SOSrelaxation(relax_ctx, mmtrel_pb)
 sdp_instance = read_SDPInstance(pwd())
 
 sdp = SDP_Problem()
@@ -60,7 +60,7 @@ moments_params = build_sparsity(relax_ctx, problem, max_cliques)
 
 mmtrel_pb = MomentRelaxation{Float64}(relax_ctx, problem, moments_params, max_cliques)
 
-sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
+sdpinstance = build_SOSrelaxation(relax_ctx, mmtrel_pb)
 sdp_instance = read_SDPInstance(pwd())
 
 sdp = SDP_Problem()

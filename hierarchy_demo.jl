@@ -52,7 +52,7 @@ function main()
 
         ########################################
         # Convert to a primal SDP problem
-        SOS_pb = build_SDPInstance(relax_ctx, moment_relaxation_pb)
+        SOS_pb = build_SOSrelaxation(relax_ctx, moment_relaxation_pb)
         println("SOS problem:")
         println(SOS_pb)
         readline()

@@ -29,7 +29,7 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath; 
 
     ########################################
     # Convert to a primal SDP problem
-    sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
+    sdpinstance = build_SOSrelaxation(relax_ctx, mmtrel_pb)
 
     export_SDP(sdpinstance, logpath, indentedprint=indentedprint)
 
@@ -71,7 +71,7 @@ function build_relaxation(problem::Problem, relax_ctx::RelaxationContext; max_cl
 
     ########################################
     # Convert to a primal SDP problem
-    sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
+    sdpinstance = build_SOSrelaxation(relax_ctx, mmtrel_pb)
 
     return sdpinstance
 

@@ -1,4 +1,4 @@
-function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxation{T}; debug=false) where T<:Number
+function build_SOSrelaxation(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelaxation{T}; debug=false) where T<:Number
     sdpblocks = Dict{Tuple{Moment, String, Exponent, Exponent}, T}()
     sdplinsym = Dict{Tuple{Moment, String, Exponent}, T}()
     sdplin = Dict{Tuple{Moment, Exponent}, T}()
@@ -17,11 +17,11 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
                 debug && (@assert expo.degree.conjvar == moment.conj_part.degree.conjvar)
                 # Check the current monomial has correct degree
                 if (relaxctx.hierarchykind==:Complex) && ((moment.expl_part.degree.explvar > relaxctx.di[cstrname]) || (moment.conj_part.degree.conjvar > relaxctx.di[cstrname]))
-                    warn("build_SDPInstance(): Found exponent pair of degree $(expo.degree) > $(relaxctx.di[cstrname]) for Complex hierarchy.\n($(expo), at $((γ, δ)) of MM matrix)")
+                    warn("build_SOSrelaxation(): Found exponent pair of degree $(expo.degree) > $(relaxctx.di[cstrname]) for Complex hierarchy.\n($(expo), at $((γ, δ)) of MM matrix)")
                 elseif (relaxctx.hierarchykind==:Real) && ((moment.expl_part.degree.explvar > 2*relaxctx.di[cstrname]) || (moment.conj_part.degree.conjvar != 0))
-                    warn("build_SDPInstance(): Found exponent pair of degree $(expo.degree) > 2*$(relaxctx.di[cstrname]) for Real hierarchy.\n($(expo), at $((γ, δ)) of MM matrix)")
+                    warn("build_SOSrelaxation(): Found exponent pair of degree $(expo.degree) > 2*$(relaxctx.di[cstrname]) for Real hierarchy.\n($(expo), at $((γ, δ)) of MM matrix)")
                 end
-                !isnan(λ) || warn("build_SDPInstance(): isNaN ! constraint $cstrname - clique $blocname - mm entry $((γ, δ)) - moment $(moment)")
+                !isnan(λ) || warn("build_SOSrelaxation(): isNaN ! constraint $cstrname - clique $blocname - mm entry $((γ, δ)) - moment $(moment)")
 
                 # Add the current coeff to the SDP problem
                 # Constraints are fα - ∑ Bi.Zi = 0
@@ -41,7 +41,7 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
                     # haskey(sdplinsym, key) || (sdplinsym[key] = 0)
                     # sdplinsym[key] += val
                 else
-                    error("build_SDPInstance(): Unhandled matrix kind $(mmt.matrixkind) for ($cstrname, $cliquename)")
+                    error("build_SOSrelaxation(): Unhandled matrix kind $(mmt.matrixkind) for ($cstrname, $cliquename)")
                 end
 
             end
@@ -83,7 +83,10 @@ function build_SDPInstance(relaxctx::RelaxationContext, mmtrelax_pb::MomentRelax
         # sdpcst[moment] += fαβ
     end
 
-    return SDPInstance{T}(block_to_vartype, sdpblocks, sdplinsym, sdplin, sdpcst)
+    sosrelaxation = SDPInstance{T}(block_to_vartype, sdpblocks, sdplinsym, sdplin, sdpcst)
+
+    print_build_SOSrelax(relaxctx, sosrelaxation)
+    return sosrelaxation
 end
 
 
@@ -106,31 +109,3 @@ end
 #     end
 #     return α, β
 # end
-
-
-function print(io::IO, sdpinst::SDPInstance)
-    println(io, " -- SDP Blocks:")
-    print(io, sdpinst.blocks)
-    println(io, " -- linear part:")
-    print(io, sdpinst.lin, sdpinst.linsym)
-    println(io, " -- const part:")
-    print(io, sdpinst.cst)
-    println(io, " -- mat var types:")
-    for blockname in sort(collect(keys(sdpinst.block_to_vartype)))
-        blocktype = sdpinst.block_to_vartype[blockname]
-        println(io, "   $blockname  \t $blocktype")
-    end
-end
-
-function print(io::IO, sdpblocks::Dict{Tuple{Moment, String, Exponent, Exponent}, T}; indentedprint=true) where T
-    print_blocksfile(io, sdpblocks; indentedprint=indentedprint, print_header=false)
-end
-
-function print(io::IO, sdplin::Dict{Tuple{Moment, Exponent}, T}, sdplinsym::Dict{Tuple{Moment, String, Exponent}, T}; indentedprint=true) where T
-    print_linfile(io, sdplin, sdplinsym; indentedprint=indentedprint, print_header=false)
-end
-
-
-function print(io::IO, sdpcst::Dict{Moment, T}; indentedprint=true) where T
-    print_cstfile(io, sdpcst; indentedprint=indentedprint, print_header=false)
-end

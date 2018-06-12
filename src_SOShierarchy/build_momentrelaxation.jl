@@ -7,8 +7,6 @@ function MomentRelaxation{T}(relax_ctx::RelaxationContext, problem::Problem,
                                                            momentmat_param::Dict{String, Int},
                                                            localizingmat_param::Dict{String, Tuple{Set{String}, Int}},
                                                            max_cliques::Dict{String, Set{Variable}}) where T<:Number
-    println("\n=== MomentRelaxation(relax_ctx, problem, moment_param::Dict{String, Tuple{Set{String}, Int}}, max_cliques::Dict{String, Set{Variable}})")
-    println("Compute the moment and localizing matrices associated with the problem constraints and clique decomposition and return a MomentRelaxation object.")
 
     var_to_cliques = Dict{Variable, Set{String}}()
     for (clique, vars) in max_cliques
@@ -126,43 +124,9 @@ function MomentRelaxation{T}(relax_ctx::RelaxationContext, problem::Problem,
         length(cliques) > 1 || delete!(expo_to_cliques, expo)
     end
 
-    nb_overlap_expos = length(expo_to_cliques)
-    if nb_overlap_expos > 0
-        info("Nb exponents coupled: $nb_overlap_expos (over $nb_expos)")
-    end
+    momentrelaxation = MomentRelaxation{T}(objective, momentmatrices, expo_to_cliques)
 
-    return MomentRelaxation{T}(objective, momentmatrices, expo_to_cliques)
-end
+    print_build_momentrelax(relax_ctx, momentrelaxation, nb_expos)
 
-
-function print(io::IO, momentrelax::MomentRelaxation{T}) where T
-    println(io, "Moment Relaxation Problem:")
-    println(io, "→ Objective: ")
-    momentlen = maximum(x->length(string(x)), keys(momentrelax.objective))
-    for moment in sort(collect(keys(momentrelax.objective)))
-        coeff = momentrelax.objective[moment]
-        print_string(io, string(moment), momentlen)
-        println(io, " $coeff")
-    end
-
-    println(io, "→ Constraints:")
-    for (cstrname, blocname) in sort(collect(keys(momentrelax.constraints)))
-        mmtmat = momentrelax.constraints[(cstrname, blocname)]
-        println(io, " → $cstrname, $blocname")
-        println(io, mmtmat)
-    end
-
-    println(io, "→ Moments clique overlap:")
-    if length(momentrelax.moments_overlap) > 0
-        mmtlength = maximum(x->length(string(x)), keys(momentrelax.moments_overlap))
-        for moment in sort(collect(keys(momentrelax.moments_overlap)))
-            cliquenames = momentrelax.moments_overlap[moment]
-            print(io, " → ")
-            print_string(io, string(moment), mmtlength)
-            for clique in sort(collect(cliquenames)) print(io, "$clique, ") end
-            @printf(io, "\b\b \n")
-        end
-    else
-        print(io, "  None")
-    end
+    return momentrelaxation
 end

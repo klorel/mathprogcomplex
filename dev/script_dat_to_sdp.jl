@@ -54,7 +54,7 @@ function main(args)
     momentmat_param, localizingmat_param = build_sparsity(relax_ctx, problem, max_cliques)
     mmtrel_pb = MomentRelaxation{Float64}(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
 
-    sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
+    sdpinstance = build_SOSrelaxation(relax_ctx, mmtrel_pb)
 
     export_SDP(sdpinstance, output_dir)
 end

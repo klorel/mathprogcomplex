@@ -51,6 +51,8 @@ function set_relaxation(pb::Problem; ismultiordered::Bool=false,
         end
     end
 
+    init_output(relax_ctx)
+
     print_build_relctx(relax_ctx, pb)
     return relax_ctx
 end
