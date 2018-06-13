@@ -15,8 +15,8 @@ function parse_commandline()
         help="relaxation order"
         arg_type = Int
         required = true
-    "workdir"
-        help = "global folder for parallel subfolders by problem"
+    "logpath"
+        help = "folder storing all output"
         arg_type = String
         required = true
   end
@@ -31,13 +31,8 @@ function main(args)
     d = input_params["d"]
     hierarchykind = :Real
     symmetries = DataType[]
-    workdir = input_params["workdir"]
+    logpath = input_params["logpath"]
 
-    # date = String(Dates.format(now(), "mm_dd-HHhMM"))
-    # workdir = joinpath(pwd(), "Mosek_runs", "pararuns", date)
-    !ispath(workdir) && mkpath(workdir)
-
-    logpath = mktempdir(workdir)
 
     ## Build real problem
     instance_dat = joinpath("..", "data", "data_Matpower", "matpower_QCQP", instance_name*".dat")
