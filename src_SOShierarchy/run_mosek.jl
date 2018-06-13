@@ -167,7 +167,7 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
                                            debug = false,
                                            logname = "",
                                            printlog = true,
-                                           sol_info=OrderedDict())
+                                           sol_info = OrderedDict())
   empty!(primal)
   empty!(dual)
   primobj = NaN

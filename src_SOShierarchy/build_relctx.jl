@@ -182,7 +182,7 @@ function log_POPcharact!(relax_ctx::RelaxationContext, pb::Problem)
 end
 
 function get_defaultparams()
-    defparams = OrderedDict{Symbol, Any}(:pb_name=>"",                           # POP parameters
+    defparams = OrderedDict{Symbol, Any}(:pb_name=>"",          # POP parameters
                         :pb_nvar=>0,
                         :pb_nvar_cplx=>0,
                         :pb_nvar_real=>0,
@@ -193,6 +193,12 @@ function get_defaultparams()
                         :pb_nctr_ineqdouble=>-1,
                         :pb_maxpolydeg=>-1,
                         :pb_isphaseinv=>false,
+                        :slv_mmtrel_t=>-1.0,                    # Relaxation time and memory consumption
+                        :slv_mmtrel_bytes=>-1,
+                        :slv_sosrel_t=>-1.0,
+                        :slv_sosrel_bytes=>-1,
+                        :slv_mskstruct_t=>-1.0,
+                        :slv_mskstruct_bytes=>-1,
                         :slv_prosta=>"",                        # SDP solution values
                         :slv_solsta=>"",
                         :slv_primobj=>-1.0,

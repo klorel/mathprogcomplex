@@ -12,6 +12,7 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath; 
     if max_cliques == Dict{String, Set{Variable}}()
         max_cliques = get_maxcliques(relax_ctx, problem)
     end
+    relax_ctx.relaxparams[:opt_nb_cliques] = length(max_cliques)
 
     ########################################
     # Compute moment matrices parameters: order et variables
@@ -19,7 +20,10 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath; 
 
     ########################################
     # Compute moment and localization matrices
-    mmtrel_pb = MomentRelaxation{Float64}(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
+    mmtrel_pb, t, bytes, gctime, memallocs = @timed MomentRelaxation{Float64}(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques);
+    # mmtrel_pb = MomentRelaxation{Float64}(relax_ctx, problem, momentmat_param, localizingmat_param, max_cliques)
+    relax_ctx.relaxparams[:slv_mmtrel_t] = t
+    relax_ctx.relaxparams[:slv_mmtrel_bytes] = bytes
 
     if save_pbs
         open(joinpath(logpath, "mmt_pb.log"), "w") do fout
@@ -29,18 +33,24 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath; 
 
     ########################################
     # Convert to a primal SDP problem
-    sdpinstance = build_SOSrelaxation(relax_ctx, mmtrel_pb)
+    sdpinstance, t, bytes, gctime, memallocs = @timed build_SOSrelaxation(relax_ctx, mmtrel_pb);
+    # sdpinstance = build_SOSrelaxation(relax_ctx, mmtrel_pb)
+    relax_ctx.relaxparams[:slv_sosrel_t] = t
+    relax_ctx.relaxparams[:slv_sosrel_bytes] = bytes
 
     export_SDP(sdpinstance, logpath, indentedprint=indentedprint)
 
-    sdp = build_mosekpb(logpath)
+    sdp, t, bytes, gctime, memallocs = @timed build_mosekpb(logpath);
+    relax_ctx.relaxparams[:slv_mskstruct_t] = t
+    relax_ctx.relaxparams[:slv_mskstruct_bytes] = bytes
 
     primal = SortedDict{Tuple{String,String,String}, Float64}()
     dual = SortedDict{Tuple{String, String, String}, Float64}()
 
-    primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual; logname = joinpath(logpath, "Mosek_run.log"))
+    primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual; logname = joinpath(logpath, "Mosek_run.log"),
+                                                                   printlog = (relax_ctx.relaxparams[:opt_outlev]!=1)?true:false,
+                                                                   sol_info = relax_ctx.relaxparams)
 
-    info("Writing results to $logpath")
     params_file = joinpath(logpath, "maxcliques_relaxctx.txt")
     isfile(params_file) && rm(params_file)
     open(params_file, "w") do fcliques

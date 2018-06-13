@@ -260,7 +260,7 @@ function final_output(relax_ctx::RelaxationContext)
     relaxparams = relax_ctx.relaxparams
 
     # Print CSV file
-    if relaxparams[:opt_outcsv] == 1
+    if relaxparams[:opt_outcsv] ≥ 1
         isfile(relaxparams[:opt_outcsvname]) && rm(relaxparams[:opt_outcsvname])
         open(relaxparams[:opt_outcsvname], "w") do f
             for key in keys(relaxparams)
