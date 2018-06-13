@@ -1,4 +1,4 @@
-function export_SDP(sdp::SDPInstance, path; indentedprint=true, renamemoments=true)
+function export_SDP(sdp::SDPInstance, path; indentedprint=true, renamemoments=true, POP_exponents=Set{Exponent}())
 
     # Build moment shortname dict if required
     momentdict = build_momentdict(sdp, renamemoments)
@@ -11,7 +11,7 @@ function export_SDP(sdp::SDPInstance, path; indentedprint=true, renamemoments=tr
     !isfile(blocks_file) || rm(blocks_file)
 
     fblocks = open(blocks_file, "a")
-    print_blocksfile(fblocks, sdp.blocks, momentdict=momentdict, indentedprint=indentedprint)
+    print_blocksfile(fblocks, sdp.blocks, momentdict=momentdict, indentedprint=indentedprint, POP_exponents=POP_exponents)
     close(fblocks)
 
     # Export linear part of constraints
@@ -19,7 +19,7 @@ function export_SDP(sdp::SDPInstance, path; indentedprint=true, renamemoments=tr
     !isfile(lin_file) || rm(lin_file)
 
     flin = open(lin_file, "a")
-    print_linfile(flin, sdp.lin, sdp.linsym, momentdict=momentdict, indentedprint=indentedprint)
+    print_linfile(flin, sdp.lin, sdp.linsym, momentdict=momentdict, indentedprint=indentedprint, POP_exponents=POP_exponents)
     close(flin)
 
     # Export constants of constraints
@@ -27,7 +27,7 @@ function export_SDP(sdp::SDPInstance, path; indentedprint=true, renamemoments=tr
     !isfile(cst_file) || rm(cst_file)
 
     fcst = open(cst_file, "a")
-    print_cstfile(fcst, sdp.cst, momentdict=momentdict, ctr_keys=ctr_keys, indentedprint=indentedprint)
+    print_cstfile(fcst, sdp.cst, momentdict=momentdict, ctr_keys=ctr_keys, indentedprint=indentedprint, POP_exponents=POP_exponents)
     close(fcst)
 
 
@@ -141,7 +141,8 @@ end
 function print_blocksfile(io::IO, sdpblocks::Dict{Tuple{Moment, String, Exponent, Exponent}, T};
                                                         momentdict::Dict{Exponent, String}=Dict{Exponent, String}(),
                                                         indentedprint=false,
-                                                        print_header=true) where T
+                                                        print_header=true,
+                                                        POP_exponents=Set{Exponent}()) where T
     if print_header
         println(io, "## Description of the matrices A_ji for the problem:")
         println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
@@ -175,16 +176,18 @@ function print_blocksfile(io::IO, sdpblocks::Dict{Tuple{Moment, String, Exponent
     println(io)
 
     for (moment, blockname, γ, δ) in sort(collect(keys(sdpblocks)))
-        λ = sdpblocks[(moment, blockname, γ, δ)]
+        if product(moment.conj_part, moment.expl_part) in POP_exponents
+            λ = sdpblocks[(moment, blockname, γ, δ)]
 
-        α, β = moment.conj_part, moment.expl_part
-        print_string(io, haskey(momentdict, α)?momentdict[α]: string(α), cstrlenα, indentedprint=indentedprint)
-        print_string(io, haskey(momentdict, β)?momentdict[β]: string(β), cstrlenβ, indentedprint=indentedprint)
-        print_string(io, moment.clique, cliquelen, indentedprint=indentedprint)
-        print_string(io, blockname, blocklen, indentedprint=indentedprint)
-        print_string(io, haskey(momentdict, γ)?momentdict[γ]: string(γ), rowlen, indentedprint=indentedprint)
-        print_string(io, haskey(momentdict, δ)?momentdict[δ]: string(δ), collen, indentedprint=indentedprint)
-        @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
+            α, β = moment.conj_part, moment.expl_part
+            print_string(io, haskey(momentdict, α)?momentdict[α]: string(α), cstrlenα, indentedprint=indentedprint)
+            print_string(io, haskey(momentdict, β)?momentdict[β]: string(β), cstrlenβ, indentedprint=indentedprint)
+            print_string(io, moment.clique, cliquelen, indentedprint=indentedprint)
+            print_string(io, blockname, blocklen, indentedprint=indentedprint)
+            print_string(io, haskey(momentdict, γ)?momentdict[γ]: string(γ), rowlen, indentedprint=indentedprint)
+            print_string(io, haskey(momentdict, δ)?momentdict[δ]: string(δ), collen, indentedprint=indentedprint)
+            @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
+        end
     end
 end
 
@@ -192,7 +195,8 @@ end
 function print_linfile(io::IO, sdplin::Dict{Tuple{Moment, Exponent}, T}, sdplinsym::Dict{Tuple{Moment, String, Exponent}, T};
                                                                      momentdict::Dict{Exponent, String}=Dict{Exponent, String}(),
                                                                      indentedprint=false,
-                                                                     print_header=true) where T
+                                                                     print_header=true,
+                                                                     POP_exponents=Set{Exponent}()) where T
     if print_header
         println(io, "## Description of the vectors b_j for the problem:")
         println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
@@ -230,26 +234,30 @@ function print_linfile(io::IO, sdplin::Dict{Tuple{Moment, Exponent}, T}, sdplins
 
     if length(sdplin)!=0
         for (moment, var) in sort(collect(keys(sdplin)))
-            λ = sdplin[(moment, var)]
+            if product(moment.conj_part, moment.expl_part) in POP_exponents
+                λ = sdplin[(moment, var)]
 
-            α, β = moment.conj_part, moment.expl_part
-            print_string(io, haskey(momentdict, α)?momentdict[α]: string(α), cstrlenα, indentedprint=indentedprint)
-            print_string(io, haskey(momentdict, β)?momentdict[β]: string(β), cstrlenβ, indentedprint=indentedprint)
-            print_string(io, moment.clique, cliquelen, indentedprint=indentedprint)
-            print_string(io, format_string(var), varlen, indentedprint=indentedprint)
-            @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
+                α, β = moment.conj_part, moment.expl_part
+                print_string(io, haskey(momentdict, α)?momentdict[α]: string(α), cstrlenα, indentedprint=indentedprint)
+                print_string(io, haskey(momentdict, β)?momentdict[β]: string(β), cstrlenβ, indentedprint=indentedprint)
+                print_string(io, moment.clique, cliquelen, indentedprint=indentedprint)
+                print_string(io, format_string(var), varlen, indentedprint=indentedprint)
+                @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
+            end
         end
     end
     if length(sdplinsym) != 0
         for (moment, blockname, var) in sort(collect(keys(sdplinsym)))
-            λ = sdplinsym[(moment, blockname, var)]
+            if product(moment.conj_part, moment.expl_part) in POP_exponents
+                λ = sdplinsym[(moment, blockname, var)]
 
-            α, β = moment.conj_part, moment.expl_part
-            print_string(io, haskey(momentdict, α)?momentdict[α]: string(α), cstrlenα, indentedprint=indentedprint)
-            print_string(io, haskey(momentdict, β)?momentdict[β]: string(β), cstrlenβ, indentedprint=indentedprint)
-            print_string(io, moment.clique, cliquelen, indentedprint=indentedprint)
-            print_string(io, format_string(var, blockname), varlen, indentedprint=indentedprint)
-            @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
+                α, β = moment.conj_part, moment.expl_part
+                print_string(io, haskey(momentdict, α)?momentdict[α]: string(α), cstrlenα, indentedprint=indentedprint)
+                print_string(io, haskey(momentdict, β)?momentdict[β]: string(β), cstrlenβ, indentedprint=indentedprint)
+                print_string(io, moment.clique, cliquelen, indentedprint=indentedprint)
+                print_string(io, format_string(var, blockname), varlen, indentedprint=indentedprint)
+                @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
+            end
         end
     end
 end
@@ -259,7 +267,8 @@ function print_cstfile(io::IO, sdpcst::Dict{Moment, T};
                                 momentdict::Dict{Exponent, String}=Dict{Exponent, String}(),
                                 ctr_keys::Set{Moment}=Set{Moment}(),
                                 indentedprint=false,
-                                print_header=true) where T
+                                print_header=true,
+                                POP_exponents=Set{Exponent}()) where T
     if print_header
         println(io, "## Description of the scalars c_j for the problem:")
         println(io, "##         max     ∑ A_0i[k,l] × Zi[k,l] + ∑ b_0[k] × x[k] + c_0")
@@ -284,12 +293,14 @@ function print_cstfile(io::IO, sdpcst::Dict{Moment, T};
     println(io)
 
     for moment in sort(union(ctr_keys, keys(sdpcst)))
-        α, β = moment.conj_part, moment.expl_part
-        λ = haskey(sdpcst, moment)?sdpcst[moment]:0
-        print_string(io, haskey(momentdict, α)?momentdict[α]: string(α), cstrlenα, indentedprint=indentedprint)
-        print_string(io, haskey(momentdict, β)?momentdict[β]: string(β), cstrlenβ, indentedprint=indentedprint)
-        print_string(io, moment.clique, cliquelen, indentedprint=indentedprint)
-        @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
+        if product(moment.conj_part, moment.expl_part) in POP_exponents
+            α, β = moment.conj_part, moment.expl_part
+            λ = haskey(sdpcst, moment)?sdpcst[moment]:0
+            print_string(io, haskey(momentdict, α)?momentdict[α]: string(α), cstrlenα, indentedprint=indentedprint)
+            print_string(io, haskey(momentdict, β)?momentdict[β]: string(β), cstrlenβ, indentedprint=indentedprint)
+            print_string(io, moment.clique, cliquelen, indentedprint=indentedprint)
+            @printf(io, "% .16e % .16e\n", real(λ), imag(λ))
+        end
     end
 end
 

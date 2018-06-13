@@ -17,6 +17,19 @@ function main()
                                                       :opt_outmode=>0,
                                                       :opt_outcsv=>1))
 
+    POP_exponents = Set{Exponent}()
+    for expo in keys(problem.objective)
+        push!(POP_exponents, expo)
+    end
+    for (ctrname, ctr) in problem.constraints
+        for expo in keys(ctr.p)
+            push!(POP_exponents, expo)
+        end
+    end
+    POP_exponents = OrderedSet{Exponent}(sort(collect(POP_exponents)))
+    @show length(POP_exponents)
+    @show POP_exponents
+
     # println("\n--------------------------------------------------------")
     # println("problem = \n$problem")
 
@@ -63,7 +76,7 @@ function main()
 
     path = joinpath(pwd(), "Mosek_runs", "worksdp")
     mkpath(path)
-    export_SDP(sdpinstance, path)
+    export_SDP(sdpinstance, path; POP_exponents=POP_exponents)
     sdp_instance = read_SDPInstance(path)
 
     # println("VAR_TYPES size:     $(size(sdp_instance.VAR_TYPES))")
