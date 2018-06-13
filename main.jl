@@ -14,7 +14,7 @@ function main()
                                         # symmetries=[PhaseInvariance],
                                         d = 1,
                                         params = Dict(:opt_outlev=>1,
-                                                      :opt_outmode=>1,
+                                                      :opt_outmode=>0,
                                                       :opt_outcsv=>1))
 
     # println("\n--------------------------------------------------------")

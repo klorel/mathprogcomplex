@@ -100,8 +100,6 @@ function print_build_momentrelax(relax_ctx, momentrelaxation, nb_expos)
     relaxparams[:opt_outmode]!=1 && push!(outstream, STDOUT)
     relaxparams[:opt_outmode]≥0  && push!(outstream, open(relaxparams[:opt_outname], "a"))
 
-    ## Compute indicators
-    nb_overlap_expos = length(momentrelaxation.moments_overlap)
 
     for outstr in outstream
         if relaxparams[:opt_outlev] ≥ 1
@@ -111,8 +109,10 @@ function print_build_momentrelax(relax_ctx, momentrelaxation, nb_expos)
             if relaxparams[:opt_outlev] ≥ 2
                 print(outstr, momentrelaxation)
             end
+
+            println(outstr, "Number of moments:     ", nb_expos)
             if nb_overlap_expos > 0
-                println(outstr, "Nb exponents coupled: $nb_overlap_expos (over $nb_expos)")
+                println(outstr, "Nb exponents coupled:  ", length(momentrelaxation.moments_overlap))
             end
 
             ## NOTE: which relevant indicators here ?
