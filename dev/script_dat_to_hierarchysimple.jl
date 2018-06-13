@@ -34,6 +34,17 @@ function main(args)
     logpath = input_params["logpath"]
 
 
+    ## Run funcitons once for precompilation...
+    instance_dat = joinpath("..", "data", "data_Matpower", "matpower_QCQP", "WB2.dat")
+    problem_C, point = import_from_dat(instance_dat)
+    problem = pb_cplx2real(problem_C)
+    relax_ctx = set_relaxation(problem; hierarchykind=hierarchykind,
+                                        d=1,
+                                        params = Dict(:opt_outlev=>0,
+                                                      :opt_outmode=>0)
+    run_hierarchy(problem, relax_ctx, logpath; save_pbs=false)
+
+
     ## Build real problem
     instance_dat = joinpath("..", "data", "data_Matpower", "matpower_QCQP", instance_name*".dat")
     problem_C, point = import_from_dat(instance_dat)
