@@ -106,14 +106,12 @@ function print_build_momentrelax(relax_ctx, momentrelaxation, nb_expos)
             println(outstr, "\n=== MomentRelaxation(relax_ctx, problem, moment_param::Dict{String, Tuple{Set{String}, Int}}, max_cliques::Dict{String, Set{Variable}})")
             println(outstr, "Compute the moment and localizing matrices associated with the problem constraints and clique decomposition and return a MomentRelaxation object.")
 
-            if relaxparams[:opt_outlev] ≥ 2
+            if relaxparams[:opt_outlev] ≥ 3
                 print(outstr, momentrelaxation)
             end
 
-            println(outstr, "Number of moments:     ", nb_expos)
-            if nb_overlap_expos > 0
-                println(outstr, "Nb exponents coupled:  ", length(momentrelaxation.moments_overlap))
-            end
+            println(outstr, "Number of moments      : ", nb_expos)
+            println(outstr, "Nb exponents coupled   : ", length(momentrelaxation.moments_overlap))
 
             ## NOTE: which relevant indicators here ?
         end
@@ -168,20 +166,45 @@ function print_build_SOSrelax(relax_ctx::RelaxationContext, sosrel::SDPInstance)
     relaxparams[:opt_outmode]≥0  && push!(outstream, open(relaxparams[:opt_outname], "a"))
 
     ## Compute indicators
+    nb_SDPvars = length(Set([(key[2]) for key in keys(sosrel.blocks)]))
     size_SDPvars = length(Set([(key[2], key[3], key[4]) for key in keys(sosrel.blocks)]))
+    nb_symvars = length(Set([(key[2]) for key in keys(sosrel.linsym)]))
     size_symvars = length(Set([(key[2], key[3]) for key in keys(sosrel.linsym)]))
-    nb_scalvars = length(Set([key[3] for key in keys(sosrel.linsym)]))
+    nb_scalvars = length(Set([key[3] for key in keys(sosrel.lin)]))
+
+    momentset = Set{Moment}([key[1] for key in keys(sosrel.blocks)])
+    union!(momentset, Set([key[1] for key in keys(sosrel.linsym)]))
+    union!(momentset, Set([key[1] for key in keys(sosrel.lin)]))
+    union!(momentset, Set([key for key in keys(sosrel.cst)]))
+    for moment in momentset
+        if product(moment.expl_part, moment.conj_part) == Exponent()
+            delete!(momentset, moment)
+        end
+    end
 
     for outstr in outstream
         if relaxparams[:opt_outlev] ≥ 1
             println(outstr, "\n=== SOSrelaxation")
-            println(outstr, "- nb of matrix variables     : ", length(sosrel.block_to_vartype))
-            println(outstr, "- size of (C)SDP matrix vars : ", length(size_SDPvars))
-            println(outstr, "- size of linear matrix vars : ", length(size_symvars))
-            println(outstr, "- number of scalar variables : ", length(nb_scalvars))
-            println(outstr, "- nb of constraints          : ", length(sosrel.cst))
 
             if relaxparams[:opt_outlev] ≥ 2
+                warn(outstr, "(C)SDP variables :")
+                println(outstr, sort([(key[2]) for key in keys(sosrel.blocks)]))
+                warn(outstr, "Symmetric variables :")
+                println(outstr, sort([(key[2]) for key in keys(sosrel.linsym)]))
+                warn(outstr, "Scalar variables :")
+                println(outstr, sort([key[3] for key in keys(sosrel.lin)]))
+                warn(outstr, "Constraint keys :")
+                println(outstr, sort(collect(momentset)))
+            end
+
+            println(outstr, "- nb of (C)SDP matrix vars     : ", nb_SDPvars)
+            println(outstr, "- size of (C)SDP matrix vars   : ", size_SDPvars)
+            println(outstr, "- nb of (C)Sym matrix vars     : ", nb_symvars)
+            println(outstr, "- size of (C)Sym matrix vars   : ", size_symvars)
+            println(outstr, "- nb of scalar variables       : ", nb_scalvars)
+            println(outstr, "- nb of constraints            : ", length(momentset))
+
+            if relaxparams[:opt_outlev] ≥ 3
                 print(outstr, sosrel)
             end
             ## NOTE: which relevant indicators here ?
