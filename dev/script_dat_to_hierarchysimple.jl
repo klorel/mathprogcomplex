@@ -7,8 +7,8 @@ function parse_commandline()
   s = ArgParseSettings()
   s.description = "Load the *.sdp files at the given location and start Mosel solve."
   @add_arg_table s begin
-    "instance_name"
-        help="instance name (without .dat or .m extension)"
+    "instance_path"
+        help=".dat instance path"
         arg_type = String
         required = true
     "d"
@@ -25,29 +25,38 @@ end
 
 
 function main(args)
-    input_params = parse_commandline()
+    # input_params = parse_commandline()
 
-    instance_name = input_params["instance_name"]
+    instance_path = input_params["instance_path"]
+    # input_params = Dict("instance_path"=>"..\\data\\data_Matpower\\matpower_QCQP\\WB2.dat",
+    #                     "d"=>1,
+    #                     "logpath"=>"tltl")
+
+    instance_path = input_params["instance_path"]
     d = input_params["d"]
     hierarchykind = :Real
     symmetries = DataType[]
     logpath = input_params["logpath"]
 
+    instance_name = splitdir(instance_path)[2][1:end-4]
+    mkpath(logpath)
+
 
     ## Run funcitons once for precompilation...
-    instance_dat = joinpath("..", "data", "data_Matpower", "matpower_QCQP", "WB2.dat")
-    problem_C, point = import_from_dat(instance_dat)
+    WB2_path = joinpath("..", "data", "data_Matpower", "matpower_QCQP", "WB2.dat")
+    problem_C, point = import_from_dat(WB2_path)
     problem = pb_cplx2real(problem_C)
     relax_ctx = set_relaxation(problem; hierarchykind=hierarchykind,
                                         d=1,
                                         params = Dict(:opt_outlev=>0,
-                                                      :opt_outmode=>0)
+                                                      :opt_outmode=>0))
     run_hierarchy(problem, relax_ctx, logpath; save_pbs=false)
 
 
+
     ## Build real problem
-    instance_dat = joinpath("..", "data", "data_Matpower", "matpower_QCQP", instance_name*".dat")
-    problem_C, point = import_from_dat(instance_dat)
+    instance_path = input_params["instance_path"]
+    problem_C, point = import_from_dat(instance_path)
     problem = pb_cplx2real(problem_C)
 
     ## Build relaxation context

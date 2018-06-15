@@ -47,9 +47,21 @@ function run_hierarchy(problem::Problem, relax_ctx::RelaxationContext, logpath; 
     primal = SortedDict{Tuple{String,String,String}, Float64}()
     dual = SortedDict{Tuple{String, String, String}, Float64}()
 
-    primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual; logname = joinpath(logpath, "Mosek_run.log"),
-                                                                   printlog = (relax_ctx.relaxparams[:opt_outlev]!=1)?true:false,
-                                                                   sol_info = relax_ctx.relaxparams)
+    primobj = dualobj = NaN
+    try
+        if (relax_ctx.relaxparams[:opt_outmode]!=1) && (relax_ctx.relaxparams[:opt_outmode] ≥ 1)
+            printlog = true
+        else
+            printlog = false
+        end
+
+        primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual; logname = joinpath(logpath, "Mosek_run.log"),
+                                                                        printlog = printlog,
+                                                                        sol_info = relax_ctx.relaxparams)
+                                                                        error("trololo")
+    catch err
+        relax_ctx.relaxparams[:slv_prosta] = err.msg
+    end
 
     params_file = joinpath(logpath, "maxcliques_relaxctx.txt")
     isfile(params_file) && rm(params_file)
