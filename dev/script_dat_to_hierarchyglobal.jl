@@ -4,10 +4,8 @@ function main()
 
     #############################################################
     # Parameters
-    nmax_order1 = 2
-    nmax_order2 = 0
-
-    error("Catch Mosek errors,\nSet maxtime for Mosek, and hierarchy...")
+    nmax_order1 = 3
+    nmax_order2 = 3
 
     date = String(Dates.format(now(), "mm_dd-HHhMM"))
     workdir = joinpath(pwd(), "Mosek_runs", "pararuns", date)

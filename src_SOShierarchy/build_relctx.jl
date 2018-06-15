@@ -212,6 +212,7 @@ function get_defaultparams()
                         :opt_globalorder=>-1,
                         :opt_sym_phaseinv=>false,
                         :opt_nb_cliques=>-1,
+                        :opt_msk_maxtime=>-1,                   # Default -1 is no time limit
                         :opt_outmode=>0,                        # 0: screen, 1: file, 2: both
                         :opt_outlev=>1,                         # 0: none, 1:summary at moment relaxation, sos relaxation, 2: detailled information, 3: full problems
                         :opt_outname=>"momentsos.log",

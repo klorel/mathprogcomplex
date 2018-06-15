@@ -167,6 +167,7 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
                                            debug = false,
                                            logname = "",
                                            printlog = true,
+                                           msk_maxtime = -1,            #Default -1 means no time limit
                                            sol_info = OrderedDict())
   empty!(primal)
   empty!(dual)
@@ -236,6 +237,9 @@ function solve_mosek(problem::SDP_Problem, primal::SortedDict{Tuple{String,Strin
       # putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_MU_RED, 1e-12)
       # putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_PFEAS, 1e-12)
       # putdouparam(task, MSK_DPAR_INTPNT_CO_TOL_REL_GAP, 1e-1)
+
+      # Set Mosek maxtime, default is infinity
+      putdouparam(task, MSK_DPAR_OPTIMIZER_MAX_TIME, msk_maxtime)
 
       if debug
         dump_mosek_model(task)

@@ -25,9 +25,8 @@ end
 
 
 function main(args)
-    # input_params = parse_commandline()
+    input_params = parse_commandline()
 
-    instance_path = input_params["instance_path"]
     # input_params = Dict("instance_path"=>"..\\data\\data_Matpower\\matpower_QCQP\\WB2.dat",
     #                     "d"=>1,
     #                     "logpath"=>"tltl")
@@ -53,7 +52,7 @@ function main(args)
     run_hierarchy(problem, relax_ctx, logpath; save_pbs=false)
 
 
-
+    warn("Here !")
     ## Build real problem
     instance_path = input_params["instance_path"]
     problem_C, point = import_from_dat(instance_path)
@@ -64,8 +63,9 @@ function main(args)
                                         d=d,
                                         symmetries=symmetries,
                                         params = Dict(:opt_outlev=>1,
-                                                      :opt_outmode=>1,
+                                                      :opt_outmode=>0,
                                                       :opt_outcsv=>1,
+                                                      :opt_msk_maxtime=>2*3600,
                                                       :opt_outname=>joinpath(logpath, "momentsos.log"),
                                                       :opt_outcsvname=>joinpath(logpath, "momentsos_solve.csv")))
     relax_ctx.relaxparams[:pb_name] = instance_name
