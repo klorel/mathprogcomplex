@@ -40,6 +40,7 @@ function main(args)
     instance_name = splitdir(instance_path)[2][1:end-4]
     mkpath(logpath)
 
+    @printf("->  Launching %30s  %2d  %s\n", instance_name, d, logpath)
 
     ## Run funcitons once for precompilation...
     WB2_path = joinpath("..", "data", "data_Matpower", "matpower_QCQP", "WB2.dat")
@@ -52,9 +53,7 @@ function main(args)
     run_hierarchy(problem, relax_ctx, logpath; save_pbs=false)
 
 
-    warn("Here !")
     ## Build real problem
-    instance_path = input_params["instance_path"]
     problem_C, point = import_from_dat(instance_path)
     problem = pb_cplx2real(problem_C)
 
@@ -63,7 +62,7 @@ function main(args)
                                         d=d,
                                         symmetries=symmetries,
                                         params = Dict(:opt_outlev=>1,
-                                                      :opt_outmode=>0,
+                                                      :opt_outmode=>1,
                                                       :opt_outcsv=>1,
                                                       :opt_msk_maxtime=>2*3600,
                                                       :opt_outname=>joinpath(logpath, "momentsos.log"),
