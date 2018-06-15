@@ -14,3 +14,6 @@ vendredi 15 juin
 - [ ] Finir le système de gestion des erreurs de Mosek, logger état du modeleur, timeout.
 - [ ] Comparer les trois implémentations en Dict, OrderedDict, SortedDict pour la hiérarchie.
 - [ ] Explorer les techniques de réduction pour la base des polyômes SOS : [Sparsity in Sums of Squares of Polynomials](http://www.is.titech.ac.jp/~kojima/articles/B-391.pdf).
+- [ ] Conversion C-SDP vers R-SDP.
+- [ ] lecture des blocks AMD pour la hiérarchie. Test sur Matpower.
+- [ ] Conversion directe `SDPInstance{Real}` vers `SDP_Problem`
