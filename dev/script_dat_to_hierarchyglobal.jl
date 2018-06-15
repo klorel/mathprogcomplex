@@ -4,8 +4,8 @@ function main()
 
     #############################################################
     # Parameters
-    nmax_order1 = 2
-    nmax_order2 = 2
+    nmax_order1 = 1354
+    nmax_order2 = 14
     juliapath = joinpath("~", "software", "julia-0.6.3", "bin", "julia")
     juliascript = joinpath(pwd(), "dev", "script_dat_to_hierarchysimple.jl")
     qsubwkdir = pwd()

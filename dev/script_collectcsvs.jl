@@ -1,4 +1,4 @@
-using CSV, DataFrames, DataArrays
+using CSV, DataFrames, ArgParse
 
 function parse_commandline()
   s = ArgParseSettings()
@@ -17,6 +17,7 @@ function main(args)
 
     ## Setting working directory
     input_params = parse_commandline()
+    # input_params = Dict("run_dir" => joinpath("Mosek_runs", "pararuns", "06_15-17h17"))
     workdir = input_params["run_dir"]
 
     info("Working in $workdir")
@@ -26,40 +27,41 @@ function main(args)
 
     global_csv = DataFrames.DataFrame()
 
-    n_addedinstances = 0
+    n_addedinstances = 1
     for folder in run_folders
         curfolder = joinpath(workdir, folder)
         println("-- working on $curfolder")
 
 
         ## Collecting information
-        csvfile = joinpath(curfolder, "knitro_log.csv")
+        csvfile = joinpath(curfolder, "momentsos_solve.csv")
 
 
         # Has timed out ?
+        hastimedout = true
         if isfile(csvfile) != 0
             hastimedout = false
         end
 
         ## Reading Knitro csv
-        if !hastimedout
+        # if !hastimedout
             cur_csv = CSV.read(csvfile, delim=";")
-        end
+        # end
         cur_csv[:slv_hasTimedOut] = hastimedout
         !hastimedout || info("hastimedout...")
 
 
         if size(global_csv) == (0,0)
             global_csv = deepcopy(cur_csv)
-        elseif names(global_csv) != names(cur_csv)
-            @show names(cur_csv)
-            @show length(names(cur_csv))
-            error("Ignoring  $(params["instance"])  $(params["knname"]) :   Names")
-        elseif DataFrames.eltypes(global_csv) != DataFrames.eltypes(cur_csv)
-            @show DataFrames.eltypes(global_csv)
-            @show DataFrames.eltypes(cur_csv)
-            @show names cur_csv
-    	    error("Ignoring  $(params["instance"])  $(params["knname"]) :   Elttypes")
+        # elseif names(global_csv) != names(cur_csv)
+        #     @show names(cur_csv)
+        #     @show length(names(cur_csv))
+        #     error("Ignoring  $(params["instance"])  $(params["knname"]) :   Names")
+        # elseif DataFrames.eltypes(global_csv) != DataFrames.eltypes(cur_csv)
+        #     @show DataFrames.eltypes(global_csv)
+        #     @show DataFrames.eltypes(cur_csv)
+        #     @show names cur_csv
+    	#     error("Ignoring  $(params["instance"])  $(params["knname"]) :   Elttypes")
         else
             n_addedinstances += 1
             append!(global_csv, cur_csv)
@@ -67,8 +69,6 @@ function main(args)
 
         println("   Size global CSV : $(size(global_csv))")
     end
-
-    println(global_csv)
 
     csvname = "report_log.csv"
     println("Writing full csv file $(joinpath(workdir, csvname))")
@@ -80,7 +80,7 @@ function main(args)
 
     info("$n_addedinstances / $(length(run_folders)) added to final csv.")
 
-    global_csv
+    return nothing
 end
 
 main(ARGS)
