@@ -47,11 +47,18 @@ function read_input(intput_type::T, instance_path::String) where T<:Type{IIDMInp
 
       attribute(cur_gen["property"][1], "value") == "FUEL" || warn("generator $gen_id of $busname not of expected type FUEL.")
       capabilityCurve = cur_gen["reactiveCapabilityCurve"][1]
-      minP = parse(attribute(pt, "p"))
-      minQminP, maxQminP = parse(attribute(pt, "minQ")), parse(attribute(pt, "maxQ"))
-      maxP = parse(attribute(pt, "p"))
-      minQmaxP, maxQmaxP = parse(attribute(pt, "minQ")), parse(attribute(pt, "maxQ"))
-      S_bounds = [(minP+im*minQminP, minP+im*maxQminP), (maxP+im*minQmaxP, maxP+im*maxQmaxP)]
+
+      feasreg = Set()
+      for pt in capabilityCurve["point"]
+        PminQmaxQ = (parse(attribute(pt, "p")), parse(attribute(pt, "minQ")), parse(attribute(pt, "maxQ")))
+        push!(feasreg, PminQmaxQ)
+      end
+      minPminQmaxQ, maxPminQmaxQ = sort(collect(feasreg), by=x->x[1])
+
+      minP, minPminQ, minPmaxQ = minPminQmaxQ
+      maxP, maxPminQ, maxPmaxQ = maxPminQmaxQ
+
+      S_bounds = [(minP+im*minPminQ, minP+im*minPmaxQ), (maxP+im*maxPminQ, maxP+im*maxPmaxQ)]
 
       bus[busname]["GEN_$gen_id"] = IIDMGenerator(gen_id, minP, maxP, targetV, volt_regulator_on, S_bounds)
     end
@@ -91,8 +98,8 @@ function read_input(intput_type::T, instance_path::String) where T<:Type{IIDMInp
   link_vars = SortedDict{Link, SortedDict{String, Variable}}()
   gs = GridStructure("BaseCase", node_linksin, node_linksout)
 
-  node_formulations = SortedDict{String, SortedDict{Tuple{Type, String}, Symbol}}()
-  link_formulations = SortedDict{Link, SortedDict{Tuple{Type, String}, Symbol}}()
+  node_formulations = SortedDict{String, SortedDict{String, Symbol}}()
+  link_formulations = SortedDict{Link, SortedDict{String, Symbol}}()
   mp = MathematicalProgramming(node_formulations, link_formulations, node_vars, link_vars)
   return OPFProblems("BaseCase"=>Scenario(ds, gs, mp))
 end

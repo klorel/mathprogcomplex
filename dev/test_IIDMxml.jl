@@ -4,11 +4,13 @@ using LightXML
 ROOT=pwd()
 include(joinpath(ROOT,"..","src_PowSysMod", "PowSysMod_body.jl"))
 
-filename = joinpath("instances", "IIDM", "pfLille_10postes.xml")
-OPFpbs = build_OPFproblems(IIDMInput, [filename])
+# filename = joinpath("instances", "IIDM", "pfLille_10postes.xml")
+filename = joinpath("..\\..\\data", "data_IIDM", "pfLille_10postes.xml")
+OPFpbs = load_OPFproblems(IIDMInput, filename)
 
-scenario = "BaseCase"
-pb = build_Problem!(OPFpbs, scenario)
+# scenario = "BaseCase"
+pb = build_globalpb!(OPFpbs)
+# pb = build_globalpb!(OPFpbs, scenario)
 # print(pb)
 
 voltage = Point()
