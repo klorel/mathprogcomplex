@@ -24,7 +24,7 @@ function build_and_solve_SDPrelax_GOC(data_path::String, folder::String, scenari
     # init_point_real = cplx2real(init_point)
     #
     # ## Exporting real problem
-    # amplexportpath = joinpath("knitro_runs", "$(folder[9:end])_$(scenario)")
+    amplexportpath = joinpath("knitro_runs", "$(folder[9:end])_$(scenario)")
     #
     # my_timer = @elapsed export_to_dat(pb_global_real, amplexportpath, init_point_real)
     # input_dat1, input_dat2 = joinpath(amplexportpath,"real_minlp_instance_noSmax.dat"), joinpath(amplexportpath,"real_minlp_precond_cstrs_noSmax.dat")
@@ -36,6 +36,8 @@ function build_and_solve_SDPrelax_GOC(data_path::String, folder::String, scenari
     #
     # ## Converting problem to real
     # problem = pb_cplx2real(problem_C)
+    pt_knitro, pt_GOC = read_Knitro_output(amplexportpath, problem)
+    obj = get_objective(problem, pt_knitro)
 
     ## Build relaxation
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
@@ -52,8 +54,8 @@ function build_and_solve_SDPrelax_GOC(data_path::String, folder::String, scenari
 
     sdpinstance = build_SDPInstance(relax_ctx, mmtrel_pb)
 
-    ispath(output_dir) && rm(output_dir, recursive=true)
-    mkpath(output_dir)
+    # ispath(output_dir) && rm(output_dir, recursive=true)
+    # mkpath(output_dir)
     export_SDP(sdpinstance, output_dir)
 
     sdp_instance = read_SDPInstance(output_dir)
@@ -79,9 +81,18 @@ function build_and_solve_SDPrelax_GOC(data_path::String, folder::String, scenari
     primal = SortedDict{Tuple{String,String,String}, Float64}()
     dual = SortedDict{Tuple{String, String, String}, Float64}()
 
+
+
+    originalSTDOUT = STDOUT
+    outlog = open(joinpath(amplexportpath, "relaxSDP_$(folder)_$(scenario).log"), "w")
+    redirect_stdout(outlog)
+
     primobj, dualobj = solve_mosek(sdp::SDP_Problem, primal, dual)
 
-    return
+    close(outlog)
+    redirect_stdout(originalSTDOUT)
+
+    return scenario => obj, primobj, dualobj
 end
 
 function read_args(ARGS)
@@ -108,9 +119,18 @@ dat_paths = [joinpath(pwd(),"knitro_runs", "$(folder[9:end])_$scenario", "real_m
 output_dirs = [joinpath(pwd(),"knitro_runs", "$(folder[9:end])_$scenario") for scenario in scenarios]
 order = 1
 
-build_and_solve_SDPrelax_GOC(data_path, folder, "scenario_1", order, output_dirs[1])
-exit()
+
 println("----------> Start para jobs")
 
 # r = build_and_solve_GOC(folder, scenarios[1])
 results = pmap(build_and_solve_SDPrelax_GOC, [data_path for i=1:nb_scenarios],[folder for i=1:nb_scenarios], scenarios, [1 for i=1:nb_scenarios], output_dirs)
+
+f = open("gaps_$(folder[9:end]).csv","w")
+write(f, "scenario;Upper bound; Lower bound (primalobj) ; Lowerbound (dualobj) ; Gap\n")
+
+for (scenario, objs) in results
+    gap = abs((objs[1]-objs[3])/objs[1])
+    write(f,"$scenario;$(objs[1]);$(objs[2]);$(objs[3]);$gap\n")
+end
+
+close(f)

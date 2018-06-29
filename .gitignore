@@ -52,3 +52,4 @@ Mosek_runs
 
 /log_IEEE14_scenario_1_ordre2_cliques.txt
 /log_Mosek_case118_sparse_1clique.txt
+*.csv

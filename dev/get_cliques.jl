@@ -60,9 +60,9 @@ function get_cliques(pb_real::Problem)
 end
 
 
-# folder = "Phase_0_IEEE14_1Scenario"
-# # folder = "Phase_0_IEEE14"
-# # folder = "Phase_0_RTS96"
+# # folder = "Phase_0_IEEE14_1Scenario"
+# folder = "Phase_0_IEEE14"
+# folder = "Phase_0_RTS96"
 # scenario = "scenario_1"
 #
 # instance_path = joinpath(pwd(),"..","data", "data_GOC", folder, scenario)
@@ -82,6 +82,6 @@ end
 # cliques = get_cliques(pb_global_real)
 # println(cliques)
 #
-# println(length(cliques["C-$(basecase_scenario_name())"]))
+# println(length(cliques["clique-$(basecase_scenario_name())"]))
 #
-# println(length(cliques["C-Scen1"]))
+# println(length(cliques["clique-Scen1"]))
