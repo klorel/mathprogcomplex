@@ -13,9 +13,9 @@ function main()
     relax_ctx = set_relaxation(problem; hierarchykind=:Real,
                                         # symmetries=[PhaseInvariance],
                                         d = 1,
-                                        params = Dict(:opt_outlev=>1,
+                                        params = Dict(:opt_outlev=>0,
                                                       :opt_outmode=>0,
-                                                      :opt_outcsv=>1))
+                                                      :opt_outcsv=>0))
 
     # println("\n--------------------------------------------------------")
     # println("problem = \n$problem")
