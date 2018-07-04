@@ -70,9 +70,21 @@ function cplx2real(pol::Polynomial)
 
   for (expo, λ) in pol
     realexpo, imagexpo = cplx2real(expo)
-
     realPart += realexpo*real(λ) - imagexpo*imag(λ)
     imagPart += imagexpo*real(λ) + realexpo*imag(λ)
+  end
+  return (realPart, imagPart)
+end
+
+function cplx2real_add(pol::Polynomial)
+  realPart = Polynomial()
+  imagPart = Polynomial()
+
+  for (expo, λ) in pol
+    realexpo, imagexpo = cplx2real(expo)
+
+    add!(realPart, realexpo*real(λ) - imagexpo*imag(λ))
+    add!(imagPart, imagexpo*real(λ) + realexpo*imag(λ))
   end
   return (realPart, imagPart)
 end
