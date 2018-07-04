@@ -1,5 +1,5 @@
 using DataStructures
-using ProgressMeter
+
 include(joinpath(ROOT, "src_PolynomialOptim", "PolynomialOptim.jl"))
 
 ###############################################################################
