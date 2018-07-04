@@ -286,6 +286,7 @@ end
 function save_SDPsolinfo!(task::Mosek.Task, sol_info::OrderedDict)
   prosta = getprosta(task, MSK_SOL_ITR)
   solsta = getsolsta(task, MSK_SOL_ITR)
+  (solsta == "") && (solsta = "--")
 
   sol_info[:slv_prosta] = get_prosta_map()[prosta]
   sol_info[:slv_solsta] = get_solsta_map()[solsta]

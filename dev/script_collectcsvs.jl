@@ -43,28 +43,32 @@ function main(args)
             hastimedout = false
         end
 
-        ## Reading Knitro csv
-        # if !hastimedout
-            cur_csv = CSV.read(csvfile, delim=";")
-        # end
-        cur_csv[:slv_hasTimedOut] = hastimedout
-        !hastimedout || info("hastimedout...")
+        if isfile(csvfile)
+            ## Reading Knitro csv
+            # if !hastimedout
+                cur_csv = CSV.read(csvfile, delim=";")
+            # end
+            cur_csv[:slv_hasTimedOut] = hastimedout
+            !hastimedout || info("hastimedout...")
 
 
-        if size(global_csv) == (0,0)
-            global_csv = deepcopy(cur_csv)
-        # elseif names(global_csv) != names(cur_csv)
-        #     @show names(cur_csv)
-        #     @show length(names(cur_csv))
-        #     error("Ignoring  $(params["instance"])  $(params["knname"]) :   Names")
-        # elseif DataFrames.eltypes(global_csv) != DataFrames.eltypes(cur_csv)
-        #     @show DataFrames.eltypes(global_csv)
-        #     @show DataFrames.eltypes(cur_csv)
-        #     @show names cur_csv
-    	#     error("Ignoring  $(params["instance"])  $(params["knname"]) :   Elttypes")
-        else
-            n_addedinstances += 1
-            append!(global_csv, cur_csv)
+            if size(global_csv) == (0,0)
+                global_csv = deepcopy(cur_csv)
+            elseif names(global_csv) != names(cur_csv)
+                @show names(cur_csv)
+                @show length(names(cur_csv))
+                @show names(global_csv)
+                @show length(names(global_csv))
+                warn("Ignoring  $folder :   Names")
+            elseif DataFrames.eltypes(global_csv) != DataFrames.eltypes(cur_csv)
+                @show DataFrames.eltypes(global_csv)
+                @show DataFrames.eltypes(cur_csv)
+                @show names cur_csv
+                warn("Ignoring  $folder :   Elttypes")
+            else
+                n_addedinstances += 1
+                append!(global_csv, cur_csv)
+            end
         end
 
         println("   Size global CSV : $(size(global_csv))")
